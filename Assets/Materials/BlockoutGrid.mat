@@ -26,10 +26,10 @@ Material:
     m_Ints: []
     m_Floats:
     - _CheckerSize: 0.5
-    - _Contrast: 1.15
-    - _Metallic: 0
+    - _Contrast: 0.85
+    - _Metallic: 0.279
     m_Colors:
-    - _DarkColor: {r: 0.28, g: 0.31, b: 0.34, a: 1}
-    - _LightColor: {r: 0.68, g: 0.72, b: 0.76, a: 1}
+    - _DarkColor: {r: 0.59119487, g: 0.59119487, b: 0.59119487, a: 1}
+    - _LightColor: {r: 0.8616352, g: 0.8616352, b: 0.8616352, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
