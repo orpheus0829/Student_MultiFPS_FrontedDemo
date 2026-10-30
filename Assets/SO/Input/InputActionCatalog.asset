@@ -1,0 +1,164 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89f7b34dead0b4a49b31f995a96ca2d7, type: 3}
+  m_Name: InputActionCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::InputActionCatalogSO
+  _bindingStorageKey: GunDemo.Gameplay
+  _actions:
+  - _id: 0
+    _type: 0
+    _expectedControlType: Vector2
+    _activationMode: 0
+    _bindings:
+    - _name: WASD
+      _path: 2DVector
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 1
+      _isPartOfComposite: 0
+    - _name: up
+      _path: <Keyboard>/w
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 1
+    - _name: down
+      _path: <Keyboard>/s
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 1
+    - _name: left
+      _path: <Keyboard>/a
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 1
+    - _name: right
+      _path: <Keyboard>/d
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 1
+  - _id: 1
+    _type: 2
+    _expectedControlType: Vector2
+    _activationMode: 0
+    _bindings:
+    - _name: "\u9F20\u6807"
+      _path: <Mouse>/delta
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 2
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/space
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 3
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 1
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/leftShift
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 4
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 1
+    _bindings:
+    - _name: "\u9F20\u6807"
+      _path: <Mouse>/leftButton
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 5
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 1
+    _bindings:
+    - _name: "\u9F20\u6807"
+      _path: <Mouse>/rightButton
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 6
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/r
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 7
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/g
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 8
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 1
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/tab
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 9
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/escape
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0

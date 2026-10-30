@@ -59,6 +59,7 @@ public class TimelineCamRig : MonoBehaviour
     public void Acquire()
     {
         _activeClips++;
+        CameraControlAuthority.Acquire(this);
         isPlayingAnim = true;
         if (_activeClips == 1)
         {
@@ -74,7 +75,12 @@ public class TimelineCamRig : MonoBehaviour
 
     public void Release(bool restore)
     {
+        if (_activeClips <= 0)
+        {
+            return;
+        }
         _activeClips--;
+        CameraControlAuthority.Release(this);
         if (_activeClips <= 0)
         {
             _activeClips = 0;
