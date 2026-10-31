@@ -1,11 +1,5 @@
 # TimelineTools3D · Timeline 套件 使用手册
 
-> ⚠️ **重要声明**：本手册、以及工程内所有组件的「组件说明」栏，**全部由 AI 编写**。
-> 它们能覆盖大部分常见用法，但**不保证与最新代码完全一致**，也可能遗漏边界情况或描述有偏差。
-> 请把本文当作**上手导读**，**遇到疑问一律以脚本源码为准**；发现不对的地方直接改文案即可。
-
----
-
 ## 一、这是什么
 
 用 Timeline 编排「打击 / 位移 / 运镜 / 音效特效」的一套小工具。
@@ -16,6 +10,7 @@
 | 冲刺 / 击飞 / 绕圈等位移 | **TransformTrack** + **TransformTimelineClip** |
 | 运镜（平滑 / 瞬切 / 归位 / 环绕） | **CameraTimelineTrack** + **CameraTimelineClip** + **TimelineCamRig** |
 | 按时间点播声音、出特效 | **EffectAudioTrack** + **EffectAudioClip** |
+| 在屏幕下方显示排队文字 | **WordNoteTrack** + **WordNoteClip** |
 | 血量、受击反馈 | **DamageableHealth** + **HitFlash** |
 | 玩家鼠标环绕视角 | **OrbitCameraControl** |
 
@@ -35,8 +30,8 @@
 
 ```
 AboutTimeline/                 自定义轨道与片段
-├── Track/     HitBoxTrack / TransformTrack / CameraTimelineTrack / EffectAudioTrack
-├── Clip/      HitBoxClip / TransformTimelineClip / CameraTimelineClip / EffectAudioClip
+├── Track/     HitBoxTrack / TransformTrack / CameraTimelineTrack / EffectAudioTrack / WordNoteTrack
+├── Clip/      HitBoxClip / TransformTimelineClip / CameraTimelineClip / EffectAudioClip / WordNoteClip
 ├── Behavior/  片段对应的运行时行为
 ├── AboutTimelineHosts.cs       接口定义（ITimelineHitHost / ITimelineEffectHost / IDamageable）
 └── Editor/    片段 Inspector、Scene 可视化、样式
@@ -50,7 +45,7 @@ TimelineKit/                   与 Timeline 配合的运行时组件
 
 ---
 
-## 四、四条轨道
+## 四、五条轨道
 
 在 Timeline 里右键 → 添加轨道 就能看到它们：
 
@@ -60,6 +55,7 @@ TimelineKit/                   与 Timeline 配合的运行时组件
 | **TransformTrack** | `TransformTimelineClip` | 位移：瞬移穿墙 / 匀速直线 / 变速直线 / 绕圈 |
 | **CameraTimelineTrack** | `CameraTimelineClip` | 运镜：平滑 / 瞬切 / 归位（可环绕、可手动接管） |
 | **EffectAudioTrack** | `EffectAudioClip` | 在时间轴上触发音效与特效 |
+| **WordNoteTrack** | `WordNoteClip` | 在片段持续期间申请一条固定于屏幕下方、统一上浮出现和上浮消失的文字消息 |
 
 **打击判定的完整链路**：
 
@@ -149,7 +145,7 @@ hp.onDeath   += () => { };
 
 | 文件 | 放什么 |
 |---|---|
-| `TimelineKit/Editor/TimelineHelpTextTracks.cs` | 四条轨道与四个片段 |
+| `TimelineKit/Editor/TimelineHelpTextTracks.cs` | 五条轨道与五个片段 |
 | `TimelineKit/Editor/TimelineHelpTextActors.cs` | ActorHost / 血量 / 闪色 / 机位 / 环绕 |
 | `TimelineKit/Editor/TimelineHelpTextExtra.cs` | 想给任意类型（含第三方组件）加说明时写这里 |
 
@@ -167,7 +163,3 @@ TimelineHelpText.Register(map, "类型名", "标题", "正文");
 4. **Input System**：`OrbitCameraControl` 依赖新输入系统；工程未启用时它自动不参与编译
 5. **改脚本请保持 UTF-8 无 BOM**：否则中文会变乱码
 6. **`AssetDatabase` 的导入时序**：一次并行写入多个新脚本时，偶发某些文件没进编译列表（表现为「类型不存在 / 菜单不出现」）。遇到时**换个文件名重写一次**即可
-
----
-
-> 再次提醒：**本文与工程内所有说明文字均由 AI 生成**，仅供参考，**请以源码为准**。

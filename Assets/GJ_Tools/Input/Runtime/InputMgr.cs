@@ -11,14 +11,33 @@ public class InputMgr : BaseMgr<InputMgr>
     private InputActionAsset _asset;
     private InputBindingService _bindingService;
 
-    protected override bool Ddol => true;
+    protected override bool Ddol
+    {
+        get
+        {
+            return true;
+        }
+    }
 
-    public InputActionAsset Asset => _asset;
-    public InputBindingService BindingService => _bindingService;
+    public InputActionAsset Asset
+    {
+        get
+        {
+            return _asset;
+        }
+    }
+
+    public InputBindingService BindingService
+    {
+        get
+        {
+            return _bindingService;
+        }
+    }
 
     public void Configure(InputActionCatalogSO catalog)
     {
-        if (_catalog == catalog && _asset != null)
+        if (_catalog == catalog && _asset)
         {
             return;
         }
@@ -26,7 +45,7 @@ public class InputMgr : BaseMgr<InputMgr>
         DisposeRuntime();
         _catalog = catalog;
 
-        if (_catalog == null)
+        if (!_catalog)
         {
             _catalog = ScriptableObject.CreateInstance<InputActionCatalogSO>();
             _catalog.ResetToDefaults();
@@ -77,7 +96,7 @@ public class InputMgr : BaseMgr<InputMgr>
 
     public InputAction GetAction(GJInputAction id)
     {
-        if (_asset == null)
+        if (!_asset)
         {
             Configure(_catalog);
         }
@@ -95,7 +114,7 @@ public class InputMgr : BaseMgr<InputMgr>
         _bindingService?.Dispose();
         _bindingService = null;
 
-        if (_asset != null)
+        if (_asset)
         {
             _asset.Disable();
             Destroy(_asset);

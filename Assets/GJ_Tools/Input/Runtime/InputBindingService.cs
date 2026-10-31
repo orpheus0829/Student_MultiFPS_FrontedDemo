@@ -8,9 +8,29 @@ public sealed class InputBindingService : IDisposable
     private readonly InputActionAsset _asset;
     private readonly IInputBindingStorage _storage;
     private InputActionRebindingExtensions.RebindingOperation _operation;
+    private InputAction _rebindAction;
+    private GJInputAction _rebindId;
+    private int _rebindBindingIndex;
+    private bool _wasActionEnabled;
+    private string _previousOverridePath;
+    private Action<InputRebindResult> _completed;
+    private Action _canceled;
 
-    public InputActionAsset Asset => _asset;
-    public bool IsRebinding => _operation != null;
+    public InputActionAsset Asset
+    {
+        get
+        {
+            return _asset;
+        }
+    }
+
+    public bool IsRebinding
+    {
+        get
+        {
+            return _operation != null;
+        }
+    }
 
     public event Action Changed;
 
@@ -113,48 +133,19 @@ public sealed class InputBindingService : IDisposable
             return null;
         }
 
-        bool wasEnabled = action.enabled;
-        string previousOverridePath = action.bindings[bindingIndex].overridePath;
+        _rebindAction = action;
+        _rebindId = id;
+        _rebindBindingIndex = bindingIndex;
+        _wasActionEnabled = action.enabled;
+        _previousOverridePath = action.bindings[bindingIndex].overridePath;
+        _completed = completed;
+        _canceled = canceled;
         action.Disable();
         InputActionRebindingExtensions.RebindingOperation operation = action.PerformInteractiveRebinding(bindingIndex)
             .WithControlsExcluding("<Mouse>/position")
             .OnMatchWaitForAnother(0.08f)
-            .OnComplete(rebindOperation =>
-            {
-                string path = action.bindings[bindingIndex].effectivePath;
-                rebindOperation.Dispose();
-                _operation = null;
-
-                if (TryFindConflict(id, bindingIndex, path, out InputBindingConflict conflict))
-                {
-                    RestoreOverride(action, bindingIndex, previousOverridePath);
-                    if (wasEnabled)
-                    {
-                        action.Enable();
-                    }
-                    completed?.Invoke(InputRebindResult.Rejected(path, conflict));
-                    return;
-                }
-
-                if (wasEnabled)
-                {
-                    action.Enable();
-                }
-
-                Save();
-                Changed?.Invoke();
-                completed?.Invoke(InputRebindResult.Success(path));
-            })
-            .OnCancel(rebindOperation =>
-            {
-                rebindOperation.Dispose();
-                _operation = null;
-                if (wasEnabled)
-                {
-                    action.Enable();
-                }
-                canceled?.Invoke();
-            });
+            .OnComplete(CompleteRebind)
+            .OnCancel(CancelRebindOperation);
 
         if (id != GJInputAction.Settings)
         {
@@ -241,5 +232,61 @@ public sealed class InputBindingService : IDisposable
         }
 
         action.ApplyBindingOverride(bindingIndex, previousOverridePath);
+    }
+
+    private void CompleteRebind(
+        InputActionRebindingExtensions.RebindingOperation operation)
+    {
+        string path = _rebindAction.bindings[_rebindBindingIndex].effectivePath;
+        operation.Dispose();
+        _operation = null;
+
+        if (TryFindConflict(
+                _rebindId,
+                _rebindBindingIndex,
+                path,
+                out InputBindingConflict conflict))
+        {
+            RestoreOverride(
+                _rebindAction,
+                _rebindBindingIndex,
+                _previousOverridePath);
+            EnableRebindAction();
+            _completed?.Invoke(InputRebindResult.Rejected(path, conflict));
+            ClearRebindContext();
+            return;
+        }
+
+        EnableRebindAction();
+        Save();
+        Changed?.Invoke();
+        _completed?.Invoke(InputRebindResult.Success(path));
+        ClearRebindContext();
+    }
+
+    private void CancelRebindOperation(
+        InputActionRebindingExtensions.RebindingOperation operation)
+    {
+        operation.Dispose();
+        _operation = null;
+        EnableRebindAction();
+        _canceled?.Invoke();
+        ClearRebindContext();
+    }
+
+    private void EnableRebindAction()
+    {
+        if (_wasActionEnabled)
+        {
+            _rebindAction.Enable();
+        }
+    }
+
+    private void ClearRebindContext()
+    {
+        _rebindAction = null;
+        _previousOverridePath = null;
+        _completed = null;
+        _canceled = null;
     }
 }

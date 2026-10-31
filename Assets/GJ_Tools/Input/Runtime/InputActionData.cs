@@ -12,11 +12,45 @@ public class InputActionData
     [SerializeField] private InputActivationMode _activationMode;
     [SerializeField] private List<InputBindingData> _bindings = new List<InputBindingData>();
 
-    public GJInputAction Id => _id;
-    public InputActionType Type => _type;
-    public string ExpectedControlType => _expectedControlType;
-    public InputActivationMode ActivationMode => _activationMode;
-    public IReadOnlyList<InputBindingData> Bindings => _bindings;
+    public GJInputAction Id
+    {
+        get
+        {
+            return _id;
+        }
+    }
+
+    public InputActionType Type
+    {
+        get
+        {
+            return _type;
+        }
+    }
+
+    public string ExpectedControlType
+    {
+        get
+        {
+            return _expectedControlType;
+        }
+    }
+
+    public InputActivationMode ActivationMode
+    {
+        get
+        {
+            return _activationMode;
+        }
+    }
+
+    public IReadOnlyList<InputBindingData> Bindings
+    {
+        get
+        {
+            return _bindings;
+        }
+    }
 
     public InputActionData(
         GJInputAction id,

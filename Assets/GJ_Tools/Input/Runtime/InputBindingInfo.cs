@@ -7,7 +7,13 @@ public readonly struct InputBindingInfo
     public string DisplayName { get; }
     public bool IsComposite { get; }
     public bool IsPartOfComposite { get; }
-    public bool CanRebind => !IsComposite;
+    public bool CanRebind
+    {
+        get
+        {
+            return !IsComposite;
+        }
+    }
 
     public InputBindingInfo(
         GJInputAction action,

@@ -14,6 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDataSO
   _moveSpeed: 5
   _sprintSpeed: 8
+  _jumpHeight: 1.2
+  _gravity: -25
+  _groundedForce: -2
+  _vaultDistance: 0.9
+  _vaultLowHeight: 0.45
+  _vaultHighHeight: 1.4
+  _vaultMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _lookSensitivity: 0.1
   _minPitch: -85
   _maxPitch: 85

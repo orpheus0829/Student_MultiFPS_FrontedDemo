@@ -10,9 +10,29 @@ public class PlayerActionTimelineData
     [SerializeField] private TimelineAsset _enterTimeline;
     [SerializeField] private TimelineAsset _exitTimeline;
 
-    public GJInputAction Action => _action;
-    public TimelineAsset EnterTimeline => _enterTimeline;
-    public TimelineAsset ExitTimeline => _exitTimeline;
+    public GJInputAction Action
+    {
+        get
+        {
+            return _action;
+        }
+    }
+
+    public TimelineAsset EnterTimeline
+    {
+        get
+        {
+            return _enterTimeline;
+        }
+    }
+
+    public TimelineAsset ExitTimeline
+    {
+        get
+        {
+            return _exitTimeline;
+        }
+    }
 }
 
 [CreateAssetMenu(fileName = "PlayerActionSet", menuName = "Gun Demo/玩家/动作 Timeline 集")]
@@ -23,7 +43,15 @@ public class PlayerActionSetSO : ScriptableObject
 
     public TimelineAsset Get(GJInputAction action, PlayerInputPhase phase)
     {
-        PlayerActionTimelineData data = _actions.Find(item => item.Action == action);
+        PlayerActionTimelineData data = null;
+        for (int i = 0; i < _actions.Count; i++)
+        {
+            if (_actions[i].Action == action)
+            {
+                data = _actions[i];
+                break;
+            }
+        }
         if (data == null)
         {
             return null;

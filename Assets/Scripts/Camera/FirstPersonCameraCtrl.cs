@@ -19,12 +19,12 @@ public class FirstPersonCameraCtrl : MonoBehaviour
 
     private void Awake()
     {
-        if (_yawRoot == null)
+        if (!_yawRoot)
         {
             _yawRoot = transform.root;
         }
 
-        if (_pitchPivot == null)
+        if (!_pitchPivot)
         {
             _pitchPivot = transform;
         }
@@ -34,7 +34,7 @@ public class FirstPersonCameraCtrl : MonoBehaviour
 
     private void OnEnable()
     {
-        if (_inputCtrl != null)
+        if (_inputCtrl)
         {
             _inputCtrl.CommandIssued += Receive;
         }
@@ -42,7 +42,7 @@ public class FirstPersonCameraCtrl : MonoBehaviour
 
     private void OnDisable()
     {
-        if (_inputCtrl != null)
+        if (_inputCtrl)
         {
             _inputCtrl.CommandIssued -= Receive;
         }
@@ -64,9 +64,9 @@ public class FirstPersonCameraCtrl : MonoBehaviour
             SyncAngles();
         }
 
-        float sensitivity = _playerData != null ? _playerData.LookSensitivity : 0.1f;
-        float minPitch = _playerData != null ? _playerData.MinPitch : -85f;
-        float maxPitch = _playerData != null ? _playerData.MaxPitch : 85f;
+        float sensitivity = _playerData ? _playerData.LookSensitivity : 0.1f;
+        float minPitch = _playerData ? _playerData.MinPitch : -85f;
+        float maxPitch = _playerData ? _playerData.MaxPitch : 85f;
 
         _yaw += _lookInput.x * sensitivity;
         _pitch = Mathf.Clamp(_pitch - _lookInput.y * sensitivity, minPitch, maxPitch);

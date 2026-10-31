@@ -12,13 +12,61 @@ public class InputBindingData
     [SerializeField] private bool _isComposite;
     [SerializeField] private bool _isPartOfComposite;
 
-    public string Name => _name;
-    public string Path => _path;
-    public string Interactions => _interactions;
-    public string Processors => _processors;
-    public string Groups => _groups;
-    public bool IsComposite => _isComposite;
-    public bool IsPartOfComposite => _isPartOfComposite;
+    public string Name
+    {
+        get
+        {
+            return _name;
+        }
+    }
+
+    public string Path
+    {
+        get
+        {
+            return _path;
+        }
+    }
+
+    public string Interactions
+    {
+        get
+        {
+            return _interactions;
+        }
+    }
+
+    public string Processors
+    {
+        get
+        {
+            return _processors;
+        }
+    }
+
+    public string Groups
+    {
+        get
+        {
+            return _groups;
+        }
+    }
+
+    public bool IsComposite
+    {
+        get
+        {
+            return _isComposite;
+        }
+    }
+
+    public bool IsPartOfComposite
+    {
+        get
+        {
+            return _isPartOfComposite;
+        }
+    }
 
     public InputBindingData(string name, string path, bool isComposite = false, bool isPartOfComposite = false)
     {

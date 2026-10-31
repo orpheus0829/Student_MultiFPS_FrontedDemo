@@ -12,8 +12,23 @@ public class InputActionCatalogSO : ScriptableObject
     [Header("输入动作")]
     [SerializeField] private List<InputActionData> _actions = new List<InputActionData>();
 
-    public string BindingStorageKey => string.IsNullOrWhiteSpace(_bindingStorageKey) ? name : _bindingStorageKey.Trim();
-    public IReadOnlyList<InputActionData> Actions => _actions;
+    public string BindingStorageKey
+    {
+        get
+        {
+            return string.IsNullOrWhiteSpace(_bindingStorageKey)
+                ? name
+                : _bindingStorageKey.Trim();
+        }
+    }
+
+    public IReadOnlyList<InputActionData> Actions
+    {
+        get
+        {
+            return _actions;
+        }
+    }
 
     public InputActionAsset BuildAsset()
     {
@@ -83,7 +98,7 @@ public class InputActionCatalogSO : ScriptableObject
     public bool ResetBindingToDefault(GJInputAction id, int bindingIndex)
     {
         InputActionData current = Find(id);
-        InputActionData defaults = CreateDefaults().Find(action => action.Id == id);
+        InputActionData defaults = Find(CreateDefaults(), id);
         if (current == null || defaults == null || bindingIndex < 0 || bindingIndex >= current.Bindings.Count || bindingIndex >= defaults.Bindings.Count)
         {
             return false;
@@ -150,7 +165,7 @@ public class InputActionCatalogSO : ScriptableObject
 
     public InputActionData Find(GJInputAction id)
     {
-        return _actions.Find(action => action.Id == id);
+        return Find(_actions, id);
     }
 
     private void EnsureDefaults()
@@ -185,5 +200,20 @@ public class InputActionCatalogSO : ScriptableObject
             new InputActionData(GJInputAction.Scoreboard, InputActionType.Button, "Button", InputActivationMode.Hold, new InputBindingData("键盘", "<Keyboard>/tab")),
             new InputActionData(GJInputAction.Settings, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/escape"))
         };
+    }
+
+    private static InputActionData Find(
+        List<InputActionData> actions,
+        GJInputAction id)
+    {
+        for (int i = 0; i < actions.Count; i++)
+        {
+            if (actions[i].Id == id)
+            {
+                return actions[i];
+            }
+        }
+
+        return null;
     }
 }

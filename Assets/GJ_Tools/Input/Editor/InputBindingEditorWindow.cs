@@ -55,7 +55,7 @@ public class InputBindingEditorWindow : EditorWindow
         DrawTitle();
         DrawCatalogPanel();
 
-        if (_catalog == null)
+        if (!_catalog)
         {
             EditorGUILayout.HelpBox("没有找到输入数据源，请创建或选择 InputActionCatalogSO。", MessageType.Info);
             return;
@@ -114,7 +114,7 @@ public class InputBindingEditorWindow : EditorWindow
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUI.enabled = _catalog != null;
+                GUI.enabled = _catalog;
                 if (GUILayout.Button("保存", GUILayout.ExpandWidth(false), GUILayout.Height(24f)))
                 {
                     EditorUtility.SetDirty(_catalog);
@@ -292,26 +292,8 @@ public class InputBindingEditorWindow : EditorWindow
         InputActionRebindingExtensions.RebindingOperation operation = _bindingService?.StartRebind(
             id,
             bindingIndex,
-            result =>
-            {
-                ClearWaiting();
-                if (!result.IsSuccessful)
-                {
-                    SetMessage($"按键冲突：{GetActionName(result.Conflict.Action)} 已使用 {result.Conflict.DisplayName}。本次修改未保存。", MessageType.Warning);
-                    Repaint();
-                    return;
-                }
-
-                SetCatalogBinding(id, bindingIndex, result.Path);
-                SetMessage("按键已修改并写入输入数据源。", MessageType.Info);
-                Repaint();
-            },
-            () =>
-            {
-                ClearWaiting();
-                SetMessage("已取消按键监听。", MessageType.Info);
-                Repaint();
-            });
+            OnRebindCompleted,
+            OnRebindCanceled);
 
         if (operation == null)
         {
@@ -319,6 +301,30 @@ public class InputBindingEditorWindow : EditorWindow
             SetMessage("该绑定无法进入监听状态。", MessageType.Error);
         }
 
+        Repaint();
+    }
+
+    private void OnRebindCompleted(InputRebindResult result)
+    {
+        GJInputAction action = _waitingAction.GetValueOrDefault();
+        int bindingIndex = _waitingBindingIndex;
+        ClearWaiting();
+        if (!result.IsSuccessful)
+        {
+            SetMessage($"按键冲突：{GetActionName(result.Conflict.Action)} 已使用 {result.Conflict.DisplayName}。本次修改未保存。", MessageType.Warning);
+            Repaint();
+            return;
+        }
+
+        SetCatalogBinding(action, bindingIndex, result.Path);
+        SetMessage("按键已修改并写入输入数据源。", MessageType.Info);
+        Repaint();
+    }
+
+    private void OnRebindCanceled()
+    {
+        ClearWaiting();
+        SetMessage("已取消按键监听。", MessageType.Info);
         Repaint();
     }
 
@@ -414,7 +420,7 @@ public class InputBindingEditorWindow : EditorWindow
     private void RebuildPreview()
     {
         DisposePreview();
-        if (_catalog == null || _catalog.GetValidationErrors().Count > 0)
+        if (!_catalog || _catalog.GetValidationErrors().Count > 0)
         {
             return;
         }
@@ -427,7 +433,7 @@ public class InputBindingEditorWindow : EditorWindow
     {
         _bindingService?.Dispose();
         _bindingService = null;
-        if (_previewAsset != null)
+        if (_previewAsset)
         {
             DestroyImmediate(_previewAsset);
             _previewAsset = null;
@@ -437,14 +443,14 @@ public class InputBindingEditorWindow : EditorWindow
     private void FindDefaultCatalog()
     {
         InputActionCatalogSO selected = Selection.activeObject as InputActionCatalogSO;
-        if (selected != null)
+        if (selected)
         {
             _catalog = selected;
             return;
         }
 
         InputActionCatalogSO defaultCatalog = AssetDatabase.LoadAssetAtPath<InputActionCatalogSO>("Assets/SO/Input/InputActionCatalog.asset");
-        if (defaultCatalog != null)
+        if (defaultCatalog)
         {
             _catalog = defaultCatalog;
             return;
@@ -475,7 +481,7 @@ public class InputBindingEditorWindow : EditorWindow
 
     private void SetAllFoldouts(bool expanded)
     {
-        if (_catalog == null)
+        if (!_catalog)
         {
             return;
         }
