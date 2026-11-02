@@ -1,7 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.Timeline;
 
 public class PlayerActionCtrl : MonoBehaviour
 {
@@ -11,18 +9,13 @@ public class PlayerActionCtrl : MonoBehaviour
     [Header("角色移动")]
     [SerializeField] private CharacterController _characterController;
 
-    [Header("动作数据")]
+    [Header("玩家数据")]
     [SerializeField] private PlayerDataSO _playerData;
-    [SerializeField] private PlayerActionSetSO _actionSet;
-
-    [Header("Timeline")]
-    [SerializeField] private PlayableDirector _director;
 
     private Vector2 _moveInput;
     private bool _isSprinting;
     private bool _isFiring;
     private bool _isAiming;
-    private bool _isVaulting;
     private float _verticalSpeed;
 
     public event Action<PlayerInputCommand> CommandReceived;
@@ -74,10 +67,6 @@ public class PlayerActionCtrl : MonoBehaviour
             _characterController = GetComponent<CharacterController>();
         }
 
-        if (!_director)
-        {
-            _director = GetComponent<PlayableDirector>();
-        }
     }
 
     private void OnEnable()
@@ -87,10 +76,6 @@ public class PlayerActionCtrl : MonoBehaviour
             _inputCtrl.CommandIssued += Receive;
         }
 
-        if (_director)
-        {
-            _director.stopped += OnTimelineStopped;
-        }
     }
 
     private void OnDisable()
@@ -100,13 +85,7 @@ public class PlayerActionCtrl : MonoBehaviour
             _inputCtrl.CommandIssued -= Receive;
         }
 
-        if (_director)
-        {
-            _director.stopped -= OnTimelineStopped;
-        }
-
         _moveInput = Vector2.zero;
-        _isVaulting = false;
     }
 
     private void Update()
@@ -135,35 +114,12 @@ public class PlayerActionCtrl : MonoBehaviour
                 break;
         }
 
-        if (ShouldPlayTimeline(command.Action))
-        {
-            Play(command.Action, command.Phase);
-        }
-
         CommandReceived?.Invoke(command);
-    }
-
-    private bool Play(GJInputAction action, PlayerInputPhase phase)
-    {
-        if (!_director || !_actionSet)
-        {
-            return false;
-        }
-
-        TimelineAsset timeline = _actionSet.Get(action, phase);
-        if (!timeline)
-        {
-            return false;
-        }
-
-        _director.playableAsset = timeline;
-        _director.Play();
-        return true;
     }
 
     private void Move()
     {
-        if (!_characterController || !_playerData || _isVaulting)
+        if (!_characterController || !_playerData)
         {
             return;
         }
@@ -198,51 +154,7 @@ public class PlayerActionCtrl : MonoBehaviour
             return;
         }
 
-        if (CanVault())
-        {
-            if (Play(GJInputAction.JumpVault, phase))
-            {
-                _isVaulting = true;
-                _verticalSpeed = 0f;
-                return;
-            }
-        }
-
         _verticalSpeed = Mathf.Sqrt(
             _playerData.JumpHeight * -2f * _playerData.Gravity);
-    }
-
-    private bool CanVault()
-    {
-        Vector3 lowOrigin = transform.position +
-            Vector3.up * _playerData.VaultLowHeight;
-        Vector3 highOrigin = transform.position +
-            Vector3.up * _playerData.VaultHighHeight;
-        bool hasLowObstacle = Physics.Raycast(
-            lowOrigin,
-            transform.forward,
-            _playerData.VaultDistance,
-            _playerData.VaultMask,
-            QueryTriggerInteraction.Ignore);
-        bool hasHighObstacle = Physics.Raycast(
-            highOrigin,
-            transform.forward,
-            _playerData.VaultDistance,
-            _playerData.VaultMask,
-            QueryTriggerInteraction.Ignore);
-        return hasLowObstacle && !hasHighObstacle;
-    }
-
-    private bool ShouldPlayTimeline(GJInputAction action)
-    {
-        return action != GJInputAction.Move &&
-            action != GJInputAction.Look &&
-            action != GJInputAction.Sprint &&
-            action != GJInputAction.JumpVault;
-    }
-
-    private void OnTimelineStopped(PlayableDirector director)
-    {
-        _isVaulting = false;
     }
 }
