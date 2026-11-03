@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: PDW90
     _category: 2
     _tags: 1031
-    _icon: {fileID: 0}
-    _silhouette: {fileID: 0}
+    _icon: {fileID: 21300000, guid: cb4bc99834a39fb46938d400899fdc3a, type: 3}
+    _silhouette: {fileID: 21300000, guid: cb4bc99834a39fb46938d400899fdc3a, type: 3}
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -91,11 +91,11 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 0}
-    _worldModelPrefab: {fileID: 0}
+    _firstPersonPrefab: {fileID: 7083275468894441344, guid: c361636e86e9eaf4da63981645940455, type: 3}
+    _worldModelPrefab: {fileID: 7083275468894441344, guid: c361636e86e9eaf4da63981645940455, type: 3}
   _animation:
     _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 0}
+    _weaponAnimatorController: {fileID: 22100000, guid: f2fcb9a2488987d4fb8c01db781f08e5, type: 2}
     _thirdPersonAnimatorController: {fileID: 0}
     _thirdPersonWeaponAnimatorController: {fileID: 0}
     _holdStyle: 0
@@ -126,11 +126,16 @@ MonoBehaviour:
     _fireSounds: []
     _firePitchRange: {x: 0.96, y: 1.03}
     _fireVolumeRange: {x: 0.98, y: 1.02}
-    _weaponEventSounds: []
+    _weaponEventSounds:
+    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
+    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
+    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
     _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 0}
-    _unequipSound: {fileID: 0}
-    _reloadSounds: []
+    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
+    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
+    _reloadSounds:
+    - {fileID: 8300000, guid: f723598c87da1b14b9bbed0eb4d6eab3, type: 3}
+    - {fileID: 8300000, guid: 6891f561b5133d3479c33aab268e31ee, type: 3}
     _mechanicalSounds: []
   _effects:
     _muzzleFlashPrefab: {fileID: 0}
@@ -332,6 +337,11 @@ MonoBehaviour:
       _damping: 0
       _amount: 0
     _aimProgressAlpha: 1
+    _horizontalControllerRecoil: {x: 0, y: 0}
+    _verticalControllerRecoil: {x: 0, y: 0}
+    _horizontalSmoothing: 0
+    _verticalSmoothing: 0
+    _controllerDamping: 0
     _hipPivotOffset: {x: 0, y: 0.01, z: 0.02}
     _aimPivotOffset: {x: 0, y: -0.04, z: 0.03}
     _smoothRoll: 1
@@ -1126,4 +1136,3 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-

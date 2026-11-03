@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: Kolibri
     _category: 7
     _tags: 1
-    _icon: {fileID: 0}
-    _silhouette: {fileID: 0}
+    _icon: {fileID: 21300000, guid: 6b4f0154e78948545b2742198d4f84be, type: 3}
+    _silhouette: {fileID: 21300000, guid: 6b4f0154e78948545b2742198d4f84be, type: 3}
   _fire:
     _allowedModes: 1
     _defaultMode: 0
@@ -91,11 +91,11 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 0}
-    _worldModelPrefab: {fileID: 0}
+    _firstPersonPrefab: {fileID: 8578712836760880504, guid: fb04f84044689c845a7a4f81ede00c8c, type: 3}
+    _worldModelPrefab: {fileID: 8578712836760880504, guid: fb04f84044689c845a7a4f81ede00c8c, type: 3}
   _animation:
     _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 0}
+    _weaponAnimatorController: {fileID: 22100000, guid: d3ec6a24f72b9654080280046c215835, type: 2}
     _thirdPersonAnimatorController: {fileID: 0}
     _thirdPersonWeaponAnimatorController: {fileID: 0}
     _holdStyle: 1
@@ -123,14 +123,23 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds: []
+    _fireSounds:
+    - {fileID: 8300000, guid: f96907c5ee4961441afc9cc058e87dd1, type: 3}
+    - {fileID: 8300000, guid: 1399a5e29a6d5a24294d2639a939193c, type: 3}
+    - {fileID: 8300000, guid: e84682e69ba19ed44ae8c1f2abae16bd, type: 3}
+    - {fileID: 8300000, guid: b0003bde20a4522428993d361582321b, type: 3}
     _firePitchRange: {x: 1, y: 1}
     _fireVolumeRange: {x: 1, y: 1}
-    _weaponEventSounds: []
+    _weaponEventSounds:
+    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
+    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
+    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
     _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 0}
-    _unequipSound: {fileID: 0}
-    _reloadSounds: []
+    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
+    _unequipSound: {fileID: 8300000, guid: a1ab6875c7a5c8b42adc04060ca55245, type: 3}
+    _reloadSounds:
+    - {fileID: 8300000, guid: 4cb32bb427d1a4d4d86d67fcf431a469, type: 3}
+    - {fileID: 8300000, guid: bd1c570dc612a1941afc3e87b836710d, type: 3}
     _mechanicalSounds: []
   _effects:
     _muzzleFlashPrefab: {fileID: 0}
@@ -289,7 +298,7 @@ MonoBehaviour:
     _sourceRoll: {x: -0.8, y: -1}
     _sourceSmoothSpeed: 55
     _sourcePlayRate: 3
-    _cameraKickRotation: {x: -0.27999999999999997, y: 0, z: 0}
+    _cameraKickRotation: {x: -0.28, y: 0, z: 0}
     _cameraKickPosition: {x: 0, y: 0, z: -0.015}
     _cameraKickDuration: 0.05
     _cameraReturnDuration: 0.12
@@ -332,6 +341,11 @@ MonoBehaviour:
       _damping: 0
       _amount: 0
     _aimProgressAlpha: 1
+    _horizontalControllerRecoil: {x: 0, y: 0}
+    _verticalControllerRecoil: {x: 0, y: 0}
+    _horizontalSmoothing: 0
+    _verticalSmoothing: 0
+    _controllerDamping: 0
     _hipPivotOffset: {x: 0, y: 0, z: 0}
     _aimPivotOffset: {x: 0, y: 0, z: 0}
     _smoothRoll: 1
@@ -1027,4 +1041,3 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-

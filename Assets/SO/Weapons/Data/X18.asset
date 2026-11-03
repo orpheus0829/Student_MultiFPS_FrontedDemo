@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: X18
     _category: 7
     _tags: 7
-    _icon: {fileID: 0}
-    _silhouette: {fileID: 0}
+    _icon: {fileID: 21300000, guid: cba566f44cca07d42be3495521d57dcc, type: 3}
+    _silhouette: {fileID: 21300000, guid: cba566f44cca07d42be3495521d57dcc, type: 3}
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -91,11 +91,11 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 0}
-    _worldModelPrefab: {fileID: 0}
+    _firstPersonPrefab: {fileID: 7468646697832627869, guid: 183b05a58a1f0da4cb74cee5aca185b1, type: 3}
+    _worldModelPrefab: {fileID: 7468646697832627869, guid: 183b05a58a1f0da4cb74cee5aca185b1, type: 3}
   _animation:
     _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 0}
+    _weaponAnimatorController: {fileID: 22100000, guid: 9365ea82b553a154086fbdaf6a145dd4, type: 2}
     _thirdPersonAnimatorController: {fileID: 0}
     _thirdPersonWeaponAnimatorController: {fileID: 0}
     _holdStyle: 1
@@ -123,15 +123,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds: []
+    _fireSounds:
+    - {fileID: 8300000, guid: f67306e91dffae74c881f640d986f4e4, type: 3}
+    - {fileID: 8300000, guid: 7c25801260a35b841b432d23e3672cb4, type: 3}
+    - {fileID: 8300000, guid: 1c3383d82745a074fa6dff76897d0480, type: 3}
+    - {fileID: 8300000, guid: 63a897c98ee14c345bf87986d5f6dda9, type: 3}
     _firePitchRange: {x: 0.97, y: 1.01}
     _fireVolumeRange: {x: 0.97, y: 1.03}
-    _weaponEventSounds: []
+    _weaponEventSounds:
+    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
+    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
+    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
     _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 0}
-    _unequipSound: {fileID: 0}
-    _reloadSounds: []
-    _mechanicalSounds: []
+    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
+    _unequipSound: {fileID: 8300000, guid: a1ab6875c7a5c8b42adc04060ca55245, type: 3}
+    _reloadSounds:
+    - {fileID: 8300000, guid: 3f4bedbb538f3564ca7c14c3165a6e28, type: 3}
+    - {fileID: 8300000, guid: a3e37b9d6cc810e44a4ca51ec269a914, type: 3}
+    - {fileID: 8300000, guid: 357f2799a223eac4caf9dc0499267d29, type: 3}
+    - {fileID: 8300000, guid: e8775658e0fd87741a26e44bb2d641a5, type: 3}
+    - {fileID: 8300000, guid: aab1c9ae2835f33479fdfce2221b1990, type: 3}
+    _mechanicalSounds:
+    - {fileID: 8300000, guid: a3e37b9d6cc810e44a4ca51ec269a914, type: 3}
+    - {fileID: 8300000, guid: 357f2799a223eac4caf9dc0499267d29, type: 3}
+    - {fileID: 8300000, guid: e8775658e0fd87741a26e44bb2d641a5, type: 3}
   _effects:
     _muzzleFlashPrefab: {fileID: 0}
     _muzzleSmokePrefab: {fileID: 0}
@@ -332,6 +347,11 @@ MonoBehaviour:
       _damping: 5
       _amount: 0.01
     _aimProgressAlpha: 0
+    _horizontalControllerRecoil: {x: 0, y: 0}
+    _verticalControllerRecoil: {x: 0, y: 0}
+    _horizontalSmoothing: 0
+    _verticalSmoothing: 0
+    _controllerDamping: 0
     _hipPivotOffset: {x: 0, y: 0.01, z: 0}
     _aimPivotOffset: {x: 0, y: 0, z: 0}
     _smoothRoll: 1
@@ -1027,4 +1047,3 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-

@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: AS Val
     _category: 0
     _tags: 519
-    _icon: {fileID: 0}
-    _silhouette: {fileID: 0}
+    _icon: {fileID: 21300000, guid: e4cf7497f4055e14d86113df1a91023e, type: 3}
+    _silhouette: {fileID: 21300000, guid: e4cf7497f4055e14d86113df1a91023e, type: 3}
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -91,11 +91,11 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 0}
-    _worldModelPrefab: {fileID: 0}
+    _firstPersonPrefab: {fileID: 8742501672851920336, guid: 7b9e10c7f18760f4cbcb2de5369ffabc, type: 3}
+    _worldModelPrefab: {fileID: 8742501672851920336, guid: 7b9e10c7f18760f4cbcb2de5369ffabc, type: 3}
   _animation:
     _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 0}
+    _weaponAnimatorController: {fileID: 22100000, guid: f411021189a9232448b47df9350744ab, type: 2}
     _thirdPersonAnimatorController: {fileID: 0}
     _thirdPersonWeaponAnimatorController: {fileID: 0}
     _holdStyle: 0
@@ -123,14 +123,23 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds: []
+    _fireSounds:
+    - {fileID: 8300000, guid: b18fd4ab07a7e7049aa459e6bb0cc001, type: 3}
+    - {fileID: 8300000, guid: 0098de8d2a9be584d9e0bbce3153b09f, type: 3}
+    - {fileID: 8300000, guid: 7a6c6be91bae5584bb638b39c6865adf, type: 3}
+    - {fileID: 8300000, guid: 79af9a4898452ad43b290f845987e0ca, type: 3}
     _firePitchRange: {x: 0.95, y: 1.03}
     _fireVolumeRange: {x: 0.93, y: 1.02}
-    _weaponEventSounds: []
+    _weaponEventSounds:
+    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
+    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
+    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
     _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 0}
-    _unequipSound: {fileID: 0}
-    _reloadSounds: []
+    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
+    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
+    _reloadSounds:
+    - {fileID: 8300000, guid: 6b9e91417dc01114099d8316bcd0d3f0, type: 3}
+    - {fileID: 8300000, guid: 7ab991ecb3e33a14d88ef6b6ea57cf11, type: 3}
     _mechanicalSounds: []
   _effects:
     _muzzleFlashPrefab: {fileID: 0}
@@ -341,6 +350,11 @@ MonoBehaviour:
       _damping: 7
       _amount: 0.002
     _aimProgressAlpha: 1
+    _horizontalControllerRecoil: {x: 0, y: 0}
+    _verticalControllerRecoil: {x: 0, y: 0}
+    _horizontalSmoothing: 0
+    _verticalSmoothing: 0
+    _controllerDamping: 0
     _hipPivotOffset: {x: 0, y: 0, z: 0}
     _aimPivotOffset: {x: 0, y: 0, z: 0}
     _smoothRoll: 1
@@ -1216,4 +1230,3 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-

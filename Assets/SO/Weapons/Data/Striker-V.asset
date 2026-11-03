@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: Striker-V
     _category: 2
     _tags: 7
-    _icon: {fileID: 0}
-    _silhouette: {fileID: 0}
+    _icon: {fileID: 21300000, guid: 5ddab4d074760c64f96b0a711bb47806, type: 3}
+    _silhouette: {fileID: 21300000, guid: 5ddab4d074760c64f96b0a711bb47806, type: 3}
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -91,11 +91,11 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 0}
-    _worldModelPrefab: {fileID: 0}
+    _firstPersonPrefab: {fileID: 3198395236550038131, guid: b18197dff4c6b0b4bac1013653683b89, type: 3}
+    _worldModelPrefab: {fileID: 3198395236550038131, guid: b18197dff4c6b0b4bac1013653683b89, type: 3}
   _animation:
     _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 0}
+    _weaponAnimatorController: {fileID: 22100000, guid: 14f38f89a75f7344abdf43d5707f2d63, type: 2}
     _thirdPersonAnimatorController: {fileID: 0}
     _thirdPersonWeaponAnimatorController: {fileID: 0}
     _holdStyle: 0
@@ -123,14 +123,23 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds: []
+    _fireSounds:
+    - {fileID: 8300000, guid: 22823f7b0cf282a41936f89d745635e7, type: 3}
+    - {fileID: 8300000, guid: c02e95077a1c3b046be94cefe380fc55, type: 3}
+    - {fileID: 8300000, guid: b0f1c866aeb92d44cbd5ae9fc3647e98, type: 3}
+    - {fileID: 8300000, guid: 333a9df711dcbe34f85350d4c45a8cac, type: 3}
     _firePitchRange: {x: 0.96, y: 1.03}
     _fireVolumeRange: {x: 0.98, y: 1.02}
-    _weaponEventSounds: []
+    _weaponEventSounds:
+    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
+    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
+    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
     _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 0}
-    _unequipSound: {fileID: 0}
-    _reloadSounds: []
+    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
+    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
+    _reloadSounds:
+    - {fileID: 8300000, guid: 55a35f77c1d539a40b01bbb558ffc8fb, type: 3}
+    - {fileID: 8300000, guid: bac266c907dd873448b288bf8b728ae6, type: 3}
     _mechanicalSounds: []
   _effects:
     _muzzleFlashPrefab: {fileID: 0}
@@ -332,6 +341,11 @@ MonoBehaviour:
       _damping: 0
       _amount: 0
     _aimProgressAlpha: 1
+    _horizontalControllerRecoil: {x: 0, y: 0}
+    _verticalControllerRecoil: {x: 0, y: 0}
+    _horizontalSmoothing: 0
+    _verticalSmoothing: 0
+    _controllerDamping: 0
     _hipPivotOffset: {x: 0, y: 0.01, z: 0.02}
     _aimPivotOffset: {x: 0, y: -0.04, z: 0.03}
     _smoothRoll: 1
@@ -1126,4 +1140,3 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-
