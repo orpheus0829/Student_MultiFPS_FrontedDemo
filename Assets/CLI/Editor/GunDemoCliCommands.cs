@@ -1,0 +1,458 @@
+using System.Collections.Generic;
+using System.IO;
+using Unity.Pipeline.Commands;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+public static class GunDemoCliCommands
+{
+    private const string Group = "gundemo";
+
+    [CliGroupCommand(Group, "一次返回项目全部专属检查，供 Agent 工作流生成验证证据", Name = "verification_bundle", Tags = new[] { "gundemo/verification" })]
+    public static CliVerificationBundle VerificationBundle()
+    {
+        CliSceneReport scene = InspectScene();
+        CliPlayerReport player = InspectPlayer();
+        CliAnimationReport animation = InspectAnimation();
+        CliUiReport ui = InspectUi();
+        CliDataReport data = InspectData();
+        CliPrefabReport prefabs = InspectPrefabs();
+        CliAssetReport assets = InspectAssets();
+        int blockingProblemCount = scene.Problems.Count +
+            player.Problems.Count +
+            ui.Problems.Count +
+            data.Problems.Count +
+            prefabs.Problems.Count +
+            assets.MissingReferenceCount +
+            assets.CandidateReferenceCount;
+        int warningCount = animation.Problems.Count;
+
+        return new CliVerificationBundle
+        {
+            CreatedAtUtc = System.DateTime.UtcNow,
+            Project = ProjectSnapshot(),
+            Scene = scene,
+            Player = player,
+            Animation = animation,
+            Ui = ui,
+            Data = data,
+            Prefabs = prefabs,
+            Assets = assets,
+            ProblemCount = blockingProblemCount + warningCount,
+            BlockingProblemCount = blockingProblemCount,
+            WarningCount = warningCount,
+            Passed = blockingProblemCount == 0
+        };
+    }
+
+    [CliGroupCommand(Group, "获取当前项目、场景、资源和控制台的简明状态", Name = "project_snapshot", Tags = new[] { "gundemo/project" })]
+    public static CliProjectSnapshot ProjectSnapshot()
+    {
+        CliSceneReport scene = InspectScene();
+        CliDataReport data = InspectData();
+        CliPrefabReport prefabs = InspectPrefabs();
+        int warnings = 0;
+        int errors = 0;
+        GetConsoleCounts(out warnings, out errors);
+
+        List<CliCheckResult> checks = new List<CliCheckResult>
+        {
+            CreateCheck("场景已保存", !string.IsNullOrEmpty(scene.ScenePath) && !scene.IsDirty, scene.ScenePath),
+            CreateCheck("场景没有丢失脚本", scene.MissingScriptCount == 0, scene.MissingScriptCount + " 个"),
+            CreateCheck("Prefab 没有丢失脚本", prefabs.MissingScriptCount == 0, prefabs.MissingScriptCount + " 个"),
+            CreateCheck("Prefab 没有丢失材质", prefabs.MissingMaterialCount == 0, prefabs.MissingMaterialCount + " 个"),
+            CreateCheck("控制台没有错误", errors == 0, errors + " 个")
+        };
+
+        return new CliProjectSnapshot
+        {
+            ProjectName = Application.productName,
+            UnityVersion = Application.unityVersion,
+            ActiveScene = scene.SceneName,
+            IsPlaying = EditorApplication.isPlaying,
+            IsCompiling = EditorApplication.isCompiling,
+            SceneObjectCount = scene.ObjectCount,
+            PrefabCount = prefabs.PrefabCount,
+            ScriptableObjectCount = data.ScriptableObjectCount,
+            WarningCount = warnings,
+            ErrorCount = errors,
+            Checks = checks
+        };
+    }
+
+    [CliGroupCommand(Group, "检查当前场景的结构、构建设置和常见缺失项", Name = "inspect_scene", Tags = new[] { "gundemo/scene" })]
+    public static CliSceneReport InspectScene()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        List<GameObject> objects = GunDemoCliUtility.GetSceneObjects();
+        int activeCount = 0;
+        int cameraCount = 0;
+        int lightCount = 0;
+        int listenerCount = 0;
+        int missingScripts = 0;
+        List<string> problems = new List<string>();
+
+        foreach (GameObject gameObject in objects)
+        {
+            if (gameObject.activeInHierarchy)
+            {
+                activeCount++;
+            }
+
+            cameraCount += gameObject.GetComponents<Camera>().Length;
+            lightCount += gameObject.GetComponents<Light>().Length;
+            listenerCount += gameObject.GetComponents<AudioListener>().Length;
+            int missing = GunDemoCliUtility.CountMissingScripts(gameObject);
+            missingScripts += missing;
+            if (missing > 0)
+            {
+                problems.Add(GunDemoCliUtility.GetPath(gameObject) + " 丢失 " + missing + " 个脚本");
+            }
+        }
+
+        if (cameraCount == 0)
+        {
+            problems.Add("当前场景没有 Camera");
+        }
+
+        if (listenerCount > 1)
+        {
+            problems.Add("当前场景存在多个 AudioListener");
+        }
+
+        List<string> buildScenes = new List<string>();
+        foreach (EditorBuildSettingsScene buildScene in EditorBuildSettings.scenes)
+        {
+            if (buildScene.enabled)
+            {
+                buildScenes.Add(buildScene.path);
+            }
+        }
+
+        return new CliSceneReport
+        {
+            SceneName = scene.name,
+            ScenePath = scene.path,
+            IsDirty = scene.isDirty,
+            RootCount = scene.IsValid() && scene.isLoaded ? scene.rootCount : 0,
+            ObjectCount = objects.Count,
+            ActiveObjectCount = activeCount,
+            CameraCount = cameraCount,
+            LightCount = lightCount,
+            AudioListenerCount = listenerCount,
+            MissingScriptCount = missingScripts,
+            BuildScenes = buildScenes,
+            Problems = problems
+        };
+    }
+
+    [CliGroupCommand(Group, "检查场景内玩家输入、动作、动画和双视角配置", Name = "inspect_player", Tags = new[] { "gundemo/player" })]
+    public static CliPlayerReport InspectPlayer()
+    {
+        PlayerActionCtrl[] actions = Object.FindObjectsByType<PlayerActionCtrl>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<CliPlayerItem> players = new List<CliPlayerItem>();
+        List<string> problems = new List<string>();
+
+        foreach (PlayerActionCtrl action in actions)
+        {
+            GameObject gameObject = action.gameObject;
+            PlayerInputCtrl input = gameObject.GetComponent<PlayerInputCtrl>();
+            CharacterController characterController = gameObject.GetComponent<CharacterController>();
+            PlayerAnimationCtrl animation = gameObject.GetComponent<PlayerAnimationCtrl>();
+            CliPlayerItem item = new CliPlayerItem
+            {
+                Path = GunDemoCliUtility.GetPath(gameObject),
+                IsActive = gameObject.activeInHierarchy,
+                HasInput = input,
+                HasAction = action,
+                HasCharacterController = characterController,
+                HasPlayerData = action.PlayerData,
+                HasAnimationController = animation,
+                HasFirstPersonView = animation && animation.FirstPersonView,
+                HasThirdPersonView = animation && animation.ThirdPersonView,
+                WeaponData = animation ? GunDemoCliUtility.GetAssetName(animation.WeaponData) : string.Empty
+            };
+            players.Add(item);
+
+            if (!item.HasInput || !item.HasCharacterController || !item.HasPlayerData)
+            {
+                problems.Add(item.Path + " 的输入、CharacterController 或玩家数据不完整");
+            }
+
+            if (!item.HasAnimationController || !item.HasFirstPersonView || !item.HasThirdPersonView)
+            {
+                problems.Add(item.Path + " 的第一/第三人称动画表现配置不完整");
+            }
+        }
+
+        if (players.Count == 0)
+        {
+            problems.Add("当前场景没有 PlayerActionCtrl");
+        }
+
+        return new CliPlayerReport
+        {
+            PlayerCount = players.Count,
+            Players = players,
+            Problems = problems
+        };
+    }
+
+    [CliGroupCommand(Group, "检查当前场景 Animator、Avatar、控制器和玩家动画视角", Name = "inspect_animation", Tags = new[] { "gundemo/animation" })]
+    public static CliAnimationReport InspectAnimation()
+    {
+        Animator[] animators = Object.FindObjectsByType<Animator>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        PlayerAnimationView[] views = Object.FindObjectsByType<PlayerAnimationView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<CliAnimatorItem> items = new List<CliAnimatorItem>();
+        List<string> problems = new List<string>();
+
+        foreach (Animator animator in animators)
+        {
+            CliAnimatorItem item = new CliAnimatorItem
+            {
+                Path = GunDemoCliUtility.GetPath(animator.gameObject),
+                IsActive = animator.gameObject.activeInHierarchy,
+                Controller = GunDemoCliUtility.GetAssetName(animator.runtimeAnimatorController),
+                Avatar = GunDemoCliUtility.GetAssetName(animator.avatar),
+                ParameterCount = animator.parameters.Length
+            };
+            items.Add(item);
+
+            if (!animator.runtimeAnimatorController)
+            {
+                problems.Add(item.Path + " 没有 Animator Controller");
+            }
+        }
+
+        foreach (PlayerAnimationView view in views)
+        {
+            if (!view.CharacterAnimator || !view.WeaponRoot)
+            {
+                problems.Add(GunDemoCliUtility.GetPath(view.gameObject) + " 的角色 Animator 或武器挂点未配置");
+            }
+        }
+
+        return new CliAnimationReport
+        {
+            AnimatorCount = animators.Length,
+            ViewCount = views.Length,
+            Animators = items,
+            Problems = problems
+        };
+    }
+
+    [CliGroupCommand(Group, "检查 Canvas、EventSystem 和交互控件的基础配置", Name = "inspect_ui", Tags = new[] { "gundemo/ui" })]
+    public static CliUiReport InspectUi()
+    {
+        Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        EventSystem[] eventSystems = Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Selectable[] selectables = Object.FindObjectsByType<Selectable>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<string> canvasPaths = new List<string>();
+        List<string> problems = new List<string>();
+
+        foreach (Canvas canvas in canvases)
+        {
+            canvasPaths.Add(GunDemoCliUtility.GetPath(canvas.gameObject) + " [" + canvas.renderMode + "]");
+        }
+
+        if (canvases.Length > 0 && eventSystems.Length == 0 && selectables.Length > 0)
+        {
+            problems.Add("场景存在可交互 UI，但没有 EventSystem");
+        }
+
+        if (eventSystems.Length > 1)
+        {
+            problems.Add("场景存在多个 EventSystem");
+        }
+
+        return new CliUiReport
+        {
+            CanvasCount = canvases.Length,
+            EventSystemCount = eventSystems.Length,
+            SelectableCount = selectables.Length,
+            Canvases = canvasPaths,
+            Problems = problems
+        };
+    }
+
+    [CliGroupCommand(Group, "汇总项目 ScriptableObject 数据与枪械数据/Prefab 对应关系", Name = "inspect_data", Tags = new[] { "gundemo/data" })]
+    public static CliDataReport InspectData()
+    {
+        string[] allData = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets" });
+        string[] weaponData = AssetDatabase.FindAssets("t:WeaponDefinitionSO", new[] { "Assets/SO/Weapons" });
+        string[] playerData = AssetDatabase.FindAssets("t:PlayerDataSO", new[] { "Assets/SO" });
+        string[] inputCatalogs = AssetDatabase.FindAssets("t:InputActionCatalogSO", new[] { "Assets/SO" });
+        string[] weaponPrefabs = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Weapons" });
+        HashSet<string> prefabNames = new HashSet<string>();
+        List<string> weaponIds = new List<string>();
+        List<string> unused = new List<string>();
+        List<string> problems = new List<string>();
+
+        foreach (string guid in weaponPrefabs)
+        {
+            prefabNames.Add(Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid)));
+        }
+
+        foreach (string guid in weaponData)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            WeaponDefinitionSO data = AssetDatabase.LoadAssetAtPath<WeaponDefinitionSO>(path);
+            string id = data && data.Basic != null && !string.IsNullOrWhiteSpace(data.Basic.WeaponId)
+                ? data.Basic.WeaponId
+                : Path.GetFileNameWithoutExtension(path);
+            weaponIds.Add(id);
+            if (!prefabNames.Contains(Path.GetFileNameWithoutExtension(path)))
+            {
+                unused.Add(path);
+            }
+        }
+
+        if (weaponData.Length != weaponPrefabs.Length)
+        {
+            problems.Add("枪械数据数量与正式枪械 Prefab 数量不同");
+        }
+
+        return new CliDataReport
+        {
+            ScriptableObjectCount = allData.Length,
+            WeaponDataCount = weaponData.Length,
+            WeaponPrefabCount = weaponPrefabs.Length,
+            PlayerDataCount = playerData.Length,
+            InputCatalogCount = inputCatalogs.Length,
+            WeaponIds = weaponIds,
+            UnusedWeaponData = unused,
+            Problems = problems
+        };
+    }
+
+    [CliGroupCommand(Group, "检查正式 Prefab 的丢失脚本和丢失材质", Name = "inspect_prefabs", Tags = new[] { "gundemo/prefabs" })]
+    public static CliPrefabReport InspectPrefabs()
+    {
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs" });
+        int missingScripts = 0;
+        int missingMaterials = 0;
+        List<string> problems = new List<string>();
+
+        foreach (string guid in prefabGuids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            GameObject root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+                foreach (Transform transform in transforms)
+                {
+                    int missing = GunDemoCliUtility.CountMissingScripts(transform.gameObject);
+                    if (missing > 0)
+                    {
+                        missingScripts += missing;
+                        problems.Add(path + ": " + GunDemoCliUtility.GetPath(transform.gameObject) + " 丢失脚本");
+                    }
+                }
+
+                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+                foreach (Renderer renderer in renderers)
+                {
+                    Material[] materials = renderer.sharedMaterials;
+                    for (int i = 0; i < materials.Length; i++)
+                    {
+                        if (!materials[i])
+                        {
+                            missingMaterials++;
+                            problems.Add(path + ": " + GunDemoCliUtility.GetPath(renderer.gameObject) + " 丢失材质");
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        return new CliPrefabReport
+        {
+            PrefabCount = prefabGuids.Length,
+            MissingScriptCount = missingScripts,
+            MissingMaterialCount = missingMaterials,
+            Problems = problems
+        };
+    }
+
+    [CliGroupCommand(Group, "检查正式资源的缺失依赖和 source_unselected 候选资源引用", Name = "inspect_assets", Tags = new[] { "gundemo/assets" })]
+    public static CliAssetReport InspectAssets()
+    {
+        string[] assetPaths = AssetDatabase.GetAllAssetPaths();
+        List<string> missing = new List<string>();
+        List<string> candidates = new List<string>();
+        int assetCount = 0;
+
+        foreach (string path in assetPaths)
+        {
+            if (!path.StartsWith("Assets/") || path.StartsWith("Assets/source_unselected/"))
+            {
+                continue;
+            }
+
+            assetCount++;
+            string[] dependencies = AssetDatabase.GetDependencies(path, false);
+            foreach (string dependency in dependencies)
+            {
+                if (dependency.StartsWith("Assets/source_unselected/"))
+                {
+                    candidates.Add(path + " -> " + dependency);
+                }
+
+                if (dependency.StartsWith("Assets/") && !File.Exists(dependency) && !Directory.Exists(dependency))
+                {
+                    missing.Add(path + " -> " + dependency);
+                }
+            }
+        }
+
+        return new CliAssetReport
+        {
+            AssetCount = assetCount,
+            MissingReferenceCount = missing.Count,
+            CandidateReferenceCount = candidates.Count,
+            MissingReferences = missing,
+            CandidateReferences = candidates
+        };
+    }
+
+    private static CliCheckResult CreateCheck(string name, bool passed, string detail)
+    {
+        return new CliCheckResult
+        {
+            Name = name,
+            Passed = passed,
+            Detail = detail
+        };
+    }
+
+    private static void GetConsoleCounts(out int warnings, out int errors)
+    {
+        warnings = 0;
+        errors = 0;
+        System.Type logEntries = System.Type.GetType("UnityEditor.LogEntries,UnityEditor.dll");
+        if (logEntries == null)
+        {
+            return;
+        }
+
+        System.Reflection.MethodInfo method = logEntries.GetMethod("GetCountsByType", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+        if (method == null)
+        {
+            return;
+        }
+
+        object[] values = { 0, 0, 0 };
+        method.Invoke(null, values);
+        warnings = (int)values[1];
+        errors = (int)values[2];
+    }
+}
