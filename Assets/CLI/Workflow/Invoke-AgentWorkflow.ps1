@@ -87,6 +87,10 @@ try
         & $unityCli pipeline list --format json
     } -Required | Out-Null
 
+    Invoke-CapturedStep "打开验收场景" "open-scene.json" {
+        & $unityCli command --project-path=$ProjectPath scene open --path "Assets/Scenes/example.unity" --format json
+    } -Required | Out-Null
+
     Invoke-CapturedStep "修改前项目快照" "before.json" {
         & $unityCli command --project-path=$ProjectPath gundemo project_snapshot --format json
     } -Required | Out-Null
@@ -115,7 +119,32 @@ try
         if ($Profile -ne "Quick")
         {
             Invoke-CapturedStep "EditMode测试" "editmode-results.json" {
-                & $unityCli command --project-path=$ProjectPath test run --mode editor --timeout 300 --format json
+                $testText = & $unityCli command --project-path=$ProjectPath test run --mode editor --timeout 300 --format json 2>&1 | Out-String
+                $testExitCode = $LASTEXITCODE
+                Write-Output $testText
+                if ($testExitCode -ne 0)
+                {
+                    $global:LASTEXITCODE = $testExitCode
+                    return
+                }
+
+                try
+                {
+                    $testResult = $testText | ConvertFrom-Json
+                    if ($testResult.data.result.Summary.Failed -gt 0)
+                    {
+                        $global:LASTEXITCODE = 1
+                        return
+                    }
+                }
+                catch
+                {
+                    Write-Output "无法解析 EditMode 测试结果：$($_.Exception.Message)"
+                    $global:LASTEXITCODE = 1
+                    return
+                }
+
+                $global:LASTEXITCODE = 0
             } -Required | Out-Null
         }
 
@@ -147,11 +176,29 @@ try
                         if ($status.data.result.summary.failed -gt 0)
                         {
                             $global:LASTEXITCODE = 1
+                            return
                         }
-                        else
+
+                        $playModeExitDeadline = (Get-Date).AddSeconds(30)
+                        while ((Get-Date) -lt $playModeExitDeadline)
                         {
-                            $global:LASTEXITCODE = 0
+                            Start-Sleep -Seconds 1
+                            $snapshotText = & $unityCli command --project-path=$ProjectPath gundemo project_snapshot --format json 2>&1 | Out-String
+                            if ($LASTEXITCODE -ne 0)
+                            {
+                                continue
+                            }
+
+                            $snapshot = $snapshotText | ConvertFrom-Json
+                            if (!$snapshot.data.result.IsPlaying)
+                            {
+                                $global:LASTEXITCODE = 0
+                                return
+                            }
                         }
+
+                        Write-Output '{"success":false,"error":"PlayMode tests completed but the Editor did not leave PlayMode"}'
+                        $global:LASTEXITCODE = 1
                         return
                     }
                 }

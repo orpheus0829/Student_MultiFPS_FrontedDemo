@@ -13,37 +13,33 @@ public sealed class WordNoteUI : MonoBehaviour
         Exiting
     }
 
-    private sealed class Request
-    {
-        public int Id;
-        public string Content;
-        public WordNoteStyle Style;
-        public float Duration;
-        public float Remaining;
-    }
-
     private static WordNoteUI _instance;
 
     [Header("默认文字样式")]
-    [SerializeField] private TMP_FontAsset _defaultFont;
-    [SerializeField, Min(1f)] private float _defaultFontSize = 42f;
-    [SerializeField] private Color _defaultFontColor = Color.white;
-    [SerializeField] private bool _defaultCentered = true;
-    [SerializeField] private Color _defaultOutlineColor = Color.black;
-    [SerializeField, Min(0f)] private float _defaultDuration = 2f;
+    [SerializeField, InspectorName("默认字体")] private TMP_FontAsset _defaultFont;
+    [SerializeField, InspectorName("默认字号"), Min(1f)] private float _defaultFontSize = 42f;
+    [SerializeField, InspectorName("默认文字颜色")] private Color _defaultFontColor = Color.white;
+    [SerializeField, InspectorName("默认文字居中")] private bool _defaultCentered = true;
+    [SerializeField, InspectorName("默认描边颜色")] private Color _defaultOutlineColor = Color.black;
+    [SerializeField, InspectorName("默认 TMP 图标资源")] private TMP_SpriteAsset _defaultSpriteAsset;
+    [SerializeField, InspectorName("默认停留时间"), Min(0f)] private float _defaultDuration = 2f;
 
     [Header("上浮动画")]
-    [SerializeField, Min(0f)] private float _floatDistance = 36f;
-    [SerializeField, Min(0f)] private float _enterDuration = 0.2f;
-    [SerializeField, Min(0f)] private float _exitDuration = 0.18f;
+    [SerializeField, InspectorName("上浮距离"), Min(0f)] private float _floatDistance = 36f;
+    [SerializeField, InspectorName("进入时间"), Min(0f)] private float _enterDuration = 0.2f;
+    [SerializeField, InspectorName("离开时间"), Min(0f)] private float _exitDuration = 0.18f;
 
     [Header("屏幕适配")]
-    [SerializeField] private RectTransform _safeArea;
-    [SerializeField] private TextMeshProUGUI _text;
-    [SerializeField] private bool _dontDestroyOnLoad = true;
+    [SerializeField, InspectorName("安全区域")] private RectTransform _safeArea;
+    [SerializeField, InspectorName("底部文字")] private TextMeshProUGUI _text;
+    [SerializeField, InspectorName("跨场景保留")] private bool _dontDestroyOnLoad = true;
 
-    private readonly List<Request> _queue = new List<Request>();
-    private Request _active;
+    [Header("堆叠区域")]
+    [SerializeField, InspectorName("区域组件")] private List<WordNoteStackRegionUI> _stackRegions =
+        new List<WordNoteStackRegionUI>();
+
+    private readonly List<WordNoteRequest> _queue = new List<WordNoteRequest>();
+    private WordNoteRequest _active;
     private int _nextId;
     private int _screenWidth;
     private int _screenHeight;
@@ -88,7 +84,8 @@ public sealed class WordNoteUI : MonoBehaviour
                 _defaultFontSize,
                 _defaultFontColor,
                 _defaultCentered,
-                _defaultOutlineColor);
+                _defaultOutlineColor,
+                _defaultSpriteAsset);
         }
     }
 
@@ -156,20 +153,43 @@ public sealed class WordNoteUI : MonoBehaviour
         WordNoteStyle style,
         float duration)
     {
+        return Enqueue(WordNoteRegion.Bottom, content, style, duration);
+    }
+
+    public WordNoteHandle Enqueue(
+        WordNoteRegion region,
+        string content,
+        WordNoteStyle style,
+        float duration)
+    {
         if (string.IsNullOrWhiteSpace(content))
         {
             return null;
         }
 
         _nextId++;
-        Request request = new Request
+        WordNoteRequest request = new WordNoteRequest
         {
             Id = _nextId,
+            Region = region,
             Content = content,
             Style = style,
             Duration = Mathf.Max(0f, duration),
             Remaining = Mathf.Max(0f, duration)
         };
+
+        if (region != WordNoteRegion.Bottom)
+        {
+            WordNoteStackRegionUI stackRegion = FindStackRegion(region);
+            if (!stackRegion || !stackRegion.Add(request))
+            {
+                Debug.LogWarning($"[WordNote] 区域 {region} 尚未配置。", this);
+                return null;
+            }
+
+            return new WordNoteHandle(this, request.Id);
+        }
+
         _queue.Add(request);
         TryShowNext();
         return new WordNoteHandle(this, request.Id);
@@ -185,6 +205,15 @@ public sealed class WordNoteUI : MonoBehaviour
             }
         }
 
+        for (int i = 0; i < _stackRegions.Count; i++)
+        {
+            WordNoteStackRegionUI stackRegion = _stackRegions[i];
+            if (stackRegion && stackRegion.Contains(id))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -193,6 +222,15 @@ public sealed class WordNoteUI : MonoBehaviour
         int index = FindIndex(id);
         if (index < 0)
         {
+            for (int i = 0; i < _stackRegions.Count; i++)
+            {
+                WordNoteStackRegionUI stackRegion = _stackRegions[i];
+                if (stackRegion && stackRegion.Close(id))
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -211,9 +249,32 @@ public sealed class WordNoteUI : MonoBehaviour
 
     public void Clear()
     {
-        _queue.Clear();
-        _active = null;
-        HideText();
+        Clear(WordNoteRegion.Bottom);
+        for (int i = 0; i < _stackRegions.Count; i++)
+        {
+            WordNoteStackRegionUI stackRegion = _stackRegions[i];
+            if (stackRegion)
+            {
+                stackRegion.Clear();
+            }
+        }
+    }
+
+    public void Clear(WordNoteRegion region)
+    {
+        if (region == WordNoteRegion.Bottom)
+        {
+            _queue.Clear();
+            _active = null;
+            HideText();
+            return;
+        }
+
+        WordNoteStackRegionUI stackRegion = FindStackRegion(region);
+        if (stackRegion)
+        {
+            stackRegion.Clear();
+        }
     }
 
     private void TryShowNext()
@@ -361,11 +422,16 @@ public sealed class WordNoteUI : MonoBehaviour
 
         _text.fontSize = fontSize;
         _text.color = style.FontColor;
-        _text.alignment = style.Centered
-            ? TextAlignmentOptions.Center
-            : TextAlignmentOptions.Left;
+        _text.alignment = style.AlignRight
+            ? TextAlignmentOptions.Right
+            : style.Centered
+                ? TextAlignmentOptions.Center
+                : TextAlignmentOptions.Left;
         _text.outlineColor = style.OutlineColor;
-        _text.outlineWidth = 0.2f;
+        _text.outlineWidth = 0.08f;
+        _text.spriteAsset = style.SpriteAsset
+            ? style.SpriteAsset
+            : _defaultSpriteAsset;
     }
 
     private void HideText()
@@ -422,5 +488,21 @@ public sealed class WordNoteUI : MonoBehaviour
         }
 
         return -1;
+    }
+
+    private WordNoteStackRegionUI FindStackRegion(WordNoteRegion region)
+    {
+        for (int i = 0; i < _stackRegions.Count; i++)
+        {
+            WordNoteStackRegionUI stackRegion = _stackRegions[i];
+            if (stackRegion &&
+                stackRegion.Region == region &&
+                stackRegion.IsReady)
+            {
+                return stackRegion;
+            }
+        }
+
+        return null;
     }
 }

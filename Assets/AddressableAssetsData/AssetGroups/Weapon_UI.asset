@@ -1,0 +1,179 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Weapon_UI
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Weapon_UI
+  m_GUID: 9385a562a5c70454ca8bf626d1f71c2f
+  m_SerializeEntries:
+  - m_GUID: 0cc89738da4940febc322e390beb28fb
+    m_Address: ui.kill.skull.white
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 11551d08cde6f57498c1c78700f38464
+    m_Address: ui.killfeed.sprite_asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2028f4885343f3b43bf66692f4931607
+    m_Address: weapon.svd.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5ddab4d074760c64f96b0a711bb47806
+    m_Address: weapon.striker-v.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5fae6b54f0ee988499eb0f3ab6170164
+    m_Address: weapon.mk14-ebr.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6a104cff8c152614b86946de06261bd8
+    m_Address: weapon.ak.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6a859ccc001a4dc1a6cf92f23be20cb0
+    m_Address: ui.kill.skull.red
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b4f0154e78948545b2742198d4f84be
+    m_Address: weapon.kolibri.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6d04e77ce55fc3c408361addbc87fcac
+    m_Address: weapon.drake-12.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7cae470c17d3b5f44bec71e2b0691591
+    m_Address: weapon.g3.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7deec856f66b37c42808f6dcc7d6dd7f
+    m_Address: weapon.mgx5.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 86fcb0d8d05f1ff48976d9eefdafdd56
+    m_Address: weapon.kxg-12.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c8686055965bcb43b45b35cade87666
+    m_Address: weapon.m1911.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a4300a41c9936447a5a1a67461e6409
+    m_Address: weapon.mx16a4.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a938c6fdf69086c4aaeb63c9f4d8eb39
+    m_Address: weapon.kar98k.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b06fecff00215814780e542df947f3a4
+    m_Address: weapon.dgl-50.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b418a888370bdc046bd681d31987f5f9
+    m_Address: weapon.l96x.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb4bc99834a39fb46938d400899fdc3a
+    m_Address: weapon.pdw90.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cba566f44cca07d42be3495521d57dcc
+    m_Address: weapon.x18.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: deaaf4f83591a6f4bb201602cc5af614
+    m_Address: weapon.mps5.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e4cf7497f4055e14d86113df1a91023e
+    m_Address: weapon.as-val.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f238a242ad011604a95328c867ac5bb6
+    m_Address: weapon.viper-357.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 0f3aee40a58cbcc448879c78dcd96826, type: 2}
+    - {fileID: 11400000, guid: face1fef806f0224fb4db97876a2dad6, type: 2}
+    m_SchemaDisplayOrder:
+    - Weapon_UI_ContentUpdateGroupSchema
+    - Weapon_UI_BundledAssetGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

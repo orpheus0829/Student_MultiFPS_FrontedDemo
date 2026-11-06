@@ -1,0 +1,427 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Weapons
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Weapons
+  m_GUID: 334b1d34eed9ca04a909faa991d2e52e
+  m_SerializeEntries:
+  - m_GUID: 04bf07de132d0c746af358aa7ef1e86f
+    m_Address: weapon.l96x.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 06889bf5d3d74c24e8ed875b8907fa0b
+    m_Address: weapon.mgx5.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000001
+    m_Address: weapon.ak.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000002
+    m_Address: weapon.as-val.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000003
+    m_Address: weapon.dgl-50.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000004
+    m_Address: weapon.drake-12.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000005
+    m_Address: weapon.g3.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000006
+    m_Address: weapon.kar98k.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000007
+    m_Address: weapon.kolibri.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000008
+    m_Address: weapon.kxg-12.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000009
+    m_Address: weapon.l96x.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1000000000000000000000000000000a
+    m_Address: weapon.m1911.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1000000000000000000000000000000b
+    m_Address: weapon.mgx5.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1000000000000000000000000000000c
+    m_Address: weapon.mk14-ebr.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1000000000000000000000000000000d
+    m_Address: weapon.mps5.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1000000000000000000000000000000e
+    m_Address: weapon.mx16a4.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1000000000000000000000000000000f
+    m_Address: weapon.pdw90.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000011
+    m_Address: weapon.striker-v.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000012
+    m_Address: weapon.svd.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000013
+    m_Address: weapon.viper-357.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10000000000000000000000000000014
+    m_Address: weapon.x18.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 14f38f89a75f7344abdf43d5707f2d63
+    m_Address: weapon.striker-v.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 150eb771d05800f4c835e4bfc360a659
+    m_Address: weapon.kxg-12.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 156574f109756ab45b0a520f6a45acc5
+    m_Address: weapon.kxg-12.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 183b05a58a1f0da4cb74cee5aca185b1
+    m_Address: weapon.x18.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 18a097c48d18a0644a96b419f2a986ff
+    m_Address: weapon.mx16a4.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1cb2497def9847647906359071a20b28
+    m_Address: weapon.viper-357.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d7a43c3cbbae2d4f9eb3df664148a45
+    m_Address: weapon.mps5.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1fb4c8f6ba2ccb145b95acb7ebcf25c8
+    m_Address: weapon.m1911.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 22d117f6eb74f0e4c8697e6097447092
+    m_Address: weapon.mx16a4.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2ac8f034e81d78d428f9ca5b4fc2767f
+    m_Address: weapon.mk14-ebr.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2dbc0bed929cbc34cbad810b562d60ee
+    m_Address: weapon.mk14-ebr.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 431aac06917dbd5438b4f1812a740903
+    m_Address: weapon.g3.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 521d4dbd01759574c8103c3d174d0b5e
+    m_Address: weapon.dgl-50.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5ee4ce2ef94367b4c99242ea2f02402f
+    m_Address: weapon.kar98k.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6718cc0cda492204881dcdf2f9b1cbfe
+    m_Address: weapon.viper-357.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 769d56c02cdef7b43aeff066d39e7781
+    m_Address: weapon.svd.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7879ebda248c8214abcc39c24fd2a3c9
+    m_Address: weapon.l96x.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b9e10c7f18760f4cbcb2de5369ffabc
+    m_Address: weapon.as-val.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9365ea82b553a154086fbdaf6a145dd4
+    m_Address: weapon.x18.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9faa0e81d855a264ab426e8fead80a96
+    m_Address: weapon.svd.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b18197dff4c6b0b4bac1013653683b89
+    m_Address: weapon.striker-v.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b40719d7ae0a9b943a203a7a4353669a
+    m_Address: weapon.dgl-50.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba96cfd019b157c43813b1b450747a85
+    m_Address: weapon.ak.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c361636e86e9eaf4da63981645940455
+    m_Address: weapon.pdw90.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c6fa0a634923c184b80ac5c614192d44
+    m_Address: weapon.drake-12.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c8c6c6fd1b5309845831f509b81d553a
+    m_Address: weapon.drake-12.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ca887eadae6eea34dbec319c9ab96d73
+    m_Address: weapon.g3.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d0fae6750dd358445a1e31292cfc37f7
+    m_Address: weapon.kar98k.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d3ec6a24f72b9654080280046c215835
+    m_Address: weapon.kolibri.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e92bad61bfbc45246a9335466622afaa
+    m_Address: weapon.mgx5.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f29af3d029ec79246af8cc95c39b1c4a
+    m_Address: weapon.ak.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f2fcb9a2488987d4fb8c01db781f08e5
+    m_Address: weapon.pdw90.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f411021189a9232448b47df9350744ab
+    m_Address: weapon.as-val.animator.first_person_weapon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f4b743d37534c294999a4e88f0246453
+    m_Address: weapon.mps5.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f4c3f997b6e9771409474622b340251b
+    m_Address: weapon.m1911.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fb04f84044689c845a7a4f81ede00c8c
+    m_Address: weapon.kolibri.prefab.first_person
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 8147a827f17bf7f4dbb5fb29aaf3e4d0, type: 2}
+    - {fileID: 11400000, guid: dc6bf6b13eda57342aaef1661781df2f, type: 2}
+    m_SchemaDisplayOrder:
+    - Weapons_ContentUpdateGroupSchema
+    - Weapons_BundledAssetGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

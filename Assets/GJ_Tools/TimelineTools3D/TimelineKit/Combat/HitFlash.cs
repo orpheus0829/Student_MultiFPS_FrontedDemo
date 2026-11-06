@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 [AddComponentMenu("TimelineKit/HitFlash")]
@@ -15,20 +14,27 @@ public class HitFlash : MonoBehaviour
     private Renderer[] _renderers;
     private Color[] _originColors;
     private string[] _colorKeys;
-    private Coroutine _flashCo;
+    private EventMgr.Subscription _damageSubscription;
+    private SmartTimer.TimerTask _flashTask;
 
-    private void Start()
+    private void Awake()
     {
         _hp = GetComponent<DamageableHealth>();
-        if (_hp == null)
+        if (!_hp)
         {
+            Debug.LogError($"{name} 缺少受伤组件。", this);
+            enabled = false;
             return;
         }
+
         _renderers = GetComponentsInChildren<Renderer>(true);
         if (_renderers.Length == 0)
         {
+            Debug.LogWarning($"{name} 没有可用于受击闪色的 Renderer。", this);
+            enabled = false;
             return;
         }
+
         _originColors = new Color[_renderers.Length];
         _colorKeys = new string[_renderers.Length];
         for (int i = 0; i < _renderers.Length; i++)
@@ -38,40 +44,70 @@ public class HitFlash : MonoBehaviour
             _colorKeys[i] = mat != null && mat.HasProperty("_BaseColor") ? "_BaseColor" : "_Color";
             _originColors[i] = r.material.GetColor(_colorKeys[i]);
         }
-        _hp.onDamaged += OnDamaged;
+
+    }
+
+    private void OnEnable()
+    {
+        if (_hp && _renderers != null && _renderers.Length > 0)
+        {
+            _damageSubscription = EventMgr.Bind(this, StartListening, StopListening);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (_damageSubscription != null)
+        {
+            _damageSubscription.Dispose();
+            _damageSubscription = null;
+        }
     }
 
     private void OnDamaged(float amount, float hp)
     {
-        if (amount <= 0f || _flashCo != null)
+        if (amount <= 0f || (_flashTask != null && _flashTask.IsRunning))
         {
             return;
         }
-        _flashCo = StartCoroutine(FlashRoutine());
-    }
 
-    private IEnumerator FlashRoutine()
-    {
         for (int i = 0; i < _renderers.Length; i++)
         {
-            if (_renderers[i] != null)
+            if (_renderers[i])
             {
                 _renderers[i].material.SetColor(_colorKeys[i], flashColor);
             }
         }
+
         float wait = duration;
         if (wait <= 0f)
         {
             wait = 0.08f;
         }
-        yield return new WaitForSeconds(wait);
+
+        _flashTask = SmartTimer.instance.SetTimer(this, wait, FinishFlash);
+    }
+
+    private void FinishFlash()
+    {
         for (int i = 0; i < _renderers.Length; i++)
         {
-            if (_renderers[i] != null)
+            if (_renderers[i])
             {
                 _renderers[i].material.SetColor(_colorKeys[i], _originColors[i]);
             }
         }
-        _flashCo = null;
+
+        _flashTask = null;
+    }
+
+    private void StartListening()
+    {
+        _hp.onDamaged += OnDamaged;
+    }
+
+    private void StopListening()
+    {
+        _hp.onDamaged -= OnDamaged;
     }
 }

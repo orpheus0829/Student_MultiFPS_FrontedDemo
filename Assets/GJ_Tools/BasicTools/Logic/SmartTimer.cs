@@ -76,6 +76,7 @@ public class SmartTimer : BaseMgr<SmartTimer>
 
     [SerializeField]
     private List<TimerTask> _tasks = new List<TimerTask>();
+    private readonly List<TimerTask> _tickBuffer = new List<TimerTask>();
 
     public TimerTask SetTimer(MonoBehaviour owner, float duration, Action onEnd, bool pauseOnDisable = false)
     {
@@ -170,8 +171,8 @@ public class SmartTimer : BaseMgr<SmartTimer>
     {
         if (_tasks.Count > 0)
         {
-            TimerTask[] snapshot = _tasks.ToArray();
-            foreach (TimerTask task in snapshot)
+            CopyTasksToTickBuffer();
+            foreach (TimerTask task in _tickBuffer)
             {
                 if (!task.IsRunning || task.IsPaused || task.Mode == Mode.FixedUpdate)
                 {
@@ -187,8 +188,8 @@ public class SmartTimer : BaseMgr<SmartTimer>
     {
         if (_tasks.Count > 0)
         {
-            TimerTask[] snapshot = _tasks.ToArray();
-            foreach (TimerTask task in snapshot)
+            CopyTasksToTickBuffer();
+            foreach (TimerTask task in _tickBuffer)
             {
                 if (!task.IsRunning || task.IsPaused || task.Mode != Mode.FixedUpdate)
                 {
@@ -198,6 +199,12 @@ public class SmartTimer : BaseMgr<SmartTimer>
             }
         }
         Cleanup();
+    }
+
+    private void CopyTasksToTickBuffer()
+    {
+        _tickBuffer.Clear();
+        _tickBuffer.AddRange(_tasks);
     }
 
     private void Cleanup()

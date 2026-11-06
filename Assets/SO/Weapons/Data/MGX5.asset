@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: MGX5
     _category: 3
     _tags: 70
-    _icon: {fileID: 21300000, guid: 7deec856f66b37c42808f6dcc7d6dd7f, type: 3}
-    _silhouette: {fileID: 21300000, guid: 7deec856f66b37c42808f6dcc7d6dd7f, type: 3}
+    _iconResourceId: weapon.mgx5.silhouette
+    _silhouetteResourceId: weapon.mgx5.silhouette
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.4
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 100
     _startingReserveAmmo: 200
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 9180395743638205367, guid: 06889bf5d3d74c24e8ed875b8907fa0b, type: 3}
-    _worldModelPrefab: {fileID: 9180395743638205367, guid: 06889bf5d3d74c24e8ed875b8907fa0b, type: 3}
+    _firstPersonPrefabResourceId: weapon.mgx5.prefab.first_person
+    _worldModelPrefabResourceId: weapon.mgx5.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: e92bad61bfbc45246a9335466622afaa, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.mgx5.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 4
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,31 +128,31 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: 1d772c9919ad25248b9df9219806e51d, type: 3}
-    - {fileID: 8300000, guid: ee27004c503e79f4ca422fa502e0261e, type: 3}
-    - {fileID: 8300000, guid: ee67738ef2e843845946f8e7cdb196f4, type: 3}
-    - {fileID: 8300000, guid: 1c781833409368b438cdb3c6bfbaddff, type: 3}
+    _fireSoundResourceIds:
+    - weapon.mgx5.audio.s_mgx5_01_sounds
+    - weapon.mgx5.audio.s_mgx5_02_sounds
+    - weapon.mgx5.audio.s_mgx5_03_sounds
+    - weapon.mgx5.audio.s_mgx5_04_sounds
     _firePitchRange: {x: 0.95, y: 1.02}
     _fireVolumeRange: {x: 0.97, y: 1.03}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: 5ad5d256a3fbdc74aa5bf314673ceaa6, type: 3}
-    - {fileID: 8300000, guid: 33d1c3f2fb5450641877c67745a6a0d3, type: 3}
-    - {fileID: 8300000, guid: 53ff5b99d810dd74bba1ede280bba899, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip
+    _reloadSoundResourceIds:
+    - weapon.mgx5.audio.s_mgx5_reload_empty_full
+    - weapon.mgx5.audio.s_mgx5_reload_tac_full
+    - weapon.mgx5.audio.s_mgx5_reload_tac_with_bullets_full
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -1116,7 +1121,7 @@ MonoBehaviour:
     _beltRoundCount: 14
     _beltResetTime: 2.6
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

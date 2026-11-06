@@ -3,15 +3,15 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class WeaponView : MonoBehaviour
 {
-    [SerializeField, InspectorName("枪械数据")]
-    private WeaponDefinitionSO _weaponData;
+    [SerializeField, ResourceId(typeof(WeaponDefinitionSO)), InspectorName("枪械数据 ID")]
+    private string _weaponDataResourceId;
 
     [SerializeField, InspectorName("武器 Animator")]
     private Animator _weaponAnimator;
 
-    public WeaponDefinitionSO WeaponData
+    public string WeaponDataResourceId
     {
-        get { return _weaponData; }
+        get { return _weaponDataResourceId; }
     }
 
     public Animator WeaponAnimator

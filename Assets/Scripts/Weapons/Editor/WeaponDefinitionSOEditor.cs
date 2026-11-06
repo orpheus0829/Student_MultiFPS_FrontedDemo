@@ -47,8 +47,8 @@ public sealed class WeaponDefinitionSOEditor : Editor
             Draw("_basic._weaponName", "枪械名称");
             Draw("_basic._category", "枪械类别");
             Draw("_basic._tags", "枪械标签");
-            Draw("_basic._icon", "武器图标");
-            Draw("_basic._silhouette", "武器剪影");
+            Draw("_basic._iconResourceId", "武器图标");
+            Draw("_basic._silhouetteResourceId", "武器剪影");
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
     }
@@ -107,6 +107,12 @@ public sealed class WeaponDefinitionSOEditor : Editor
         Draw("_damage._headMultiplier", "头部倍率");
         Draw("_damage._upperBodyMultiplier", "上半身倍率");
         Draw("_damage._lowerBodyMultiplier", "下半身倍率");
+        DrawSubTitle("命中与击杀得分");
+        Draw("_damage._baseHitScore", "基础命中分");
+        Draw("_damage._weaponScoreFactor", "武器得分系数");
+        Draw("_damage._closeDistanceScoreFactor", "近距离得分系数");
+        Draw("_damage._farDistanceScoreFactor", "远距离得分系数");
+        Draw("_damage._killBonus", "击杀奖励");
     }
 
     private void DrawAmmoData()
@@ -216,17 +222,17 @@ public sealed class WeaponDefinitionSOEditor : Editor
     private void DrawResourceData()
     {
         DrawSubTitle("固定模型");
-        Draw("_resources._firstPersonPrefab", "第一人称预制体");
-        Draw("_resources._worldModelPrefab", "场景展示模型");
+        Draw("_resources._firstPersonPrefabResourceId", "第一人称预制体");
+        Draw("_resources._worldModelPrefabResourceId", "场景展示模型");
     }
 
     private void DrawAnimationData()
     {
         DrawSubTitle("双视角动画");
-        Draw("_animation._characterAnimatorController", "第一人称手臂控制器");
-        Draw("_animation._weaponAnimatorController", "第一人称武器控制器");
-        Draw("_animation._thirdPersonAnimatorController", "第三人称身体控制器");
-        Draw("_animation._thirdPersonWeaponAnimatorController", "第三人称武器控制器");
+        Draw("_animation._characterAnimatorControllerResourceId", "第一人称手臂控制器");
+        Draw("_animation._weaponAnimatorControllerResourceId", "第一人称武器控制器");
+        Draw("_animation._thirdPersonAnimatorControllerResourceId", "第三人称身体控制器");
+        Draw("_animation._thirdPersonWeaponAnimatorControllerResourceId", "第三人称武器控制器");
         Draw("_animation._holdStyle", "持枪姿势类型");
 
         DrawSubTitle("动画能力");
@@ -287,25 +293,25 @@ public sealed class WeaponDefinitionSOEditor : Editor
     private void DrawAudioData()
     {
         DrawSubTitle("声音");
-        DrawObjectList(Find("_audio._fireSounds"), "开火声音");
+        DrawResourceIdList(Find("_audio._fireSoundResourceIds"), "开火声音", typeof(AudioClip));
         Draw("_audio._firePitchRange", "开火音高范围");
         Draw("_audio._fireVolumeRange", "开火音量范围");
-        DrawObjectList(Find("_audio._weaponEventSounds"), "原资源动画事件声音");
-        Draw("_audio._dryFireSound", "空仓击发声音");
-        Draw("_audio._equipSound", "装备声音");
-        Draw("_audio._unequipSound", "收枪声音");
-        DrawObjectList(Find("_audio._reloadSounds"), "换弹声音");
-        DrawObjectList(Find("_audio._mechanicalSounds"), "机械动作声音");
+        DrawResourceIdList(Find("_audio._weaponEventSoundResourceIds"), "原资源动画事件声音", typeof(AudioClip));
+        Draw("_audio._dryFireSoundResourceId", "空仓击发声音");
+        Draw("_audio._equipSoundResourceId", "装备声音");
+        Draw("_audio._unequipSoundResourceId", "收枪声音");
+        DrawResourceIdList(Find("_audio._reloadSoundResourceIds"), "换弹声音", typeof(AudioClip));
+        DrawResourceIdList(Find("_audio._mechanicalSoundResourceIds"), "机械动作声音", typeof(AudioClip));
     }
 
     private void DrawEffectData()
     {
         DrawSubTitle("特效");
-        Draw("_effects._muzzleFlashPrefab", "枪口火焰");
-        Draw("_effects._muzzleSmokePrefab", "枪口烟雾");
-        Draw("_effects._shellPrefab", "弹壳预制体");
-        Draw("_effects._tracerPrefab", "曳光效果");
-        Draw("_effects._impactEffectPrefab", "命中特效");
+        Draw("_effects._muzzleFlashResourceId", "枪口火焰");
+        Draw("_effects._muzzleSmokeResourceId", "枪口烟雾");
+        Draw("_effects._shellResourceId", "弹壳预制体");
+        Draw("_effects._tracerResourceId", "曳光效果");
+        Draw("_effects._impactEffectResourceId", "命中特效");
     }
 
     private void DrawSpecialData()
@@ -322,7 +328,7 @@ public sealed class WeaponDefinitionSOEditor : Editor
         }
         else if (specialType == WeaponSpecialType.Pdw90Mechanism)
         {
-            Draw("_special._specialAnimation", "弹匣表现动画");
+            Draw("_special._specialAnimationResourceId", "弹匣表现动画");
             Draw("_special._specialCurve", "机械结构运动曲线");
         }
     }
@@ -434,6 +440,21 @@ public sealed class WeaponDefinitionSOEditor : Editor
         {
             SerializedProperty item = property.GetArrayElementAtIndex(i);
             EditorGUILayout.PropertyField(item, new GUIContent("第 " + (i + 1) + " 个"));
+        }
+        EditorGUI.indentLevel--;
+    }
+
+    private void DrawResourceIdList(SerializedProperty property, string label, System.Type resourceType)
+    {
+        DrawListHeader(property, label);
+        EditorGUI.indentLevel++;
+        for (int i = 0; i < property.arraySize; i++)
+        {
+            SerializedProperty item = property.GetArrayElementAtIndex(i);
+            ResourceIdDrawer.DrawLayout(
+                item,
+                new GUIContent("第 " + (i + 1) + " 个"),
+                resourceType);
         }
         EditorGUI.indentLevel--;
     }

@@ -5,29 +5,29 @@ using UnityEngine;
 public sealed class WeaponCatalogSO : ScriptableObject
 {
     [Header("枪械目录")]
-    [SerializeField] private List<WeaponDefinitionSO> _weapons = new List<WeaponDefinitionSO>();
-    [SerializeField] private WeaponDefinitionSO _defaultWeapon;
+    [SerializeField, ResourceId(typeof(WeaponDefinitionSO))] private List<string> _weaponResourceIds = new List<string>();
+    [SerializeField, ResourceId(typeof(WeaponDefinitionSO))] private string _defaultWeaponResourceId;
 
-    public IReadOnlyList<WeaponDefinitionSO> Weapons { get { return _weapons; } }
-    public WeaponDefinitionSO DefaultWeapon { get { return _defaultWeapon; } }
+    public IReadOnlyList<string> WeaponResourceIds { get { return _weaponResourceIds; } }
+    public string DefaultWeaponResourceId { get { return _defaultWeaponResourceId; } }
 
-    public bool TryGetWeapon(string weaponId, out WeaponDefinitionSO weapon)
+    public bool TryGetWeaponResourceId(string weaponId, out string resourceId)
     {
-        weapon = null;
+        resourceId = string.Empty;
         if (string.IsNullOrWhiteSpace(weaponId))
         {
             return false;
         }
 
-        for (int i = 0; i < _weapons.Count; i++)
+        string expected = "weapon." + weaponId.Trim().ToLowerInvariant() + ".data";
+        for (int i = 0; i < _weaponResourceIds.Count; i++)
         {
-            WeaponDefinitionSO current = _weapons[i];
-            if (!current || current.Basic.WeaponId != weaponId)
+            if (!string.Equals(_weaponResourceIds[i], expected, System.StringComparison.Ordinal))
             {
                 continue;
             }
 
-            weapon = current;
+            resourceId = expected;
             return true;
         }
 
@@ -36,17 +36,19 @@ public sealed class WeaponCatalogSO : ScriptableObject
 
     private void OnValidate()
     {
-        for (int i = _weapons.Count - 1; i >= 0; i--)
+        HashSet<string> seen = new HashSet<string>(System.StringComparer.Ordinal);
+        for (int i = _weaponResourceIds.Count - 1; i >= 0; i--)
         {
-            if (!_weapons[i])
+            string resourceId = _weaponResourceIds[i];
+            if (string.IsNullOrWhiteSpace(resourceId) || !seen.Add(resourceId))
             {
-                _weapons.RemoveAt(i);
+                _weaponResourceIds.RemoveAt(i);
             }
         }
 
-        if (!_defaultWeapon && _weapons.Count > 0)
+        if (string.IsNullOrWhiteSpace(_defaultWeaponResourceId) && _weaponResourceIds.Count > 0)
         {
-            _defaultWeapon = _weapons[0];
+            _defaultWeaponResourceId = _weaponResourceIds[0];
         }
     }
 }

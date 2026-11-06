@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ea36769902d4f6448c2393eb252e36f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponView
-  _weaponData: {fileID: 11400000, guid: 1000000000000000000000000000000a, type: 2}
+  _weaponDataResourceId: weapon.m1911.data
   _weaponAnimator: {fileID: 3244728111694390326}
 --- !u!95 &3244728111694390326
 Animator:

@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: Mk14 EBR
     _category: 5
     _tags: 7
-    _icon: {fileID: 21300000, guid: 5fae6b54f0ee988499eb0f3ab6170164, type: 3}
-    _silhouette: {fileID: 21300000, guid: 5fae6b54f0ee988499eb0f3ab6170164, type: 3}
+    _iconResourceId: weapon.mk14-ebr.silhouette
+    _silhouetteResourceId: weapon.mk14-ebr.silhouette
   _fire:
     _allowedModes: 3
     _defaultMode: 0
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.5
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 12
     _startingReserveAmmo: 60
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 589915537126014716, guid: 2dbc0bed929cbc34cbad810b562d60ee, type: 3}
-    _worldModelPrefab: {fileID: 589915537126014716, guid: 2dbc0bed929cbc34cbad810b562d60ee, type: 3}
+    _firstPersonPrefabResourceId: weapon.mk14-ebr.prefab.first_person
+    _worldModelPrefabResourceId: weapon.mk14-ebr.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 2ac8f034e81d78d428f9ca5b4fc2767f, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.mk14-ebr.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,36 +128,36 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: d52c40bf1005fd449b197a7b3b69c236, type: 3}
-    - {fileID: 8300000, guid: 50b20bfffdb2dc241a806bb22f864ae8, type: 3}
-    - {fileID: 8300000, guid: 0dbdeee39e429794cbfcc8d9a6dba657, type: 3}
-    - {fileID: 8300000, guid: 89579bd847a8c354d8251d8dd808a62d, type: 3}
+    _fireSoundResourceIds:
+    - weapon.mk14ebr.audio.s_mk14_ebr_01_sounds
+    - weapon.mk14ebr.audio.s_mk14_ebr_02_sounds
+    - weapon.mk14ebr.audio.s_mk14_ebr_03_sounds
+    - weapon.mk14ebr.audio.s_mk14_ebr_04_sounds
     _firePitchRange: {x: 0.98, y: 1.02}
     _fireVolumeRange: {x: 0.97, y: 1.02}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: 64b2a9f1592c12340a59512dc4e46911, type: 3}
-    - {fileID: 8300000, guid: 90aef43d00a225745a1393a930010562, type: 3}
-    - {fileID: 8300000, guid: 9e19817b76a7cf04286692845ecc1ee7, type: 3}
-    - {fileID: 8300000, guid: 582a6d449c9333a43b9742fc7073be3e, type: 3}
-    - {fileID: 8300000, guid: f22d5f8d0b0ed564b8742e89efc34878, type: 3}
-    _mechanicalSounds:
-    - {fileID: 8300000, guid: 9e19817b76a7cf04286692845ecc1ee7, type: 3}
-    - {fileID: 8300000, guid: 582a6d449c9333a43b9742fc7073be3e, type: 3}
-    - {fileID: 8300000, guid: f22d5f8d0b0ed564b8742e89efc34878, type: 3}
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip
+    _reloadSoundResourceIds:
+    - weapon.mk14ebr.audio.s_mk14_reload_empty_full
+    - weapon.mk14ebr.audio.s_mk14_reload_tac_full
+    - weapon.mk14ebr.audio.s_mk18_reload_dry_bolt_end
+    - weapon.mk14ebr.audio.s_mk18_reload_dry_mag_in
+    - weapon.mk14ebr.audio.s_mk18_reload_dry_mag_out
+    _mechanicalSoundResourceIds:
+    - weapon.mk14ebr.audio.s_mk18_reload_dry_bolt_end
+    - weapon.mk14ebr.audio.s_mk18_reload_dry_mag_in
+    - weapon.mk14ebr.audio.s_mk18_reload_dry_mag_out
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -1103,7 +1108,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

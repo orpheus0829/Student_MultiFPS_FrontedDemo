@@ -1,0 +1,896 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Weapon_Audio
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Weapon_Audio
+  m_GUID: 3d4e0386d5a11f548b5f04b66d55515f
+  m_SerializeEntries:
+  - m_GUID: 0098de8d2a9be584d9e0bbce3153b09f
+    m_Address: weapon.asval.audio.s_val_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 012a45a8556a0f240a67ab743a547f4b
+    m_Address: weapon.mx16a4.audio.s_mx16a4_fire_d
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 01a831c0a70d94e4684c805406bb36f4
+    m_Address: weapon.kxg12.audio.s_kxg12_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 037f700ab362c9148b6ecc2f92516a86
+    m_Address: weapon.l96x.audio.s_l96x_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0440f1de8b3f0d843a92bb3a9c23e66d
+    m_Address: weapon.l96x.audio.s_l96x_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0dbdeee39e429794cbfcc8d9a6dba657
+    m_Address: weapon.mk14ebr.audio.s_mk14_ebr_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0dc8ebd1ccca9d145862ab49963fd337
+    m_Address: weapon.kxg12.audio.s_kxg12_pump_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0f60fe0a069471c48b975d405f927458
+    m_Address: weapon.drake_12.audio.s_drake_12_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0f91cac710ba671478283a70f8c00a93
+    m_Address: weapon.viper_357.audio.s_viper_357_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 100a60b5de41cbd40b64f4db757906fe
+    m_Address: weapon.g3.audio.s_g3_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10409535ce860be4fb2c327aa0e390c1
+    m_Address: weapon.m1911.audio.s_m1911_reload_empty
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1399a5e29a6d5a24294d2639a939193c
+    m_Address: weapon.kolibri.audio.s_colibri_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1428206483f8b0546a22b54c58121418
+    m_Address: weapon.g3.audio.s_g3_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1a89cd515b31c064f8a7f411eca2cd67
+    m_Address: weapon.viper_357.audio.s_viper_357_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1a9babe4a0a537545acada30b10c5868
+    m_Address: weapon.dgl50.audio.s_dgl50_fire_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1b7b58d63fc405f428cac556bc55a6c8
+    m_Address: weapon.kxg12.audio.s_kxg12_reload_start
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1c3383d82745a074fa6dff76897d0480
+    m_Address: weapon.x18.audio.s_x18_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1c781833409368b438cdb3c6bfbaddff
+    m_Address: weapon.mgx5.audio.s_mgx5_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d772c9919ad25248b9df9219806e51d
+    m_Address: weapon.mgx5.audio.s_mgx5_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 22823f7b0cf282a41936f89d745635e7
+    m_Address: weapon.striker_v.audio.s_striker_v_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 23bc35c26a700a347a2ce7ca7697ebb0
+    m_Address: weapon.l96x.audio.s_l96x_fire_foley_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 253b599464a590c45b87587ff8c40de3
+    m_Address: weapon.kar98k.audio.s_kar98k_reload_bolt_close
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 333a9df711dcbe34f85350d4c45a8cac
+    m_Address: weapon.striker_v.audio.s_striker_v_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33c81dec7c2ebc148b73492be329ed63
+    m_Address: weapon.drake_12.audio.s_drake_12_reload_wet_insert
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33d1c3f2fb5450641877c67745a6a0d3
+    m_Address: weapon.mgx5.audio.s_mgx5_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 357f2799a223eac4caf9dc0499267d29
+    m_Address: weapon.x18.audio.s_x18_reload_mag_out
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c4641c20f56fcf4a855b865daf70030
+    m_Address: weapon.kar98k.audio.s_kar98k_reload_bullet_insert
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3f4bedbb538f3564ca7c14c3165a6e28
+    m_Address: weapon.x18.audio.s_x18_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 438d962fa65a5c845ab676c1ec67abff
+    m_Address: weapon.ak.audio.s_akx200_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 49d31c2fe10ffbc4c9ef45ab0c966d06
+    m_Address: weapon.mx16a4.audio.s_mx16a4_fire_c
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4cb32bb427d1a4d4d86d67fcf431a469
+    m_Address: weapon.kolibri.audio.s_colibri_empty_reload_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 50aec8b70431f8446a0f87f25afceb19
+    m_Address: weapon.drake_12.audio.s_drake_12_reload_wet_end
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 50b20bfffdb2dc241a806bb22f864ae8
+    m_Address: weapon.mk14ebr.audio.s_mk14_ebr_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 53ff5b99d810dd74bba1ede280bba899
+    m_Address: weapon.mgx5.audio.s_mgx5_reload_tac_with_bullets_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 55a35f77c1d539a40b01bbb558ffc8fb
+    m_Address: weapon.striker_v.audio.s_striker_v_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 571e65e81fd7ba0489b4ac07bf8b3d5c
+    m_Address: weapon.mps5.audio.s_mps5_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 582a6d449c9333a43b9742fc7073be3e
+    m_Address: weapon.mk14ebr.audio.s_mk18_reload_dry_mag_in
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5ad5d256a3fbdc74aa5bf314673ceaa6
+    m_Address: weapon.mgx5.audio.s_mgx5_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 600ea1edb4c841b4e9457cedfc3c92d9
+    m_Address: weapon.svd.audio.s_svd_reload_tac
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 60f3aa999a4fd634c897bc368e4d7adc
+    m_Address: weapon.kxg12.audio.s_kxg12_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 61d9076ae31ba7c44a8304a0a557c8e9
+    m_Address: weapon.l96x.audio.s_l96x_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62a8381b63ce9134b9c93a0fb098dcd3
+    m_Address: weapon.viper_357.audio.s_viper_357_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 633d7da3021e8914f97720c8312c0e4c
+    m_Address: weapon.g3.audio.s_g3a3_reload_tac
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 63a897c98ee14c345bf87986d5f6dda9
+    m_Address: weapon.x18.audio.s_x18_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64b2a9f1592c12340a59512dc4e46911
+    m_Address: weapon.mk14ebr.audio.s_mk14_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6891f561b5133d3479c33aab268e31ee
+    m_Address: weapon.pdw90.audio.s_pdw90_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b9e91417dc01114099d8316bcd0d3f0
+    m_Address: weapon.asval.audio.s_as_val_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ce40419b819d22429cb25aa978deaef
+    m_Address: weapon.drake_12.audio.s_drake_12_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6e4f1f5d90eef194fb48304c0a76ead4
+    m_Address: weapon.ak.audio.s_akx200_shot_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6fb8ea93b4b4c2e4f82048467b95875f
+    m_Address: weapon.l96x.audio.s_l96x_reload_wet_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 70728985d22707441b70b2bd3e0102ed
+    m_Address: weapon.svd.audio.s_svd_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 798011d9271991544929220f213e411c
+    m_Address: weapon.drake_12.audio.s_drake_12_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 79af9a4898452ad43b290f845987e0ca
+    m_Address: weapon.asval.audio.s_val_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a33e084665449b419ca9da55d8f2065
+    m_Address: weapon.dgl50.audio.s_dgl50_fire_2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a6c6be91bae5584bb638b39c6865adf
+    m_Address: weapon.asval.audio.s_val_2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ab991ecb3e33a14d88ef6b6ea57cf11
+    m_Address: weapon.asval.audio.s_as_val_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c25801260a35b841b432d23e3672cb4
+    m_Address: weapon.x18.audio.s_x18_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7d8c810c6c43bfd4b9730e3661f86b98
+    m_Address: weapon.mx16a4.audio.s_mx16a4_fire_a
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 808a8097cef3d414fa931dba0ed986d8
+    m_Address: weapon.viper_357.audio.s_viper_357_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 818503c5e050a384195bd3a46ae38c4c
+    m_Address: weapon.mps5.audio.s_mps5_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8500f9230ac39ac429d3ac49af541ec7
+    m_Address: weapon.kar98k.audio.s_kar98k_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 89579bd847a8c354d8251d8dd808a62d
+    m_Address: weapon.mk14ebr.audio.s_mk14_ebr_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8995b3135fdfe83499f4412a1105b2f9
+    m_Address: weapon.ak.audio.s_akx200_shot_2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8dd96d9e5eea3f64d82d10e3faffee12
+    m_Address: weapon.svd.audio.s_svd_reload_empty
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 90aef43d00a225745a1393a930010562
+    m_Address: weapon.mk14ebr.audio.s_mk14_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93536a669532f254db8057fd59ebc6f3
+    m_Address: weapon.dgl50.audio.s_dgl50_fire_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a0b945197e9f704899d169184bf52b5
+    m_Address: weapon.kxg12.audio.s_kxg12_reload_end
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ab6e87ae9044a24c89d5bb8a6766169
+    m_Address: weapon.dgl50.audio.s_dgl50_reload_dry_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9b8bde9c955e701499f29d27b7067aab
+    m_Address: weapon.ak.audio.s_akx200_shot_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e19817b76a7cf04286692845ecc1ee7
+    m_Address: weapon.mk14ebr.audio.s_mk18_reload_dry_bolt_end
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e1ed4cdc50b5b5408abd11bce03968d
+    m_Address: weapon.kar98k.audio.s_kar98k_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0aa5ddeec187eb4a8b26271ce7f9a68
+    m_Address: weapon.common.audio.s_aim_out
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.common
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1a6440c84a102f4d9f7a3b9288e15a8
+    m_Address: weapon.mx16a4.audio.s_mx16a4_fire_b
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1ab6875c7a5c8b42adc04060ca55245
+    m_Address: weapon.common.audio.s_unequip_pistol
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.common
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a3e37b9d6cc810e44a4ca51ec269a914
+    m_Address: weapon.x18.audio.s_x18_reload_mag_in
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a413465b15533a84ab3452ac961ae89b
+    m_Address: weapon.l96x.audio.s_l96x_reload_dry_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a5d3c4cc03425814b8c71569388cd16f
+    m_Address: weapon.mps5.audio.s_mps5_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a7fd8aa1a729edd41bfe0ef7a46cc31d
+    m_Address: weapon.drake_12.audio.s_drake_12_reload_dry_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aa0abab89f9133d4798a80a41371e669
+    m_Address: weapon.viper_357.audio.s_viper_357_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aab1c9ae2835f33479fdfce2221b1990
+    m_Address: weapon.x18.audio.s_x18_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ab1711353e4a52d4ea07e89d7bb2b655
+    m_Address: weapon.ak.audio.s_akx200_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b0003bde20a4522428993d361582321b
+    m_Address: weapon.kolibri.audio.s_colibri_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b0f1c866aeb92d44cbd5ae9fc3647e98
+    m_Address: weapon.striker_v.audio.s_striker_v_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b102d2420c46e8d498125257b04b2db9
+    m_Address: weapon.g3.audio.s_g3a3_reload_empty
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b18fd4ab07a7e7049aa459e6bb0cc001
+    m_Address: weapon.asval.audio.s_val_0
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b2b6efec540498645a9bcd2ff8745188
+    m_Address: weapon.kar98k.audio.s_kar98k_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b58e6e277789bb54191e03c4c3fd2ca9
+    m_Address: weapon.ak.audio.s_akx200_shot_0
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b5e9f37bcfb33d745966e050f29f07ae
+    m_Address: weapon.dgl50.audio.s_dgl50_reload_wet_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b68b2e9eb5f496f4093e203b58088fec
+    m_Address: weapon.common.audio.s_equip
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.common
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b725366415ed18146a5cc8b8f8766b52
+    m_Address: weapon.mps5.audio.s_mps5_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b7f063ad1558c924c9d335aa79dbc8cb
+    m_Address: weapon.common.audio.s_aim_in
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.common
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bac266c907dd873448b288bf8b728ae6
+    m_Address: weapon.striker_v.audio.s_striker_v_reload_tac_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bc82ba36c26d3a54ebf758dc4cd7fd1d
+    m_Address: weapon.m1911.audio.s_m1911_reload_tac
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd1c570dc612a1941afc3e87b836710d
+    m_Address: weapon.kolibri.audio.s_colibri_reload_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd5d62d3e5c17d346a75b1e8a5f511e4
+    m_Address: weapon.common.audio.s_unequip
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.common
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: be15d71fe11656344b6c9027fb694dfb
+    m_Address: weapon.common.audio.s_firemode
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.common
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bf6edc58ae2ba6a42a9ff362c25901b9
+    m_Address: weapon.kar98k.audio.s_kar98k_reload_bolt_open
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bf988ebb900bc3b458b4eb6c3bc5961d
+    m_Address: weapon.kxg12.audio.s_kxg12_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c02e95077a1c3b046be94cefe380fc55
+    m_Address: weapon.striker_v.audio.s_striker_v_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c29a6313c34460c42a4732716d9b4352
+    m_Address: weapon.drake_12.audio.s_drake_12_reload_wet_start
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cd75a506dfb1dfa40b421b7c738cc34e
+    m_Address: weapon.kar98k.audio.s_kar98k_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d04bac4f04d59c441ad8d623ac943ae8
+    m_Address: weapon.l96x.audio.s_l96x_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d2cdbcb876af3eb4da61e0bc2be3052e
+    m_Address: weapon.g3.audio.s_g3_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d499cf28a6efcdb4a847ae2410975cf2
+    m_Address: weapon.svd.audio.s_svd_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d52c40bf1005fd449b197a7b3b69c236
+    m_Address: weapon.mk14ebr.audio.s_mk14_ebr_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6a88bb3461988f4297bc7a7c3d4089e
+    m_Address: weapon.dgl50.audio.s_dgl50_fire_0
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e07b095fd206dd341a9c679a95640013
+    m_Address: weapon.g3.audio.s_g3_04_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e3a085c0aeac5a141844e484a7c59bdf
+    m_Address: weapon.kxg12.audio.s_kxg12_reload_shell_insert
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e67d1bf131755eb47a159feb482bc8ab
+    m_Address: weapon.mps5.audio.s_mps5_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e84682e69ba19ed44ae8c1f2abae16bd
+    m_Address: weapon.kolibri.audio.s_colibri_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e8775658e0fd87741a26e44bb2d641a5
+    m_Address: weapon.x18.audio.s_x18_reload_slide
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e8b34becbb444fa48ad5cccdef84c9dd
+    m_Address: weapon.svd.audio.s_svd_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eb856c5836a3d8b4492d91493454196a
+    m_Address: weapon.mps5.audio.s_mps5_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee27004c503e79f4ca422fa502e0261e
+    m_Address: weapon.mgx5.audio.s_mgx5_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee67738ef2e843845946f8e7cdb196f4
+    m_Address: weapon.mgx5.audio.s_mgx5_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f12edba8af796c24bb00ea2cb90052c0
+    m_Address: weapon.mx16a4.audio.s_mx16a4_reload_empty
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f22d5f8d0b0ed564b8742e89efc34878
+    m_Address: weapon.mk14ebr.audio.s_mk18_reload_dry_mag_out
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f44df570f88e10b4e8b0ab0ae0bf7ca1
+    m_Address: weapon.svd.audio.s_svd_03_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f67306e91dffae74c881f640d986f4e4
+    m_Address: weapon.x18.audio.s_x18_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f723598c87da1b14b9bbed0eb4d6eab3
+    m_Address: weapon.pdw90.audio.s_pdw90_reload_empty_full
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f7de465dbb59cef4b8122f099ed1a2c5
+    m_Address: weapon.drake_12.audio.s_drake_12_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f83edc9e1b27c324f943669bb935e085
+    m_Address: weapon.kxg12.audio.s_kxg12_02_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f96907c5ee4961441afc9cc058e87dd1
+    m_Address: weapon.kolibri.audio.s_colibri_01_sounds
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ffdf2c9609f11504eb07f8537dc379ba
+    m_Address: weapon.mx16a4.audio.s_mx16a4_reload_tac
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: f00604d93f821ef409f0eafcfc12a97b, type: 2}
+    - {fileID: 11400000, guid: 693ac93029f957d469a50379a0b5e687, type: 2}
+    m_SchemaDisplayOrder:
+    - Weapon_Audio_ContentUpdateGroupSchema
+    - Weapon_Audio_BundledAssetGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

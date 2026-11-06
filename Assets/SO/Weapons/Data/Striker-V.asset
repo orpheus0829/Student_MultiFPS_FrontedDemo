@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: Striker-V
     _category: 2
     _tags: 7
-    _icon: {fileID: 21300000, guid: 5ddab4d074760c64f96b0a711bb47806, type: 3}
-    _silhouette: {fileID: 21300000, guid: 5ddab4d074760c64f96b0a711bb47806, type: 3}
+    _iconResourceId: weapon.striker-v.silhouette
+    _silhouetteResourceId: weapon.striker-v.silhouette
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.5
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 28
     _startingReserveAmmo: 112
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 3198395236550038131, guid: b18197dff4c6b0b4bac1013653683b89, type: 3}
-    _worldModelPrefab: {fileID: 3198395236550038131, guid: b18197dff4c6b0b4bac1013653683b89, type: 3}
+    _firstPersonPrefabResourceId: weapon.striker-v.prefab.first_person
+    _worldModelPrefabResourceId: weapon.striker-v.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 14f38f89a75f7344abdf43d5707f2d63, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.striker-v.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,30 +128,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: 22823f7b0cf282a41936f89d745635e7, type: 3}
-    - {fileID: 8300000, guid: c02e95077a1c3b046be94cefe380fc55, type: 3}
-    - {fileID: 8300000, guid: b0f1c866aeb92d44cbd5ae9fc3647e98, type: 3}
-    - {fileID: 8300000, guid: 333a9df711dcbe34f85350d4c45a8cac, type: 3}
+    _fireSoundResourceIds:
+    - weapon.striker_v.audio.s_striker_v_01_sounds
+    - weapon.striker_v.audio.s_striker_v_02_sounds
+    - weapon.striker_v.audio.s_striker_v_03_sounds
+    - weapon.striker_v.audio.s_striker_v_04_sounds
     _firePitchRange: {x: 0.96, y: 1.03}
     _fireVolumeRange: {x: 0.98, y: 1.02}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: 55a35f77c1d539a40b01bbb558ffc8fb, type: 3}
-    - {fileID: 8300000, guid: bac266c907dd873448b288bf8b728ae6, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip
+    _reloadSoundResourceIds:
+    - weapon.striker_v.audio.s_striker_v_reload_empty_full
+    - weapon.striker_v.audio.s_striker_v_reload_tac_full
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -1115,7 +1120,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

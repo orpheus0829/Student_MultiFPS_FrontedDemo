@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: DGL50
     _category: 7
     _tags: 1
-    _icon: {fileID: 21300000, guid: b06fecff00215814780e542df947f3a4, type: 3}
-    _silhouette: {fileID: 21300000, guid: b06fecff00215814780e542df947f3a4, type: 3}
+    _iconResourceId: weapon.dgl-50.silhouette
+    _silhouetteResourceId: weapon.dgl-50.silhouette
   _fire:
     _allowedModes: 1
     _defaultMode: 0
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.6
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 7
     _startingReserveAmmo: 35
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 7257147076849319845, guid: b40719d7ae0a9b943a203a7a4353669a, type: 3}
-    _worldModelPrefab: {fileID: 7257147076849319845, guid: b40719d7ae0a9b943a203a7a4353669a, type: 3}
+    _firstPersonPrefabResourceId: weapon.dgl-50.prefab.first_person
+    _worldModelPrefabResourceId: weapon.dgl-50.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 521d4dbd01759574c8103c3d174d0b5e, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.dgl-50.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 1
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,30 +128,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: d6a88bb3461988f4297bc7a7c3d4089e, type: 3}
-    - {fileID: 8300000, guid: 1a9babe4a0a537545acada30b10c5868, type: 3}
-    - {fileID: 8300000, guid: 7a33e084665449b419ca9da55d8f2065, type: 3}
-    - {fileID: 8300000, guid: 93536a669532f254db8057fd59ebc6f3, type: 3}
+    _fireSoundResourceIds:
+    - weapon.dgl50.audio.s_dgl50_fire_0
+    - weapon.dgl50.audio.s_dgl50_fire_1
+    - weapon.dgl50.audio.s_dgl50_fire_2
+    - weapon.dgl50.audio.s_dgl50_fire_3
     _firePitchRange: {x: 0.95, y: 1.04}
     _fireVolumeRange: {x: 0.9, y: 1.1}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: a1ab6875c7a5c8b42adc04060ca55245, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: 9ab6e87ae9044a24c89d5bb8a6766169, type: 3}
-    - {fileID: 8300000, guid: b5e9f37bcfb33d745966e050f29f07ae, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip_pistol
+    _reloadSoundResourceIds:
+    - weapon.dgl50.audio.s_dgl50_reload_dry_full
+    - weapon.dgl50.audio.s_dgl50_reload_wet_full
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -881,7 +886,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

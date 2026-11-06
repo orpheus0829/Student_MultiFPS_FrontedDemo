@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: MX16A4
     _category: 0
     _tags: 7
-    _icon: {fileID: 21300000, guid: 9a4300a41c9936447a5a1a67461e6409, type: 3}
-    _silhouette: {fileID: 21300000, guid: 9a4300a41c9936447a5a1a67461e6409, type: 3}
+    _iconResourceId: weapon.mx16a4.silhouette
+    _silhouetteResourceId: weapon.mx16a4.silhouette
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.45
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 30
     _startingReserveAmmo: 90
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 8803500589676878457, guid: 22d117f6eb74f0e4c8697e6097447092, type: 3}
-    _worldModelPrefab: {fileID: 8803500589676878457, guid: 22d117f6eb74f0e4c8697e6097447092, type: 3}
+    _firstPersonPrefabResourceId: weapon.mx16a4.prefab.first_person
+    _worldModelPrefabResourceId: weapon.mx16a4.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 18a097c48d18a0644a96b419f2a986ff, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.mx16a4.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,30 +128,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: 7d8c810c6c43bfd4b9730e3661f86b98, type: 3}
-    - {fileID: 8300000, guid: a1a6440c84a102f4d9f7a3b9288e15a8, type: 3}
-    - {fileID: 8300000, guid: 49d31c2fe10ffbc4c9ef45ab0c966d06, type: 3}
-    - {fileID: 8300000, guid: 012a45a8556a0f240a67ab743a547f4b, type: 3}
+    _fireSoundResourceIds:
+    - weapon.mx16a4.audio.s_mx16a4_fire_a
+    - weapon.mx16a4.audio.s_mx16a4_fire_b
+    - weapon.mx16a4.audio.s_mx16a4_fire_c
+    - weapon.mx16a4.audio.s_mx16a4_fire_d
     _firePitchRange: {x: 0.96, y: 1.02}
     _fireVolumeRange: {x: 0.95, y: 1.03}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: f12edba8af796c24bb00ea2cb90052c0, type: 3}
-    - {fileID: 8300000, guid: ffdf2c9609f11504eb07f8537dc379ba, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip
+    _reloadSoundResourceIds:
+    - weapon.mx16a4.audio.s_mx16a4_reload_empty
+    - weapon.mx16a4.audio.s_mx16a4_reload_tac
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -1115,7 +1120,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

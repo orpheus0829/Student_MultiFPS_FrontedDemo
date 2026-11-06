@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: SVD
     _category: 5
     _tags: 1
-    _icon: {fileID: 21300000, guid: 2028f4885343f3b43bf66692f4931607, type: 3}
-    _silhouette: {fileID: 21300000, guid: 2028f4885343f3b43bf66692f4931607, type: 3}
+    _iconResourceId: weapon.svd.silhouette
+    _silhouetteResourceId: weapon.svd.silhouette
   _fire:
     _allowedModes: 1
     _defaultMode: 0
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.4
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 12
     _startingReserveAmmo: 48
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 558764254201986424, guid: 769d56c02cdef7b43aeff066d39e7781, type: 3}
-    _worldModelPrefab: {fileID: 558764254201986424, guid: 769d56c02cdef7b43aeff066d39e7781, type: 3}
+    _firstPersonPrefabResourceId: weapon.svd.prefab.first_person
+    _worldModelPrefabResourceId: weapon.svd.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 9faa0e81d855a264ab426e8fead80a96, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.svd.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 3
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,30 +128,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: e8b34becbb444fa48ad5cccdef84c9dd, type: 3}
-    - {fileID: 8300000, guid: 70728985d22707441b70b2bd3e0102ed, type: 3}
-    - {fileID: 8300000, guid: f44df570f88e10b4e8b0ab0ae0bf7ca1, type: 3}
-    - {fileID: 8300000, guid: d499cf28a6efcdb4a847ae2410975cf2, type: 3}
+    _fireSoundResourceIds:
+    - weapon.svd.audio.s_svd_01_sounds
+    - weapon.svd.audio.s_svd_02_sounds
+    - weapon.svd.audio.s_svd_03_sounds
+    - weapon.svd.audio.s_svd_04_sounds
     _firePitchRange: {x: 0.97, y: 1.03}
     _fireVolumeRange: {x: 0.96, y: 1.04}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: 8dd96d9e5eea3f64d82d10e3faffee12, type: 3}
-    - {fileID: 8300000, guid: 600ea1edb4c841b4e9457cedfc3c92d9, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip
+    _reloadSoundResourceIds:
+    - weapon.svd.audio.s_svd_reload_empty
+    - weapon.svd.audio.s_svd_reload_tac
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -872,7 +877,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

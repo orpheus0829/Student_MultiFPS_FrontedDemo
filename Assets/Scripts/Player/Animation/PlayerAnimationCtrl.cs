@@ -4,17 +4,18 @@ using UnityEngine;
 public sealed class PlayerAnimationCtrl : MonoBehaviour
 {
     [Header("唯一枪械数据")]
-    [SerializeField, InspectorName("当前枪械数据")] private WeaponDefinitionSO _weaponData;
+    [SerializeField, ResourceId(typeof(WeaponDefinitionSO)), InspectorName("当前枪械数据 ID")]
+    private string _weaponDataResourceId = "weapon.ak.data";
 
     [Header("双视角表现")]
     [SerializeField, InspectorName("第一人称表现")] private PlayerAnimationView _firstPersonView;
     [SerializeField, InspectorName("第三人称表现")] private PlayerAnimationView _thirdPersonView;
 
-    public WeaponDefinitionSO WeaponData
+    public string WeaponDataResourceId
     {
         get
         {
-            return _weaponData;
+            return _weaponDataResourceId;
         }
     }
 

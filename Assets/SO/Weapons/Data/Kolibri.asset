@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: Kolibri
     _category: 7
     _tags: 1
-    _icon: {fileID: 21300000, guid: 6b4f0154e78948545b2742198d4f84be, type: 3}
-    _silhouette: {fileID: 21300000, guid: 6b4f0154e78948545b2742198d4f84be, type: 3}
+    _iconResourceId: weapon.kolibri.silhouette
+    _silhouetteResourceId: weapon.kolibri.silhouette
   _fire:
     _allowedModes: 1
     _defaultMode: 0
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.65
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 6
     _startingReserveAmmo: 42
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 8578712836760880504, guid: fb04f84044689c845a7a4f81ede00c8c, type: 3}
-    _worldModelPrefab: {fileID: 8578712836760880504, guid: fb04f84044689c845a7a4f81ede00c8c, type: 3}
+    _firstPersonPrefabResourceId: weapon.kolibri.prefab.first_person
+    _worldModelPrefabResourceId: weapon.kolibri.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: d3ec6a24f72b9654080280046c215835, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.kolibri.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 1
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,30 +128,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: f96907c5ee4961441afc9cc058e87dd1, type: 3}
-    - {fileID: 8300000, guid: 1399a5e29a6d5a24294d2639a939193c, type: 3}
-    - {fileID: 8300000, guid: e84682e69ba19ed44ae8c1f2abae16bd, type: 3}
-    - {fileID: 8300000, guid: b0003bde20a4522428993d361582321b, type: 3}
+    _fireSoundResourceIds:
+    - weapon.kolibri.audio.s_colibri_01_sounds
+    - weapon.kolibri.audio.s_colibri_02_sounds
+    - weapon.kolibri.audio.s_colibri_03_sounds
+    - weapon.kolibri.audio.s_colibri_04_sounds
     _firePitchRange: {x: 1, y: 1}
     _fireVolumeRange: {x: 1, y: 1}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: a1ab6875c7a5c8b42adc04060ca55245, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: 4cb32bb427d1a4d4d86d67fcf431a469, type: 3}
-    - {fileID: 8300000, guid: bd1c570dc612a1941afc3e87b836710d, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip_pistol
+    _reloadSoundResourceIds:
+    - weapon.kolibri.audio.s_colibri_empty_reload_full
+    - weapon.kolibri.audio.s_colibri_reload_full
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -1016,7 +1021,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

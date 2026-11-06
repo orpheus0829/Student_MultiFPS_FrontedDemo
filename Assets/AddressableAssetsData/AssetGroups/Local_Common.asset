@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Local_Common
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Local_Common
+  m_GUID: 49fd055beb77b8241a4321033ae725fb
+  m_SerializeEntries:
+  - m_GUID: b8888888888888888888888888888888
+    m_Address: weapon.catalog
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: eed44b1ff7ea2e04a9068d4f95ea9495, type: 2}
+    - {fileID: 11400000, guid: 4661f7c4f1a398b49a730ea27e17f710, type: 2}
+    m_SchemaDisplayOrder:
+    - Local_Common_ContentUpdateGroupSchema
+    - Local_Common_BundledAssetGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

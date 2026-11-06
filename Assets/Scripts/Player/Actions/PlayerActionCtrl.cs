@@ -12,6 +12,7 @@ public class PlayerActionCtrl : MonoBehaviour
     [Header("玩家数据")]
     [SerializeField] private PlayerDataSO _playerData;
 
+    private EventMgr.Subscription _inputSubscription;
     private Vector2 _moveInput;
     private bool _isSprinting;
     private bool _isFiring;
@@ -67,25 +68,36 @@ public class PlayerActionCtrl : MonoBehaviour
             _characterController = GetComponent<CharacterController>();
         }
 
+        if (!_characterController || !_inputCtrl || !_playerData)
+        {
+            Debug.LogError($"{name} 的玩家动作引用未配置完整。", this);
+            enabled = false;
+            return;
+        }
+
     }
 
     private void OnEnable()
     {
         if (_inputCtrl)
         {
-            _inputCtrl.CommandIssued += Receive;
+            _inputSubscription = EventMgr.Bind(this, StartListening, StopListening);
         }
-
     }
 
     private void OnDisable()
     {
-        if (_inputCtrl)
+        if (_inputSubscription != null)
         {
-            _inputCtrl.CommandIssued -= Receive;
+            _inputSubscription.Dispose();
+            _inputSubscription = null;
         }
 
         _moveInput = Vector2.zero;
+        _isSprinting = false;
+        _isFiring = false;
+        _isAiming = false;
+        _verticalSpeed = 0f;
     }
 
     private void Update()
@@ -156,5 +168,15 @@ public class PlayerActionCtrl : MonoBehaviour
 
         _verticalSpeed = Mathf.Sqrt(
             _playerData.JumpHeight * -2f * _playerData.Gravity);
+    }
+
+    private void StartListening()
+    {
+        _inputCtrl.CommandIssued += Receive;
+    }
+
+    private void StopListening()
+    {
+        _inputCtrl.CommandIssued -= Receive;
     }
 }

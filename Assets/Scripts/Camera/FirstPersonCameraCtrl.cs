@@ -12,6 +12,7 @@ public class FirstPersonCameraCtrl : MonoBehaviour
     [Header("玩家数据")]
     [SerializeField] private PlayerDataSO _playerData;
 
+    private EventMgr.Subscription _inputSubscription;
     private Vector2 _lookInput;
     private float _yaw;
     private float _pitch;
@@ -30,22 +31,31 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         }
 
         SyncAngles();
+        if (!_inputCtrl)
+        {
+            Debug.LogError($"{name} 未配置玩家输入来源。", this);
+            enabled = false;
+            return;
+        }
+
     }
 
     private void OnEnable()
     {
         if (_inputCtrl)
         {
-            _inputCtrl.CommandIssued += Receive;
+            _inputSubscription = EventMgr.Bind(this, StartListening, StopListening);
         }
     }
 
     private void OnDisable()
     {
-        if (_inputCtrl)
+        if (_inputSubscription != null)
         {
-            _inputCtrl.CommandIssued -= Receive;
+            _inputSubscription.Dispose();
+            _inputSubscription = null;
         }
+
         _lookInput = Vector2.zero;
     }
 
@@ -92,5 +102,15 @@ public class FirstPersonCameraCtrl : MonoBehaviour
     private float NormalizeAngle(float angle)
     {
         return angle > 180f ? angle - 360f : angle;
+    }
+
+    private void StartListening()
+    {
+        _inputCtrl.CommandIssued += Receive;
+    }
+
+    private void StopListening()
+    {
+        _inputCtrl.CommandIssued -= Receive;
     }
 }

@@ -79,15 +79,15 @@ public class WeaponBasicData
     [SerializeField] private string _weaponName;
     [SerializeField] private WeaponCategory _category;
     [SerializeField] private WeaponTag _tags;
-    [SerializeField] private Sprite _icon;
-    [SerializeField] private Sprite _silhouette;
+    [SerializeField, ResourceId(typeof(Sprite))] private string _iconResourceId;
+    [SerializeField, ResourceId(typeof(Sprite))] private string _silhouetteResourceId;
 
     public string WeaponId { get { return _weaponId; } }
     public string WeaponName { get { return _weaponName; } }
     public WeaponCategory Category { get { return _category; } }
     public WeaponTag Tags { get { return _tags; } }
-    public Sprite Icon { get { return _icon; } }
-    public Sprite Silhouette { get { return _silhouette; } }
+    public string IconResourceId { get { return _iconResourceId; } }
+    public string SilhouetteResourceId { get { return _silhouetteResourceId; } }
 }
 
 [Serializable]
@@ -129,6 +129,11 @@ public class WeaponDamageData
     [SerializeField, Min(0f)] private float _headMultiplier = 1.5f;
     [SerializeField, Min(0f)] private float _upperBodyMultiplier = 1f;
     [SerializeField, Min(0f)] private float _lowerBodyMultiplier = 0.9f;
+    [SerializeField, Min(0f)] private float _baseHitScore = 10f;
+    [SerializeField, Min(0f)] private float _weaponScoreFactor = 1f;
+    [SerializeField, Min(0f)] private float _closeDistanceScoreFactor = 1f;
+    [SerializeField, Min(0f)] private float _farDistanceScoreFactor = 1f;
+    [SerializeField, Min(0f)] private float _killBonus = 100f;
 
     public float CloseDamage { get { return _closeDamage; } }
     public float FarDamage { get { return _farDamage; } }
@@ -138,6 +143,24 @@ public class WeaponDamageData
     public float HeadMultiplier { get { return _headMultiplier; } }
     public float UpperBodyMultiplier { get { return _upperBodyMultiplier; } }
     public float LowerBodyMultiplier { get { return _lowerBodyMultiplier; } }
+    public float BaseHitScore { get { return _baseHitScore; } }
+    public float WeaponScoreFactor { get { return _weaponScoreFactor; } }
+    public float CloseDistanceScoreFactor { get { return _closeDistanceScoreFactor; } }
+    public float FarDistanceScoreFactor { get { return _farDistanceScoreFactor; } }
+    public float KillBonus { get { return _killBonus; } }
+
+    public float GetDistanceScoreFactor(float distance)
+    {
+        if (_farDamageRange <= _closeDamageRange)
+        {
+            return distance <= _closeDamageRange
+                ? _closeDistanceScoreFactor
+                : _farDistanceScoreFactor;
+        }
+
+        float progress = Mathf.InverseLerp(_closeDamageRange, _farDamageRange, distance);
+        return Mathf.Lerp(_closeDistanceScoreFactor, _farDistanceScoreFactor, progress);
+    }
 }
 
 [Serializable]

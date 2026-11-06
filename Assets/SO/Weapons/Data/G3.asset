@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: G3
     _category: 1
     _tags: 7
-    _icon: {fileID: 21300000, guid: 7cae470c17d3b5f44bec71e2b0691591, type: 3}
-    _silhouette: {fileID: 21300000, guid: 7cae470c17d3b5f44bec71e2b0691591, type: 3}
+    _iconResourceId: weapon.g3.silhouette
+    _silhouetteResourceId: weapon.g3.silhouette
   _fire:
     _allowedModes: 3
     _defaultMode: 1
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.5
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 30
     _startingReserveAmmo: 90
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 9019268397008109641, guid: ca887eadae6eea34dbec319c9ab96d73, type: 3}
-    _worldModelPrefab: {fileID: 9019268397008109641, guid: ca887eadae6eea34dbec319c9ab96d73, type: 3}
+    _firstPersonPrefabResourceId: weapon.g3.prefab.first_person
+    _worldModelPrefabResourceId: weapon.g3.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 431aac06917dbd5438b4f1812a740903, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.g3.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,30 +128,30 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: 100a60b5de41cbd40b64f4db757906fe, type: 3}
-    - {fileID: 8300000, guid: d2cdbcb876af3eb4da61e0bc2be3052e, type: 3}
-    - {fileID: 8300000, guid: 1428206483f8b0546a22b54c58121418, type: 3}
-    - {fileID: 8300000, guid: e07b095fd206dd341a9c679a95640013, type: 3}
+    _fireSoundResourceIds:
+    - weapon.g3.audio.s_g3_01_sounds
+    - weapon.g3.audio.s_g3_02_sounds
+    - weapon.g3.audio.s_g3_03_sounds
+    - weapon.g3.audio.s_g3_04_sounds
     _firePitchRange: {x: 0.93, y: 1.03}
     _fireVolumeRange: {x: 0.94, y: 1.02}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: bd5d62d3e5c17d346a75b1e8a5f511e4, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: b102d2420c46e8d498125257b04b2db9, type: 3}
-    - {fileID: 8300000, guid: 633d7da3021e8914f97720c8312c0e4c, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip
+    _reloadSoundResourceIds:
+    - weapon.g3.audio.s_g3a3_reload_empty
+    - weapon.g3.audio.s_g3a3_reload_tac
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -1115,7 +1120,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

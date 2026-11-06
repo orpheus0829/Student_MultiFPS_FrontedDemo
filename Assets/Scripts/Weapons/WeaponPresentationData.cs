@@ -5,10 +5,10 @@ using UnityEngine;
 [Serializable]
 public class WeaponAnimationData
 {
-    [SerializeField] private RuntimeAnimatorController _characterAnimatorController;
-    [SerializeField] private RuntimeAnimatorController _weaponAnimatorController;
-    [SerializeField] private RuntimeAnimatorController _thirdPersonAnimatorController;
-    [SerializeField] private RuntimeAnimatorController _thirdPersonWeaponAnimatorController;
+    [SerializeField, ResourceId(typeof(RuntimeAnimatorController))] private string _characterAnimatorControllerResourceId;
+    [SerializeField, ResourceId(typeof(RuntimeAnimatorController))] private string _weaponAnimatorControllerResourceId;
+    [SerializeField, ResourceId(typeof(RuntimeAnimatorController))] private string _thirdPersonAnimatorControllerResourceId;
+    [SerializeField, ResourceId(typeof(RuntimeAnimatorController))] private string _thirdPersonWeaponAnimatorControllerResourceId;
     [SerializeField] private WeaponHoldStyle _holdStyle;
     [SerializeField] private bool _canInspect;
     [SerializeField] private bool _hasFireAnimation;
@@ -21,10 +21,10 @@ public class WeaponAnimationData
     [SerializeField] private bool _hasManualCycleAnimation;
     [SerializeField] private bool _usesSprintTriggerDiscipline = true;
 
-    public RuntimeAnimatorController CharacterAnimatorController { get { return _characterAnimatorController; } }
-    public RuntimeAnimatorController WeaponAnimatorController { get { return _weaponAnimatorController; } }
-    public RuntimeAnimatorController ThirdPersonAnimatorController { get { return _thirdPersonAnimatorController; } }
-    public RuntimeAnimatorController ThirdPersonWeaponAnimatorController { get { return _thirdPersonWeaponAnimatorController; } }
+    public string CharacterAnimatorControllerResourceId { get { return _characterAnimatorControllerResourceId; } }
+    public string WeaponAnimatorControllerResourceId { get { return _weaponAnimatorControllerResourceId; } }
+    public string ThirdPersonAnimatorControllerResourceId { get { return _thirdPersonAnimatorControllerResourceId; } }
+    public string ThirdPersonWeaponAnimatorControllerResourceId { get { return _thirdPersonWeaponAnimatorControllerResourceId; } }
     public WeaponHoldStyle HoldStyle { get { return _holdStyle; } }
     public bool CanInspect { get { return _canInspect; } }
     public bool HasFireAnimation { get { return _hasFireAnimation; } }
@@ -71,41 +71,41 @@ public class WeaponIkData
 [Serializable]
 public class WeaponAudioData
 {
-    [SerializeField] private List<AudioClip> _fireSounds = new List<AudioClip>();
+    [SerializeField, ResourceId(typeof(AudioClip))] private List<string> _fireSoundResourceIds = new List<string>();
     [SerializeField] private Vector2 _firePitchRange = Vector2.one;
     [SerializeField] private Vector2 _fireVolumeRange = Vector2.one;
-    [SerializeField] private List<AudioClip> _weaponEventSounds = new List<AudioClip>();
-    [SerializeField] private AudioClip _dryFireSound;
-    [SerializeField] private AudioClip _equipSound;
-    [SerializeField] private AudioClip _unequipSound;
-    [SerializeField] private List<AudioClip> _reloadSounds = new List<AudioClip>();
-    [SerializeField] private List<AudioClip> _mechanicalSounds = new List<AudioClip>();
+    [SerializeField, ResourceId(typeof(AudioClip))] private List<string> _weaponEventSoundResourceIds = new List<string>();
+    [SerializeField, ResourceId(typeof(AudioClip))] private string _dryFireSoundResourceId;
+    [SerializeField, ResourceId(typeof(AudioClip))] private string _equipSoundResourceId;
+    [SerializeField, ResourceId(typeof(AudioClip))] private string _unequipSoundResourceId;
+    [SerializeField, ResourceId(typeof(AudioClip))] private List<string> _reloadSoundResourceIds = new List<string>();
+    [SerializeField, ResourceId(typeof(AudioClip))] private List<string> _mechanicalSoundResourceIds = new List<string>();
 
-    public IReadOnlyList<AudioClip> FireSounds { get { return _fireSounds; } }
+    public IReadOnlyList<string> FireSoundResourceIds { get { return _fireSoundResourceIds; } }
     public Vector2 FirePitchRange { get { return _firePitchRange; } }
     public Vector2 FireVolumeRange { get { return _fireVolumeRange; } }
-    public IReadOnlyList<AudioClip> WeaponEventSounds { get { return _weaponEventSounds; } }
-    public AudioClip DryFireSound { get { return _dryFireSound; } }
-    public AudioClip EquipSound { get { return _equipSound; } }
-    public AudioClip UnequipSound { get { return _unequipSound; } }
-    public IReadOnlyList<AudioClip> ReloadSounds { get { return _reloadSounds; } }
-    public IReadOnlyList<AudioClip> MechanicalSounds { get { return _mechanicalSounds; } }
+    public IReadOnlyList<string> WeaponEventSoundResourceIds { get { return _weaponEventSoundResourceIds; } }
+    public string DryFireSoundResourceId { get { return _dryFireSoundResourceId; } }
+    public string EquipSoundResourceId { get { return _equipSoundResourceId; } }
+    public string UnequipSoundResourceId { get { return _unequipSoundResourceId; } }
+    public IReadOnlyList<string> ReloadSoundResourceIds { get { return _reloadSoundResourceIds; } }
+    public IReadOnlyList<string> MechanicalSoundResourceIds { get { return _mechanicalSoundResourceIds; } }
 }
 
 [Serializable]
 public class WeaponEffectData
 {
-    [SerializeField] private GameObject _muzzleFlashPrefab;
-    [SerializeField] private GameObject _muzzleSmokePrefab;
-    [SerializeField] private GameObject _shellPrefab;
-    [SerializeField] private GameObject _tracerPrefab;
-    [SerializeField] private GameObject _impactEffectPrefab;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _muzzleFlashResourceId;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _muzzleSmokeResourceId;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _shellResourceId;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _tracerResourceId;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _impactEffectResourceId;
 
-    public GameObject MuzzleFlashPrefab { get { return _muzzleFlashPrefab; } }
-    public GameObject MuzzleSmokePrefab { get { return _muzzleSmokePrefab; } }
-    public GameObject ShellPrefab { get { return _shellPrefab; } }
-    public GameObject TracerPrefab { get { return _tracerPrefab; } }
-    public GameObject ImpactEffectPrefab { get { return _impactEffectPrefab; } }
+    public string MuzzleFlashResourceId { get { return _muzzleFlashResourceId; } }
+    public string MuzzleSmokeResourceId { get { return _muzzleSmokeResourceId; } }
+    public string ShellResourceId { get { return _shellResourceId; } }
+    public string TracerResourceId { get { return _tracerResourceId; } }
+    public string ImpactEffectResourceId { get { return _impactEffectResourceId; } }
 }
 
 [Serializable]
@@ -139,11 +139,11 @@ public class WeaponCameraFeedbackData
 [Serializable]
 public class WeaponResourceData
 {
-    [SerializeField] private GameObject _firstPersonPrefab;
-    [SerializeField] private GameObject _worldModelPrefab;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _firstPersonPrefabResourceId;
+    [SerializeField, ResourceId(typeof(GameObject))] private string _worldModelPrefabResourceId;
 
-    public GameObject FirstPersonPrefab { get { return _firstPersonPrefab; } }
-    public GameObject WorldModelPrefab { get { return _worldModelPrefab; } }
+    public string FirstPersonPrefabResourceId { get { return _firstPersonPrefabResourceId; } }
+    public string WorldModelPrefabResourceId { get { return _worldModelPrefabResourceId; } }
 }
 
 [Serializable]
@@ -153,13 +153,13 @@ public class WeaponSpecialData
     [SerializeField, Min(0)] private int _beltRoundCount;
     [SerializeField, Min(0f)] private float _beltResetTime;
     [SerializeField] private List<string> _beltNodePaths = new List<string>();
-    [SerializeField] private AnimationClip _specialAnimation;
+    [SerializeField, ResourceId(typeof(AnimationClip))] private string _specialAnimationResourceId;
     [SerializeField] private AnimationCurve _specialCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
     public WeaponSpecialType SpecialType { get { return _specialType; } }
     public int BeltRoundCount { get { return _beltRoundCount; } }
     public float BeltResetTime { get { return _beltResetTime; } }
     public IReadOnlyList<string> BeltNodePaths { get { return _beltNodePaths; } }
-    public AnimationClip SpecialAnimation { get { return _specialAnimation; } }
+    public string SpecialAnimationResourceId { get { return _specialAnimationResourceId; } }
     public AnimationCurve SpecialCurve { get { return _specialCurve; } }
 }

@@ -30,6 +30,45 @@ public static class WordNote
         return ui.Enqueue(content, style, duration);
     }
 
+    public static WordNoteHandle Show(
+        WordNoteRegion region,
+        string content)
+    {
+        if (!TryGetUI(out WordNoteUI ui))
+        {
+            return null;
+        }
+
+        return ui.Enqueue(region, content, ui.DefaultStyle, ui.DefaultDuration);
+    }
+
+    public static WordNoteHandle Show(
+        WordNoteRegion region,
+        string content,
+        float duration)
+    {
+        if (!TryGetUI(out WordNoteUI ui))
+        {
+            return null;
+        }
+
+        return ui.Enqueue(region, content, ui.DefaultStyle, duration);
+    }
+
+    public static WordNoteHandle Show(
+        WordNoteRegion region,
+        string content,
+        WordNoteStyle style,
+        float duration = 2f)
+    {
+        if (!TryGetUI(out WordNoteUI ui))
+        {
+            return null;
+        }
+
+        return ui.Enqueue(region, content, style, duration);
+    }
+
     public static bool Close(WordNoteHandle handle)
     {
         return handle != null && handle.Close();
@@ -40,6 +79,14 @@ public static class WordNote
         if (WordNoteUI.Instance)
         {
             WordNoteUI.Instance.Clear();
+        }
+    }
+
+    public static void Clear(WordNoteRegion region)
+    {
+        if (WordNoteUI.Instance)
+        {
+            WordNoteUI.Instance.Clear(region);
         }
     }
 

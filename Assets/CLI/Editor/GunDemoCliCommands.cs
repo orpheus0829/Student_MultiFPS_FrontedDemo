@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.IO;
 using Unity.Pipeline.Commands;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -163,6 +165,10 @@ public static class GunDemoCliCommands
             PlayerInputCtrl input = gameObject.GetComponent<PlayerInputCtrl>();
             CharacterController characterController = gameObject.GetComponent<CharacterController>();
             PlayerAnimationCtrl animation = gameObject.GetComponent<PlayerAnimationCtrl>();
+            PlayerInfo playerInfo = gameObject.GetComponent<PlayerInfo>();
+            CharacterHealth health = gameObject.GetComponent<CharacterHealth>();
+            CombatScore score = gameObject.GetComponent<CombatScore>();
+            BodyHitbox[] hitboxes = gameObject.GetComponentsInChildren<BodyHitbox>(true);
             CliPlayerItem item = new CliPlayerItem
             {
                 Path = GunDemoCliUtility.GetPath(gameObject),
@@ -174,7 +180,12 @@ public static class GunDemoCliCommands
                 HasAnimationController = animation,
                 HasFirstPersonView = animation && animation.FirstPersonView,
                 HasThirdPersonView = animation && animation.ThirdPersonView,
-                WeaponData = animation ? GunDemoCliUtility.GetAssetName(animation.WeaponData) : string.Empty
+                HasPlayerInfo = playerInfo,
+                HasHealth = health,
+                HasCombatScore = score,
+                BodyHitboxCount = hitboxes.Length,
+                PlayerName = playerInfo ? playerInfo.PlayerName : string.Empty,
+                WeaponData = animation ? animation.WeaponDataResourceId : string.Empty
             };
             players.Add(item);
 
@@ -186,6 +197,16 @@ public static class GunDemoCliCommands
             if (!item.HasAnimationController || !item.HasFirstPersonView || !item.HasThirdPersonView)
             {
                 problems.Add(item.Path + " 的第一/第三人称动画表现配置不完整");
+            }
+
+            if (!item.HasPlayerInfo || !item.HasHealth || !item.HasCombatScore)
+            {
+                problems.Add(item.Path + " 的玩家身份、生命或计分组件不完整");
+            }
+
+            if (item.BodyHitboxCount < 3)
+            {
+                problems.Add(item.Path + " 缺少头部、上半身或下半身命中区域");
             }
         }
 
@@ -251,12 +272,25 @@ public static class GunDemoCliCommands
         Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         EventSystem[] eventSystems = Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         Selectable[] selectables = Object.FindObjectsByType<Selectable>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        WordNoteUI[] wordNotes = Object.FindObjectsByType<WordNoteUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        WordNoteStackRegionUI[] stackRegions = Object.FindObjectsByType<WordNoteStackRegionUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        KillFeedUI[] killFeeds = Object.FindObjectsByType<KillFeedUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        CombatScoreFeedbackUI[] scoreFeedbacks = Object.FindObjectsByType<CombatScoreFeedbackUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        CombatFeedbackCtrl[] combatFeedbackControllers = Object.FindObjectsByType<CombatFeedbackCtrl>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        CrosshairHitFeedbackUI[] crosshairFeedbacks = Object.FindObjectsByType<CrosshairHitFeedbackUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         List<string> canvasPaths = new List<string>();
         List<string> problems = new List<string>();
+        int topRightRegionCount = 0;
+        int playerHudCount = 0;
+        int crosshairFeedbackLineCount = 0;
 
         foreach (Canvas canvas in canvases)
         {
             canvasPaths.Add(GunDemoCliUtility.GetPath(canvas.gameObject) + " [" + canvas.renderMode + "]");
+            if (canvas.gameObject.name == "PlayerHUD")
+            {
+                playerHudCount++;
+            }
         }
 
         if (canvases.Length > 0 && eventSystems.Length == 0 && selectables.Length > 0)
@@ -269,11 +303,52 @@ public static class GunDemoCliCommands
             problems.Add("场景存在多个 EventSystem");
         }
 
+        for (int i = 0; i < stackRegions.Length; i++)
+        {
+            if (stackRegions[i].Region == WordNoteRegion.TopRight && stackRegions[i].IsReady)
+            {
+                topRightRegionCount++;
+            }
+        }
+
+        if (wordNotes.Length != 1 || topRightRegionCount != 1)
+        {
+            problems.Add("场景需要且只能有一套 WordNote 与可用的右上角堆叠区域");
+        }
+
+        if (killFeeds.Length != 1 || scoreFeedbacks.Length != 1 || combatFeedbackControllers.Length != 1)
+        {
+            problems.Add("场景中的击杀播报、分数反馈或战斗反馈控制器配置不完整");
+        }
+
+        for (int i = 0; i < crosshairFeedbacks.Length; i++)
+        {
+            crosshairFeedbackLineCount += crosshairFeedbacks[i].FeedbackLineCount;
+            if (!crosshairFeedbacks[i].IsReady)
+            {
+                problems.Add(GunDemoCliUtility.GetPath(crosshairFeedbacks[i].gameObject) +
+                    " 的准心命中反馈引用不完整");
+            }
+        }
+
+        if (playerHudCount != 1 || crosshairFeedbacks.Length != 1)
+        {
+            problems.Add("场景需要且只能有一套 PlayerHUD 与准心命中反馈");
+        }
+
         return new CliUiReport
         {
             CanvasCount = canvases.Length,
             EventSystemCount = eventSystems.Length,
             SelectableCount = selectables.Length,
+            WordNoteCount = wordNotes.Length,
+            TopRightRegionCount = topRightRegionCount,
+            KillFeedCount = killFeeds.Length,
+            ScoreFeedbackCount = scoreFeedbacks.Length,
+            CombatFeedbackControllerCount = combatFeedbackControllers.Length,
+            PlayerHudCount = playerHudCount,
+            CrosshairFeedbackCount = crosshairFeedbacks.Length,
+            CrosshairFeedbackLineCount = crosshairFeedbackLineCount,
             Canvases = canvasPaths,
             Problems = problems
         };
@@ -290,7 +365,36 @@ public static class GunDemoCliCommands
         HashSet<string> prefabNames = new HashSet<string>();
         List<string> weaponIds = new List<string>();
         List<string> unused = new List<string>();
+        List<string> missingResourceIds = new List<string>();
+        List<string> duplicateAddresses = new List<string>();
         List<string> problems = new List<string>();
+        AddressableAssetSettings addressableSettings = AddressableAssetSettingsDefaultObject.GetSettings(false);
+        HashSet<string> knownAddresses = new HashSet<string>();
+        int addressableEntryCount = 0;
+
+        if (addressableSettings)
+        {
+            foreach (AddressableAssetGroup group in addressableSettings.groups)
+            {
+                if (!group)
+                {
+                    continue;
+                }
+
+                foreach (AddressableAssetEntry entry in group.entries)
+                {
+                    addressableEntryCount++;
+                    if (!knownAddresses.Add(entry.address))
+                    {
+                        duplicateAddresses.Add(entry.address);
+                    }
+                }
+            }
+        }
+        else
+        {
+            problems.Add("项目缺少 Addressables Settings");
+        }
 
         foreach (string guid in weaponPrefabs)
         {
@@ -309,11 +413,55 @@ public static class GunDemoCliCommands
             {
                 unused.Add(path);
             }
+
+
+            SerializedObject serializedData = new SerializedObject(data);
+            CheckResourceId(serializedData, "_basic._silhouetteResourceId", path, knownAddresses, missingResourceIds);
+            CheckResourceId(serializedData, "_resources._firstPersonPrefabResourceId", path, knownAddresses, missingResourceIds);
+            CheckResourceId(serializedData, "_animation._weaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_basic._iconResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_resources._worldModelPrefabResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_animation._characterAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_animation._thirdPersonAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_animation._thirdPersonWeaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_audio._dryFireSoundResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_audio._equipSoundResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_audio._unequipSoundResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_effects._muzzleFlashResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_effects._muzzleSmokeResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_effects._shellResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_effects._tracerResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_effects._impactEffectResourceId", path, knownAddresses, missingResourceIds);
+            CheckOptionalResourceId(serializedData, "_special._specialAnimationResourceId", path, knownAddresses, missingResourceIds);
+            CheckResourceIdArray(serializedData, "_audio._fireSoundResourceIds", path, knownAddresses, missingResourceIds);
+            CheckResourceIdArray(serializedData, "_audio._weaponEventSoundResourceIds", path, knownAddresses, missingResourceIds);
+            CheckResourceIdArray(serializedData, "_audio._reloadSoundResourceIds", path, knownAddresses, missingResourceIds);
+            CheckResourceIdArray(serializedData, "_audio._mechanicalSoundResourceIds", path, knownAddresses, missingResourceIds);
+
+            string prefabPath = "Assets/Prefabs/Weapons/" + Path.GetFileNameWithoutExtension(path) + ".prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            WeaponView weaponView = prefab ? prefab.GetComponent<WeaponView>() : null;
+            if (!weaponView ||
+                string.IsNullOrWhiteSpace(weaponView.WeaponDataResourceId) ||
+                !knownAddresses.Contains(weaponView.WeaponDataResourceId))
+            {
+                missingResourceIds.Add(prefabPath + " -> WeaponView.WeaponDataResourceId");
+            }
         }
 
         if (weaponData.Length != weaponPrefabs.Length)
         {
             problems.Add("枪械数据数量与正式枪械 Prefab 数量不同");
+        }
+
+        if (missingResourceIds.Count > 0)
+        {
+            problems.Add("枪械数据存在空资源 ID 或未登记 Addressables 的资源 ID");
+        }
+
+        if (duplicateAddresses.Count > 0)
+        {
+            problems.Add("Addressables 存在重复 Address");
         }
 
         return new CliDataReport
@@ -323,8 +471,12 @@ public static class GunDemoCliCommands
             WeaponPrefabCount = weaponPrefabs.Length,
             PlayerDataCount = playerData.Length,
             InputCatalogCount = inputCatalogs.Length,
+            HasAddressableSettings = addressableSettings,
+            AddressableEntryCount = addressableEntryCount,
             WeaponIds = weaponIds,
             UnusedWeaponData = unused,
+            MissingResourceIds = missingResourceIds,
+            DuplicateAddresses = duplicateAddresses,
             Problems = problems
         };
     }
@@ -432,6 +584,63 @@ public static class GunDemoCliCommands
             Passed = passed,
             Detail = detail
         };
+    }
+
+    private static void CheckResourceId(
+        SerializedObject owner,
+        string propertyPath,
+        string assetPath,
+        HashSet<string> knownAddresses,
+        List<string> missingResourceIds)
+    {
+        SerializedProperty property = owner.FindProperty(propertyPath);
+        string resourceId = property != null ? property.stringValue : string.Empty;
+        if (string.IsNullOrWhiteSpace(resourceId) || !knownAddresses.Contains(resourceId))
+        {
+            missingResourceIds.Add(assetPath + " -> " + propertyPath + " = " + resourceId);
+        }
+    }
+
+    private static void CheckOptionalResourceId(
+        SerializedObject owner,
+        string propertyPath,
+        string assetPath,
+        HashSet<string> knownAddresses,
+        List<string> missingResourceIds)
+    {
+        SerializedProperty property = owner.FindProperty(propertyPath);
+        if (property == null || string.IsNullOrWhiteSpace(property.stringValue))
+        {
+            return;
+        }
+
+        if (!knownAddresses.Contains(property.stringValue))
+        {
+            missingResourceIds.Add(assetPath + " -> " + propertyPath + " = " + property.stringValue);
+        }
+    }
+
+    private static void CheckResourceIdArray(
+        SerializedObject owner,
+        string propertyPath,
+        string assetPath,
+        HashSet<string> knownAddresses,
+        List<string> missingResourceIds)
+    {
+        SerializedProperty property = owner.FindProperty(propertyPath);
+        if (property == null || !property.isArray)
+        {
+            return;
+        }
+
+        for (int i = 0; i < property.arraySize; i++)
+        {
+            string resourceId = property.GetArrayElementAtIndex(i).stringValue;
+            if (!string.IsNullOrWhiteSpace(resourceId) && !knownAddresses.Contains(resourceId))
+            {
+                missingResourceIds.Add(assetPath + " -> " + propertyPath + "[" + i + "] = " + resourceId);
+            }
+        }
     }
 
     private static void GetConsoleCounts(out int warnings, out int errors)

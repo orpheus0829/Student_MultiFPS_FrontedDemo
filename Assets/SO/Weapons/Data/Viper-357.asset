@@ -17,8 +17,8 @@ MonoBehaviour:
     _weaponName: Viper-357
     _category: 8
     _tags: 129
-    _icon: {fileID: 21300000, guid: f238a242ad011604a95328c867ac5bb6, type: 3}
-    _silhouette: {fileID: 21300000, guid: f238a242ad011604a95328c867ac5bb6, type: 3}
+    _iconResourceId: weapon.viper-357.silhouette
+    _silhouetteResourceId: weapon.viper-357.silhouette
   _fire:
     _allowedModes: 1
     _defaultMode: 0
@@ -40,6 +40,11 @@ MonoBehaviour:
     _headMultiplier: 1.55
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
+    _baseHitScore: 10
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
   _ammo:
     _magazineCapacity: 6
     _startingReserveAmmo: 36
@@ -91,13 +96,13 @@ MonoBehaviour:
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
   _resources:
-    _firstPersonPrefab: {fileID: 3616431485869538876, guid: 1cb2497def9847647906359071a20b28, type: 3}
-    _worldModelPrefab: {fileID: 3616431485869538876, guid: 1cb2497def9847647906359071a20b28, type: 3}
+    _firstPersonPrefabResourceId: weapon.viper-357.prefab.first_person
+    _worldModelPrefabResourceId: weapon.viper-357.prefab.first_person
   _animation:
-    _characterAnimatorController: {fileID: 0}
-    _weaponAnimatorController: {fileID: 22100000, guid: 6718cc0cda492204881dcdf2f9b1cbfe, type: 2}
-    _thirdPersonAnimatorController: {fileID: 0}
-    _thirdPersonWeaponAnimatorController: {fileID: 0}
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: weapon.viper-357.animator.first_person_weapon
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 1
     _canInspect: 1
     _hasFireAnimation: 0
@@ -123,29 +128,29 @@ MonoBehaviour:
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSounds:
-    - {fileID: 8300000, guid: 62a8381b63ce9134b9c93a0fb098dcd3, type: 3}
-    - {fileID: 8300000, guid: 808a8097cef3d414fa931dba0ed986d8, type: 3}
-    - {fileID: 8300000, guid: 0f91cac710ba671478283a70f8c00a93, type: 3}
-    - {fileID: 8300000, guid: 1a89cd515b31c064f8a7f411eca2cd67, type: 3}
+    _fireSoundResourceIds:
+    - weapon.viper_357.audio.s_viper_357_01_sounds
+    - weapon.viper_357.audio.s_viper_357_02_sounds
+    - weapon.viper_357.audio.s_viper_357_03_sounds
+    - weapon.viper_357.audio.s_viper_357_04_sounds
     _firePitchRange: {x: 1, y: 1}
     _fireVolumeRange: {x: 1, y: 1}
-    _weaponEventSounds:
-    - {fileID: 8300000, guid: b7f063ad1558c924c9d335aa79dbc8cb, type: 3}
-    - {fileID: 8300000, guid: a0aa5ddeec187eb4a8b26271ce7f9a68, type: 3}
-    - {fileID: 8300000, guid: be15d71fe11656344b6c9027fb694dfb, type: 3}
-    _dryFireSound: {fileID: 0}
-    _equipSound: {fileID: 8300000, guid: b68b2e9eb5f496f4093e203b58088fec, type: 3}
-    _unequipSound: {fileID: 8300000, guid: a1ab6875c7a5c8b42adc04060ca55245, type: 3}
-    _reloadSounds:
-    - {fileID: 8300000, guid: aa0abab89f9133d4798a80a41371e669, type: 3}
-    _mechanicalSounds: []
+    _weaponEventSoundResourceIds:
+    - weapon.common.audio.s_aim_in
+    - weapon.common.audio.s_aim_out
+    - weapon.common.audio.s_firemode
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: weapon.common.audio.s_equip
+    _unequipSoundResourceId: weapon.common.audio.s_unequip_pistol
+    _reloadSoundResourceIds:
+    - weapon.viper_357.audio.s_viper_357_reload_empty_full
+    _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashPrefab: {fileID: 0}
-    _muzzleSmokePrefab: {fileID: 0}
-    _shellPrefab: {fileID: 0}
-    _tracerPrefab: {fileID: 0}
-    _impactEffectPrefab: {fileID: 0}
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:
       _x:
@@ -943,7 +948,7 @@ MonoBehaviour:
     _beltRoundCount: 0
     _beltResetTime: 0
     _beltNodePaths: []
-    _specialAnimation: {fileID: 0}
+    _specialAnimationResourceId: 
     _specialCurve:
       serializedVersion: 2
       m_Curve:

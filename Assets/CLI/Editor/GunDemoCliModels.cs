@@ -62,6 +62,11 @@ public sealed class CliPlayerItem
     public bool HasAnimationController { get; set; }
     public bool HasFirstPersonView { get; set; }
     public bool HasThirdPersonView { get; set; }
+    public bool HasPlayerInfo { get; set; }
+    public bool HasHealth { get; set; }
+    public bool HasCombatScore { get; set; }
+    public int BodyHitboxCount { get; set; }
+    public string PlayerName { get; set; }
     public string WeaponData { get; set; }
 }
 
@@ -90,6 +95,14 @@ public sealed class CliUiReport
     public int CanvasCount { get; set; }
     public int EventSystemCount { get; set; }
     public int SelectableCount { get; set; }
+    public int WordNoteCount { get; set; }
+    public int TopRightRegionCount { get; set; }
+    public int KillFeedCount { get; set; }
+    public int ScoreFeedbackCount { get; set; }
+    public int CombatFeedbackControllerCount { get; set; }
+    public int PlayerHudCount { get; set; }
+    public int CrosshairFeedbackCount { get; set; }
+    public int CrosshairFeedbackLineCount { get; set; }
     public List<string> Canvases { get; set; }
     public List<string> Problems { get; set; }
 }
@@ -102,8 +115,12 @@ public sealed class CliDataReport
     public int WeaponPrefabCount { get; set; }
     public int PlayerDataCount { get; set; }
     public int InputCatalogCount { get; set; }
+    public bool HasAddressableSettings { get; set; }
+    public int AddressableEntryCount { get; set; }
     public List<string> WeaponIds { get; set; }
     public List<string> UnusedWeaponData { get; set; }
+    public List<string> MissingResourceIds { get; set; }
+    public List<string> DuplicateAddresses { get; set; }
     public List<string> Problems { get; set; }
 }
 

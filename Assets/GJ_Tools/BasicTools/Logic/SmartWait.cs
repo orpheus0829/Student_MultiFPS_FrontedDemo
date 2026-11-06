@@ -7,6 +7,7 @@ public class SmartWait : BaseMgr<SmartWait>
     protected override bool Ddol => true;
 
     private readonly List<WaitTask> _waits = new List<WaitTask>();
+    private readonly List<WaitTask> _updateBuffer = new List<WaitTask>();
 
     public WaitTask WaitUntil(MonoBehaviour owner, Func<bool> condition, Action onDone)
     {
@@ -74,7 +75,9 @@ public class SmartWait : BaseMgr<SmartWait>
         {
             return;
         }
-        foreach (WaitTask task in _waits.ToArray())
+        _updateBuffer.Clear();
+        _updateBuffer.AddRange(_waits);
+        foreach (WaitTask task in _updateBuffer)
         {
             if (task.IsDead || task.IsPaused)
             {
