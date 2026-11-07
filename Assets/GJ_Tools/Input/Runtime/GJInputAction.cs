@@ -9,5 +9,8 @@ public enum GJInputAction
     Reload = 6,
     Inspect = 7,
     Scoreboard = 8,
-    Settings = 9
+    Settings = 9,
+    CycleWeapon = 10,
+    Slide = 11,
+    ToggleView = 12
 }

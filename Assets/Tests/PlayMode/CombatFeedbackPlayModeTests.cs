@@ -86,6 +86,64 @@ namespace GunDemo.Tests
         }
 
         [UnityTest]
+        public IEnumerator KillScoreShowsSourceAndVictimWithoutRichTextInjection()
+        {
+            yield return LoadExampleScene();
+
+            Type feedbackType = GetRuntimeType("CombatScoreFeedbackUI");
+            UnityEngine.Object[] feedbacks = UnityEngine.Object.FindObjectsByType(
+                feedbackType,
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            Assert.That(feedbacks.Length, Is.EqualTo(1));
+
+            Type dataType = GetRuntimeType("CombatScoreFeedbackData");
+            MethodInfo show = feedbackType.GetMethod("Show", BindingFlags.Instance | BindingFlags.Public);
+            FieldInfo detailField = feedbackType.GetField(
+                "_killDetailText",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo visualRootField = feedbackType.GetField(
+                "_visualRoot",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(detailField, Is.Not.Null);
+            Assert.That(visualRootField, Is.Not.Null);
+
+            object score = Activator.CreateInstance(dataType, 100, true, "目标<甲>", false, "AK<47>");
+            show.Invoke(feedbacks[0], new[] { score });
+            Component detail = detailField.GetValue(feedbacks[0]) as Component;
+            RectTransform visualRoot = visualRootField.GetValue(feedbacks[0]) as RectTransform;
+            Assert.That(detail.transform.IsChildOf(visualRoot), Is.False,
+                "击杀提示不能被累计分数的透明度和缩放动画控制。");
+            string content = (string)detail.GetType().GetProperty("text").GetValue(detail);
+            Assert.That(content, Does.Contain("你使用AK＜47＞击杀了目标＜甲＞"));
+
+            object noSource = Activator.CreateInstance(dataType, 100, true, "目标乙", false, string.Empty);
+            show.Invoke(feedbacks[0], new[] { noSource });
+            object hitScore = Activator.CreateInstance(dataType, 20, false, string.Empty, false);
+            show.Invoke(feedbacks[0], new[] { hitScore });
+            content = (string)detail.GetType().GetProperty("text").GetValue(detail);
+            Assert.That(content, Does.Contain("你使用AK＜47＞击杀了目标＜甲＞"));
+
+            yield return new WaitForSecondsRealtime(1.65f);
+            content = (string)detail.GetType().GetProperty("text").GetValue(detail);
+            Assert.That(content, Does.Contain("你击杀了目标乙"));
+
+            yield return new WaitForSecondsRealtime(0.5f);
+            content = (string)detail.GetType().GetProperty("text").GetValue(detail);
+            Assert.That(content, Does.Contain("你击杀了目标乙"));
+            float alpha = (float)detail.GetType().GetProperty("alpha").GetValue(detail);
+            Assert.That(alpha, Is.GreaterThan(0f), "分数淡出后，队列中的击杀提示仍应可见。");
+
+            object zeroScoreKill = Activator.CreateInstance(dataType, 0, true, "目标丙", true);
+            show.Invoke(feedbacks[0], new[] { zeroScoreKill });
+            yield return new WaitForSecondsRealtime(1.1f);
+            content = (string)detail.GetType().GetProperty("text").GetValue(detail);
+            Assert.That(content, Does.Contain("你击杀了目标丙"));
+
+            yield return DestroyWordNoteUI();
+        }
+
+        [UnityTest]
         public IEnumerator KillFeedSpriteAssetLoadsThroughResourceManager()
         {
             Type managerType = GetRuntimeType("ResourceMgr");

@@ -174,6 +174,11 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         }
 
         _instances.Remove(instance);
+        if (!handle.IsValid())
+        {
+            return false;
+        }
+
         return Addressables.ReleaseInstance(handle);
     }
 

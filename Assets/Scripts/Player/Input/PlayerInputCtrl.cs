@@ -21,14 +21,19 @@ public class PlayerInputCtrl : MonoBehaviour
     {
         EmitContinuous(GJInputAction.Move, InputMgr.instance.ReadVector2(GJInputAction.Move));
         EmitContinuous(GJInputAction.Look, InputMgr.instance.ReadVector2(GJInputAction.Look));
+        EmitContinuous(
+            GJInputAction.CycleWeapon,
+            InputMgr.instance.ReadVector2(GJInputAction.CycleWeapon));
 
         EmitButton(GJInputAction.JumpVault);
         EmitButton(GJInputAction.Sprint);
+        EmitButton(GJInputAction.Slide);
         EmitButton(GJInputAction.Fire);
         EmitButton(GJInputAction.Aim);
         EmitButton(GJInputAction.Reload);
         EmitButton(GJInputAction.Inspect);
         EmitButton(GJInputAction.Scoreboard);
+        EmitButton(GJInputAction.ToggleView);
         EmitButton(GJInputAction.Settings);
     }
 

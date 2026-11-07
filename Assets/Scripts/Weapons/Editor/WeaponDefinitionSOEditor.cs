@@ -8,6 +8,7 @@ public sealed class WeaponDefinitionSOEditor : Editor
     private bool _showCombat = true;
     private bool _showAccuracy = true;
     private bool _showHandling = true;
+    private bool _showActions = true;
     private bool _showPresentation = true;
     private bool _showOriginalRecoil;
 
@@ -20,6 +21,7 @@ public sealed class WeaponDefinitionSOEditor : Editor
         DrawCombatSection();
         DrawAccuracySection();
         DrawHandlingSection();
+        DrawActionSection();
         DrawPresentationSection();
         DrawOriginalRecoilSection();
 
@@ -123,17 +125,6 @@ public sealed class WeaponDefinitionSOEditor : Editor
         Draw("_ammo._maximumReserveAmmo", "最大备弹");
         SerializedProperty styleProperty = Find("_ammo._reloadStyle");
         DrawProperty(styleProperty, "换弹方式");
-        Draw("_ammo._tacticalReloadDuration", "非空仓换弹时间");
-        Draw("_ammo._emptyReloadDuration", "空仓换弹时间");
-        Draw("_ammo._ammoCommitTime", "完成补弹时间点");
-
-        WeaponReloadStyle style = (WeaponReloadStyle)styleProperty.enumValueIndex;
-        if (style == WeaponReloadStyle.PerRound || style == WeaponReloadStyle.Revolver)
-        {
-            Draw("_ammo._perRoundInsertDuration", "每发装填时间");
-        }
-
-        Draw("_ammo._canInterruptReload", "允许取消换弹");
         Draw("_ammo._autoReloadWhenEmpty", "空仓自动换弹");
         Draw("_ammo._originalAmmoResetTimeScale", "原资源补弹时间倍率");
     }
@@ -194,11 +185,22 @@ public sealed class WeaponDefinitionSOEditor : Editor
             }
 
             Draw("_handling._movementSpeedMultiplier", "持枪移动速度倍率");
-            Draw("_handling._equipDuration", "装备时间");
-            Draw("_handling._unequipDuration", "收枪时间");
             Draw("_handling._sprintToFireDuration", "冲刺转开火时间");
             Draw("_handling._canFireWhileSprinting", "允许冲刺开火");
             Draw("_handling._canFireWhileAirborne", "允许空中开火");
+        }
+        EditorGUILayout.EndFoldoutHeaderGroup();
+    }
+
+    private void DrawActionSection()
+    {
+        _showActions = EditorGUILayout.BeginFoldoutHeaderGroup(_showActions, "枪械动作");
+        if (_showActions)
+        {
+            Draw("_actionSetResourceId", "枪械动作集");
+            EditorGUILayout.HelpBox(
+                "开火、换弹、逐发装填、抽枪和收枪的时间与生效节点统一由动作集管理。",
+                MessageType.Info);
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
     }
@@ -237,18 +239,7 @@ public sealed class WeaponDefinitionSOEditor : Editor
 
         DrawSubTitle("动画能力");
         Draw("_animation._canInspect", "支持检视");
-        Draw("_animation._hasFireAnimation", "具有角色开火动画");
         Draw("_animation._hasLastRoundFireAnimation", "具有最后一发动画");
-        Draw("_animation._hasTacticalReloadAnimation", "具有非空仓换弹动画");
-        Draw("_animation._hasEmptyReloadAnimation", "具有空仓换弹动画");
-
-        WeaponReloadStyle style = (WeaponReloadStyle)Find("_ammo._reloadStyle").enumValueIndex;
-        if (style == WeaponReloadStyle.PerRound || style == WeaponReloadStyle.Revolver)
-        {
-            Draw("_animation._hasPerRoundReloadAnimation", "具有逐发装填动画");
-        }
-
-        Draw("_animation._hasEquipOverrideAnimation", "具有特殊装备动画");
         if (Find("_fire._canSwitchMode").boolValue)
         {
             Draw("_animation._hasFireModeSwitchAnimation", "具有模式切换动画");

@@ -20,6 +20,9 @@ MonoBehaviour:
   _vaultDistance: 0.9
   _vaultLowHeight: 0.45
   _vaultHighHeight: 1.4
+  _vaultLandingForwardOffset: 0.2
+  _vaultMaxSurfaceAngle: 45
+  _vaultClearancePadding: 0.03
   _vaultMask:
     serializedVersion: 2
     m_Bits: 4294967295

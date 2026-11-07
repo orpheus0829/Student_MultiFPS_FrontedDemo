@@ -161,6 +161,17 @@ public class WeaponDamageData
         float progress = Mathf.InverseLerp(_closeDamageRange, _farDamageRange, distance);
         return Mathf.Lerp(_closeDistanceScoreFactor, _farDistanceScoreFactor, progress);
     }
+
+    public float GetDamageAtDistance(float distance)
+    {
+        if (_farDamageRange <= _closeDamageRange)
+        {
+            return distance <= _closeDamageRange ? _closeDamage : _farDamage;
+        }
+
+        float progress = Mathf.InverseLerp(_closeDamageRange, _farDamageRange, distance);
+        return Mathf.Lerp(_closeDamage, _farDamage, progress);
+    }
 }
 
 [Serializable]
@@ -170,11 +181,6 @@ public class WeaponAmmoData
     [SerializeField, Min(0)] private int _startingReserveAmmo = 90;
     [SerializeField, Min(0)] private int _maximumReserveAmmo = 180;
     [SerializeField] private WeaponReloadStyle _reloadStyle;
-    [SerializeField, Min(0f)] private float _tacticalReloadDuration = 2f;
-    [SerializeField, Min(0f)] private float _emptyReloadDuration = 2.5f;
-    [SerializeField, Min(0f)] private float _ammoCommitTime = 1.4f;
-    [SerializeField, Min(0f)] private float _perRoundInsertDuration = 0.65f;
-    [SerializeField] private bool _canInterruptReload = true;
     [SerializeField] private bool _autoReloadWhenEmpty = true;
     [SerializeField, Min(0f)] private float _originalAmmoResetTimeScale = 1f;
 
@@ -182,11 +188,6 @@ public class WeaponAmmoData
     public int StartingReserveAmmo { get { return _startingReserveAmmo; } }
     public int MaximumReserveAmmo { get { return _maximumReserveAmmo; } }
     public WeaponReloadStyle ReloadStyle { get { return _reloadStyle; } }
-    public float TacticalReloadDuration { get { return _tacticalReloadDuration; } }
-    public float EmptyReloadDuration { get { return _emptyReloadDuration; } }
-    public float AmmoCommitTime { get { return _ammoCommitTime; } }
-    public float PerRoundInsertDuration { get { return _perRoundInsertDuration; } }
-    public bool CanInterruptReload { get { return _canInterruptReload; } }
     public bool AutoReloadWhenEmpty { get { return _autoReloadWhenEmpty; } }
     public float OriginalAmmoResetTimeScale { get { return _originalAmmoResetTimeScale; } }
 }
@@ -257,8 +258,6 @@ public class WeaponHandlingData
     [SerializeField, Min(0f)] private float _aimSensitivityMultiplier = 0.75f;
     [SerializeField, Min(0f)] private float _aimMovementSpeedMultiplier = 0.85f;
     [SerializeField, Min(0f)] private float _movementSpeedMultiplier = 1f;
-    [SerializeField, Min(0f)] private float _equipDuration = 0.45f;
-    [SerializeField, Min(0f)] private float _unequipDuration = 0.3f;
     [SerializeField, Min(0f)] private float _sprintToFireDuration = 0.18f;
     [SerializeField, Min(0f)] private float _aimToFireDuration = 0.08f;
     [SerializeField] private bool _canFireWhileSprinting;
@@ -271,8 +270,6 @@ public class WeaponHandlingData
     public float AimSensitivityMultiplier { get { return _aimSensitivityMultiplier; } }
     public float AimMovementSpeedMultiplier { get { return _aimMovementSpeedMultiplier; } }
     public float MovementSpeedMultiplier { get { return _movementSpeedMultiplier; } }
-    public float EquipDuration { get { return _equipDuration; } }
-    public float UnequipDuration { get { return _unequipDuration; } }
     public float SprintToFireDuration { get { return _sprintToFireDuration; } }
     public float AimToFireDuration { get { return _aimToFireDuration; } }
     public bool CanFireWhileSprinting { get { return _canFireWhileSprinting; } }

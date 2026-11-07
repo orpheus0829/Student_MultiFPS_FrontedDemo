@@ -164,7 +164,16 @@ public static class GunDemoCliCommands
             GameObject gameObject = action.gameObject;
             PlayerInputCtrl input = gameObject.GetComponent<PlayerInputCtrl>();
             CharacterController characterController = gameObject.GetComponent<CharacterController>();
+            PlayerMoveCtrl move = gameObject.GetComponent<PlayerMoveCtrl>();
+            PlayerAimCtrl aim = gameObject.GetComponent<PlayerAimCtrl>();
             PlayerAnimationCtrl animation = gameObject.GetComponent<PlayerAnimationCtrl>();
+            WeaponActionCtrl weaponActions = gameObject.GetComponent<WeaponActionCtrl>();
+            PlayerWeaponInventoryCtrl weaponInventory =
+                gameObject.GetComponent<PlayerWeaponInventoryCtrl>();
+            WeaponCombatCtrl weaponCombat = gameObject.GetComponent<WeaponCombatCtrl>();
+            PlayerWeaponViewCtrl weaponView = gameObject.GetComponent<PlayerWeaponViewCtrl>();
+            FirstPersonCameraMotionCtrl cameraMotion =
+                gameObject.GetComponentInChildren<FirstPersonCameraMotionCtrl>(true);
             PlayerInfo playerInfo = gameObject.GetComponent<PlayerInfo>();
             CharacterHealth health = gameObject.GetComponent<CharacterHealth>();
             CombatScore score = gameObject.GetComponent<CombatScore>();
@@ -176,6 +185,13 @@ public static class GunDemoCliCommands
                 HasInput = input,
                 HasAction = action,
                 HasCharacterController = characterController,
+                HasMove = move,
+                HasAim = aim,
+                HasWeaponAction = weaponActions,
+                HasWeaponInventory = weaponInventory,
+                HasWeaponCombat = weaponCombat,
+                HasWeaponView = weaponView,
+                HasCameraMotion = cameraMotion,
                 HasPlayerData = action.PlayerData,
                 HasAnimationController = animation,
                 HasFirstPersonView = animation && animation.FirstPersonView,
@@ -184,14 +200,32 @@ public static class GunDemoCliCommands
                 HasHealth = health,
                 HasCombatScore = score,
                 BodyHitboxCount = hitboxes.Length,
+                WeaponSlotCount = weaponInventory ? weaponInventory.SlotCount : 0,
+                ConfiguredWeaponCount = weaponInventory
+                    ? weaponInventory.ConfiguredWeaponCount
+                    : 0,
                 PlayerName = playerInfo ? playerInfo.PlayerName : string.Empty,
-                WeaponData = animation ? animation.WeaponDataResourceId : string.Empty
+                WeaponData = GetCurrentWeaponResourceId(weaponActions)
             };
             players.Add(item);
 
             if (!item.HasInput || !item.HasCharacterController || !item.HasPlayerData)
             {
                 problems.Add(item.Path + " 的输入、CharacterController 或玩家数据不完整");
+            }
+
+            if (!item.HasMove || !item.HasAim || !item.HasWeaponInventory ||
+                !item.HasWeaponAction ||
+                !item.HasWeaponCombat || !item.HasWeaponView || !item.HasCameraMotion)
+            {
+                problems.Add(item.Path + " 的移动、瞄准、枪械栏、枪械动作、枪械表现或镜头反馈组件不完整");
+            }
+
+            if (item.HasWeaponInventory &&
+                (item.WeaponSlotCount < 1 ||
+                 item.ConfiguredWeaponCount > item.WeaponSlotCount))
+            {
+                problems.Add(item.Path + " 的枪械栏容量或已配置枪械数量无效");
             }
 
             if (!item.HasAnimationController || !item.HasFirstPersonView || !item.HasThirdPersonView)
@@ -221,6 +255,22 @@ public static class GunDemoCliCommands
             Players = players,
             Problems = problems
         };
+    }
+
+    private static string GetCurrentWeaponResourceId(WeaponActionCtrl weaponActions)
+    {
+        if (!weaponActions)
+        {
+            return string.Empty;
+        }
+
+        WeaponDefinitionSO current = weaponActions.CurrentWeaponData;
+        if (current && current.Basic != null && !string.IsNullOrWhiteSpace(current.Basic.WeaponId))
+        {
+            return "weapon." + current.Basic.WeaponId.Trim().ToLowerInvariant() + ".data";
+        }
+
+        return weaponActions.StartingWeaponResourceId;
     }
 
     [CliGroupCommand(Group, "检查当前场景 Animator、Avatar、控制器和玩家动画视角", Name = "inspect_animation", Tags = new[] { "gundemo/animation" })]
@@ -278,6 +328,7 @@ public static class GunDemoCliCommands
         CombatScoreFeedbackUI[] scoreFeedbacks = Object.FindObjectsByType<CombatScoreFeedbackUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         CombatFeedbackCtrl[] combatFeedbackControllers = Object.FindObjectsByType<CombatFeedbackCtrl>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         CrosshairHitFeedbackUI[] crosshairFeedbacks = Object.FindObjectsByType<CrosshairHitFeedbackUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        PlayerCrosshairUI[] playerCrosshairs = Object.FindObjectsByType<PlayerCrosshairUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         List<string> canvasPaths = new List<string>();
         List<string> problems = new List<string>();
         int topRightRegionCount = 0;
@@ -336,6 +387,11 @@ public static class GunDemoCliCommands
             problems.Add("场景需要且只能有一套 PlayerHUD 与准心命中反馈");
         }
 
+        if (playerCrosshairs.Length != 1 || !playerCrosshairs[0].IsReady)
+        {
+            problems.Add("场景需要且只能有一套已配置的玩家基础准心");
+        }
+
         return new CliUiReport
         {
             CanvasCount = canvases.Length,
@@ -347,6 +403,7 @@ public static class GunDemoCliCommands
             ScoreFeedbackCount = scoreFeedbacks.Length,
             CombatFeedbackControllerCount = combatFeedbackControllers.Length,
             PlayerHudCount = playerHudCount,
+            PlayerCrosshairCount = playerCrosshairs.Length,
             CrosshairFeedbackCount = crosshairFeedbacks.Length,
             CrosshairFeedbackLineCount = crosshairFeedbackLineCount,
             Canvases = canvasPaths,
@@ -359,6 +416,9 @@ public static class GunDemoCliCommands
     {
         string[] allData = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets" });
         string[] weaponData = AssetDatabase.FindAssets("t:WeaponDefinitionSO", new[] { "Assets/SO/Weapons" });
+        string[] weaponActionSets = AssetDatabase.FindAssets(
+            "t:WeaponActionSetSO",
+            new[] { WeaponActionSetConfigurator.WeaponActionFolder });
         string[] playerData = AssetDatabase.FindAssets("t:PlayerDataSO", new[] { "Assets/SO" });
         string[] inputCatalogs = AssetDatabase.FindAssets("t:InputActionCatalogSO", new[] { "Assets/SO" });
         string[] weaponPrefabs = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Weapons" });
@@ -419,6 +479,7 @@ public static class GunDemoCliCommands
             CheckResourceId(serializedData, "_basic._silhouetteResourceId", path, knownAddresses, missingResourceIds);
             CheckResourceId(serializedData, "_resources._firstPersonPrefabResourceId", path, knownAddresses, missingResourceIds);
             CheckResourceId(serializedData, "_animation._weaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            CheckResourceId(serializedData, "_actionSetResourceId", path, knownAddresses, missingResourceIds);
             CheckOptionalResourceId(serializedData, "_basic._iconResourceId", path, knownAddresses, missingResourceIds);
             CheckOptionalResourceId(serializedData, "_resources._worldModelPrefabResourceId", path, knownAddresses, missingResourceIds);
             CheckOptionalResourceId(serializedData, "_animation._characterAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
@@ -447,11 +508,27 @@ public static class GunDemoCliCommands
             {
                 missingResourceIds.Add(prefabPath + " -> WeaponView.WeaponDataResourceId");
             }
+
+            string actionPath = WeaponActionSetConfigurator.GetActionSetPath(data);
+            WeaponActionSetSO actionSet = AssetDatabase.LoadAssetAtPath<WeaponActionSetSO>(actionPath);
+            if (!actionSet)
+            {
+                problems.Add(path + " 缺少枪械动作集");
+            }
+            else
+            {
+                ValidateWeaponActionSet(actionSet, actionPath, problems);
+            }
         }
 
         if (weaponData.Length != weaponPrefabs.Length)
         {
             problems.Add("枪械数据数量与正式枪械 Prefab 数量不同");
+        }
+
+        if (weaponData.Length != weaponActionSets.Length)
+        {
+            problems.Add("枪械数据数量与枪械动作集数量不同");
         }
 
         if (missingResourceIds.Count > 0)
@@ -468,6 +545,7 @@ public static class GunDemoCliCommands
         {
             ScriptableObjectCount = allData.Length,
             WeaponDataCount = weaponData.Length,
+            WeaponActionSetCount = weaponActionSets.Length,
             WeaponPrefabCount = weaponPrefabs.Length,
             PlayerDataCount = playerData.Length,
             InputCatalogCount = inputCatalogs.Length,
@@ -479,6 +557,60 @@ public static class GunDemoCliCommands
             DuplicateAddresses = duplicateAddresses,
             Problems = problems
         };
+    }
+
+    private static void ValidateWeaponActionSet(
+        WeaponActionSetSO actionSet,
+        string assetPath,
+        List<string> problems)
+    {
+        if (actionSet.DataVersion < WeaponActionSetConfigurator.CurrentDataVersion)
+        {
+            problems.Add(assetPath + " 的动作数据版本过旧");
+        }
+
+        ValidateActionMarker(
+            actionSet.Fire,
+            WeaponActionMarkerType.FireShot,
+            assetPath,
+            problems);
+        ValidateActionMarker(
+            actionSet.Reload,
+            WeaponActionMarkerType.AmmoCommit,
+            assetPath,
+            problems);
+        ValidateActionMarker(
+            actionSet.EmptyReload,
+            WeaponActionMarkerType.AmmoCommit,
+            assetPath,
+            problems);
+        ValidateActionMarker(
+            actionSet.PerRoundInsert,
+            WeaponActionMarkerType.InsertRound,
+            assetPath,
+            problems);
+    }
+
+    private static void ValidateActionMarker(
+        WeaponActionDefinition action,
+        WeaponActionMarkerType requiredMarker,
+        string assetPath,
+        List<string> problems)
+    {
+        if (action == null || !action.Enabled)
+        {
+            return;
+        }
+
+        for (int i = 0; i < action.Markers.Count; i++)
+        {
+            if (action.Markers[i].MarkerType == requiredMarker)
+            {
+                return;
+            }
+        }
+
+        problems.Add(assetPath + " 的" + action.ActionType + "缺少" + requiredMarker + "节点");
     }
 
     [CliGroupCommand(Group, "检查正式 Prefab 的丢失脚本和丢失材质", Name = "inspect_prefabs", Tags = new[] { "gundemo/prefabs" })]

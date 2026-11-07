@@ -10,6 +10,7 @@ public sealed class WeaponDefinitionSO : ScriptableObject
     [SerializeField] private WeaponAccuracyData _accuracy = new WeaponAccuracyData();
     [SerializeField] private WeaponGameplayRecoilData _gameplayRecoil = new WeaponGameplayRecoilData();
     [SerializeField] private WeaponHandlingData _handling = new WeaponHandlingData();
+    [SerializeField, ResourceId(typeof(WeaponActionSetSO))] private string _actionSetResourceId;
     [SerializeField] private WeaponResourceData _resources = new WeaponResourceData();
     [SerializeField] private WeaponAnimationData _animation = new WeaponAnimationData();
     [SerializeField] private WeaponIkData _ik = new WeaponIkData();
@@ -26,6 +27,7 @@ public sealed class WeaponDefinitionSO : ScriptableObject
     public WeaponAccuracyData Accuracy { get { return _accuracy; } }
     public WeaponGameplayRecoilData GameplayRecoil { get { return _gameplayRecoil; } }
     public WeaponHandlingData Handling { get { return _handling; } }
+    public string ActionSetResourceId { get { return _actionSetResourceId; } }
     public WeaponResourceData Resources { get { return _resources; } }
     public WeaponAnimationData Animation { get { return _animation; } }
     public WeaponIkData Ik { get { return _ik; } }

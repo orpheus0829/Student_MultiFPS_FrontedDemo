@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 150
     _maximumReserveAmmo: 250
     _reloadStyle: 0
-    _tacticalReloadDuration: 2.35
-    _emptyReloadDuration: 2.8
-    _ammoCommitTime: 1.55
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 0.35
   _accuracy:
@@ -89,46 +84,46 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.8
     _aimMovementSpeedMultiplier: 0.95
     _movementSpeedMultiplier: 1.03
-    _equipDuration: 0.38
-    _unequipDuration: 0.25
     _sprintToFireDuration: 0.14
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.pdw90.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.pdw90.prefab.first_person
     _worldModelPrefabResourceId: weapon.pdw90.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.pdw90.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.pdw90.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
     _canInspect: 1
-    _hasFireAnimation: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 1
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.striker_v
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0, z: 0}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.3}
+    _aimPointLocalPosition: {x: 0, y: 0.1273, z: 0.1644}
     _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
     _adsBlend: 0.41
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSoundResourceIds: []
+    _fireSoundResourceIds:
+    - weapon.mps5.audio.s_mps5_01_sounds
+    - weapon.mps5.audio.s_mps5_02_sounds
+    - weapon.mps5.audio.s_mps5_03_sounds
+    - weapon.mps5.audio.s_mps5_04_sounds
     _firePitchRange: {x: 0.96, y: 1.03}
     _fireVolumeRange: {x: 0.98, y: 1.02}
     _weaponEventSoundResourceIds:
@@ -143,7 +138,7 @@ MonoBehaviour:
     - weapon.pdw90.audio.s_pdw90_reload_tac_full
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

@@ -14,7 +14,82 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Effects
   m_GUID: 685299d282a41b04db8044e124843fdc
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 135d2dc6898fa804cb4c8b516b3587fe
+    m_Address: effect.impact.texture.brick
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 77790bc3f765be74096f0b66c7970fdf
+    m_Address: effect.impact.texture.metal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 83cbc92a9bae4a54eafe2d05e15fe57f
+    m_Address: effect.impact.texture.dirt
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 89608fa0394dd264793f98280d5716ad
+    m_Address: effect.impact.texture.glass
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c3fdfdf2665dd3c438576be367e7844c
+    m_Address: effect.impact.texture.wood
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce249aaba124403448a807c5c6eb92be
+    m_Address: effect.weapon.muzzle_flash
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.weapon
+    - type.effect
+    - weapon.ak
+    - weapon.as-val
+    - weapon.dgl-50
+    - weapon.drake-12
+    - weapon.g3
+    - weapon.kar98k
+    - weapon.kolibri
+    - weapon.kxg-12
+    - weapon.l96x
+    - weapon.m1911
+    - weapon.mgx5
+    - weapon.mk14-ebr
+    - weapon.mps5
+    - weapon.mx16a4
+    - weapon.pdw90
+    - weapon.striker-v
+    - weapon.svd
+    - weapon.viper-357
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f2a8ce770f9745047ae3b51ac03e8497
+    m_Address: effect.impact.texture.concrete
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f50c3d4fe93865f46a91ef57b3aa1b39
+    m_Address: effect.impact.decal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.impact
+    - type.effect
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}
   m_SchemaSet:

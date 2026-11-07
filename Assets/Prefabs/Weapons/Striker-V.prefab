@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8958915558358927316}
   - component: {fileID: 4629728547865753428}
-  - component: {fileID: 4183135859660775842}
   m_Layer: 0
   m_Name: Striker-V
   m_TagString: Untagged
@@ -32,6 +31,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 12590716095356571}
+  - {fileID: 2310084735139211819}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4629728547865753428
@@ -44,32 +44,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ea36769902d4f6448c2393eb252e36f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponView
   _weaponDataResourceId: weapon.striker-v.data
-  _weaponAnimator: {fileID: 4183135859660775842}
---- !u!95 &4183135859660775842
-Animator:
-  serializedVersion: 7
+  _weaponAnimator: {fileID: 3154278051949686755}
+--- !u!1 &6062963659857086026
+GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3198395236550038131}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 22100000, guid: 14f38f89a75f7344abdf43d5707f2d63, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2310084735139211819}
+  m_Layer: 0
+  m_Name: "\u67AA\u53E3"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2310084735139211819
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6062963659857086026}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
+  m_LocalPosition: {x: 0, y: 0.12, z: -0.531086}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8958915558358927316}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &551130538277714288
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -124,19 +133,64 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2816943067466959200, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 05f842a6a98acb1429bb0267c934aea1, type: 2}
     - target: {fileID: 2816943067466959200, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
       propertyPath: 'm_Materials.Array.data[1]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 6144d6ff52b7755408662086cc58f8e8, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3154278051949686755}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9075263109380370128}
   m_SourcePrefab: {fileID: 100100000, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
 --- !u!4 &12590716095356571 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
   m_PrefabInstance: {fileID: 551130538277714288}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &821743775094440993 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ffc22ed3470162b479c4751f1f20bb14, type: 3}
+  m_PrefabInstance: {fileID: 551130538277714288}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &3154278051949686755
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 821743775094440993}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 22100000, guid: 14f38f89a75f7344abdf43d5707f2d63, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &9075263109380370128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 821743775094440993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f79a870c242c4ade8da81b409bd67a31, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponAnimationEventRelay

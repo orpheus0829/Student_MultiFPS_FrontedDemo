@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 60
     _maximumReserveAmmo: 120
     _reloadStyle: 0
-    _tacticalReloadDuration: 2.25
-    _emptyReloadDuration: 2.8
-    _ammoCommitTime: 1.65
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.7
     _aimMovementSpeedMultiplier: 0.78
     _movementSpeedMultiplier: 0.94
-    _equipDuration: 0.55
-    _unequipDuration: 0.36
     _sprintToFireDuration: 0.23
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.mk14-ebr.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.mk14-ebr.prefab.first_person
     _worldModelPrefabResourceId: weapon.mk14-ebr.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.mk14_ebr.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.mk14-ebr.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 1
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 1
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.mk14
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0, z: 0}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.1}
+    _aimPointLocalPosition: {x: 0.0007, y: 0.035, z: -0.1362}
     _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
     _adsBlend: 0.496
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -153,7 +144,7 @@ MonoBehaviour:
     - weapon.mk14ebr.audio.s_mk18_reload_dry_mag_in
     - weapon.mk14ebr.audio.s_mk18_reload_dry_mag_out
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

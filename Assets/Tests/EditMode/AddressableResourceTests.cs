@@ -29,16 +29,19 @@ namespace GunDemo.Tests
                 string silhouetteId = serializedWeapon.FindProperty("_basic._silhouetteResourceId").stringValue;
                 string firstPersonPrefabId = serializedWeapon.FindProperty("_resources._firstPersonPrefabResourceId").stringValue;
                 string weaponControllerId = serializedWeapon.FindProperty("_animation._weaponAnimatorControllerResourceId").stringValue;
+                string actionSetId = serializedWeapon.FindProperty("_actionSetResourceId").stringValue;
 
                 Assert.That(weaponIds.Add(weaponId), Is.True, "重复枪械 ID: " + weaponId);
                 Assert.That(silhouetteId, Is.Not.Empty, path + " 缺少剪影资源 ID");
                 Assert.That(firstPersonPrefabId, Is.Not.Empty, path + " 缺少第一人称 Prefab ID");
                 Assert.That(weaponControllerId, Is.Not.Empty, path + " 缺少第一人称武器控制器 ID");
+                Assert.That(actionSetId, Is.EqualTo("weapon." + weaponId.Trim().ToLowerInvariant() + ".actions"));
 
                 string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
                 AssertAddress(path, "weapon." + weaponId.Trim().ToLowerInvariant() + ".data");
                 AssertAddress("Assets/Resource/UI/WeaponSilhouettes/" + fileName + ".png", silhouetteId);
                 AssertAddress("Assets/Prefabs/Weapons/" + fileName + ".prefab", firstPersonPrefabId);
+                AssertAddress("Assets/SO/Weapons/Actions/" + fileName + ".asset", actionSetId);
             }
         }
 

@@ -127,7 +127,7 @@ public sealed class CombatFeedbackCtrl : MonoBehaviour
             ShowCrosshairFeedback(result.WasHeadshot);
         }
 
-        if (result.AwardedScore <= 0 ||
+        if ((result.AwardedScore <= 0 && !result.WasKill) ||
             !_scoreFeedbackUI ||
             !ShouldShowLocalFeedback(result))
         {
@@ -139,7 +139,8 @@ public sealed class CombatFeedbackCtrl : MonoBehaviour
             result.AwardedScore,
             result.WasKill,
             victimName,
-            result.WasHeadshot));
+            result.WasHeadshot,
+            result.SourceName));
     }
 
     private void ShowKillFeed(DamageResult result)

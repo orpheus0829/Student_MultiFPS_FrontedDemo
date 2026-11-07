@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 36
     _maximumReserveAmmo: 72
     _reloadStyle: 3
-    _tacticalReloadDuration: 2.45
-    _emptyReloadDuration: 2.75
-    _ammoCommitTime: 1.85
-    _perRoundInsertDuration: 0.42
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.74
     _aimMovementSpeedMultiplier: 0.92
     _movementSpeedMultiplier: 1.03
-    _equipDuration: 0.36
-    _unequipDuration: 0.24
     _sprintToFireDuration: 0.13
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.viper-357.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.viper-357.prefab.first_person
     _worldModelPrefabResourceId: weapon.viper-357.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.viper_357.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.viper-357.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 1
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 1
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 0
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.viper_357
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0, z: 0}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.2}
+    _aimPointLocalPosition: {x: 0, y: 0.0209, z: -0.011}
     _sprintRightHandRotationOffset: {x: 0, y: 0.17364818, z: 0, w: 0.9848077}
     _adsBlend: 0.832
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -146,7 +137,7 @@ MonoBehaviour:
     - weapon.viper_357.audio.s_viper_357_reload_empty_full
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

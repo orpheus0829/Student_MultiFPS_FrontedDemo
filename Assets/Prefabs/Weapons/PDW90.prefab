@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6110629567845559016
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5034732077481277208}
+  m_Layer: 0
+  m_Name: "\u67AA\u53E3"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5034732077481277208
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6110629567845559016}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.46}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6287984369565721163}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7083275468894441344
 GameObject:
   m_ObjectHideFlags: 0
@@ -10,7 +41,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6287984369565721163}
   - component: {fileID: 3799636625998552306}
-  - component: {fileID: 7857691612232183320}
   m_Layer: 0
   m_Name: PDW90
   m_TagString: Untagged
@@ -32,6 +62,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2264654735006622091}
+  - {fileID: 5034732077481277208}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3799636625998552306
@@ -44,32 +75,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ea36769902d4f6448c2393eb252e36f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponView
   _weaponDataResourceId: weapon.pdw90.data
-  _weaponAnimator: {fileID: 7857691612232183320}
---- !u!95 &7857691612232183320
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7083275468894441344}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 22100000, guid: f2fcb9a2488987d4fb8c01db781f08e5, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  _weaponAnimator: {fileID: 5300041522702728177}
 --- !u!1001 &1794422797339231840
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -122,13 +131,79 @@ PrefabInstance:
       propertyPath: m_Name
       value: Model
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+      propertyPath: m_Avatar
+      value:
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+      propertyPath: m_Controller
+      value:
+      objectReference: {fileID: 22100000, guid: f2fcb9a2488987d4fb8c01db781f08e5, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6882182661690929414}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7230927681898093766}
   m_SourcePrefab: {fileID: 100100000, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+--- !u!4 &347330669532637893 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2033064489755339941, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+  m_PrefabInstance: {fileID: 1794422797339231840}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1451984093226580785 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+  m_PrefabInstance: {fileID: 1794422797339231840}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6882182661690929414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451984093226580785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f79a870c242c4ade8da81b409bd67a31, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponAnimationEventRelay
+--- !u!114 &7230927681898093766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451984093226580785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f007f1e9e2564284a2bd0fc619755188, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponBoneVisibilityCtrl
+  _defaultHiddenBones: []
+  _eventBones:
+  - {fileID: 347330669532637893}
+  - {fileID: 7941875821126796213}
 --- !u!4 &2264654735006622091 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+  m_PrefabInstance: {fileID: 1794422797339231840}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &5300041522702728177 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
+  m_PrefabInstance: {fileID: 1794422797339231840}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7941875821126796213 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8561386861975717333, guid: 927c660bb68c26f4589b45c2aaeb5126, type: 3}
   m_PrefabInstance: {fileID: 1794422797339231840}
   m_PrefabAsset: {fileID: 0}

@@ -132,6 +132,7 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.audio
+    - weapon.m1911
     - weapon.x18
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1c781833409368b438cdb3c6bfbaddff
@@ -266,6 +267,7 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.audio
     - weapon.mps5
+    - weapon.pdw90
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 582a6d449c9333a43b9742fc7073be3e
     m_Address: weapon.mk14ebr.audio.s_mk18_reload_dry_mag_in
@@ -321,6 +323,7 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.audio
+    - weapon.m1911
     - weapon.x18
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 64b2a9f1592c12340a59512dc4e46911
@@ -412,6 +415,7 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.audio
+    - weapon.m1911
     - weapon.x18
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7d8c810c6c43bfd4b9730e3661f86b98
@@ -644,6 +648,7 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.audio
     - weapon.mps5
+    - weapon.pdw90
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b7f063ad1558c924c9d335aa79dbc8cb
     m_Address: weapon.common.audio.s_aim_in
@@ -777,6 +782,7 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.audio
     - weapon.mps5
+    - weapon.pdw90
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e84682e69ba19ed44ae8c1f2abae16bd
     m_Address: weapon.kolibri.audio.s_colibri_03_sounds
@@ -805,6 +811,7 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.audio
     - weapon.mps5
+    - weapon.pdw90
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ee27004c503e79f4ca422fa502e0261e
     m_Address: weapon.mgx5.audio.s_mgx5_02_sounds
@@ -846,6 +853,7 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.audio
+    - weapon.m1911
     - weapon.x18
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f723598c87da1b14b9bbed0eb4d6eab3

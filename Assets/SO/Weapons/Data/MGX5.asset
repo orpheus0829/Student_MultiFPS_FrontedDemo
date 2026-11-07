@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 200
     _maximumReserveAmmo: 300
     _reloadStyle: 2
-    _tacticalReloadDuration: 5.2
-    _emptyReloadDuration: 5.8
-    _ammoCommitTime: 4.2
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.74
     _aimMovementSpeedMultiplier: 0.68
     _movementSpeedMultiplier: 0.86
-    _equipDuration: 0.72
-    _unequipDuration: 0.46
     _sprintToFireDuration: 0.3
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.mgx5.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.mgx5.prefab.first_person
     _worldModelPrefabResourceId: weapon.mgx5.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.mgx5.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.mgx5.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 4
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 1
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.mgx5
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: -0.01, y: 0.02, z: 0}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.07}
+    _aimPointLocalPosition: {x: 0.0002, y: 0.0754, z: -0.215}
     _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
     _adsBlend: 0.558
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -148,7 +139,7 @@ MonoBehaviour:
     - weapon.mgx5.audio.s_mgx5_reload_tac_with_bullets_full
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

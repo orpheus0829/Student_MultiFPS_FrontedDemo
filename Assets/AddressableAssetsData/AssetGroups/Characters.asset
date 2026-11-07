@@ -14,7 +14,259 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Characters
   m_GUID: ac9b4e2fc9df2fb489093b20805e0bb8
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 03d24b75a79fced4a8001cd7377d410b
+    m_Address: weapon.kinemation.recoil.viper_357
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0a8ded73ee53fb040a4ff44ea141ad0d
+    m_Address: weapon.drake_12.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.drake-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2353df21bac501e43b4f32a8171043d5
+    m_Address: weapon.kinemation.recoil.g3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 244564eab3852b9498c7180b88d95cb5
+    m_Address: weapon.as_val.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.as-val
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 257e4a0ab9f7b0d40a14636fb591db09
+    m_Address: weapon.mk14_ebr.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mk14-ebr
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c844a366fdbb904ba08f92aa427b572
+    m_Address: weapon.kinemation.recoil.dgl50
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2d3feb3e061f1e644a599dd1596f0b84
+    m_Address: weapon.dgl_50.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.dgl-50
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 30455ef43c1629e408172e2a70eefaa5
+    m_Address: weapon.ak.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.ak
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 389e01f669ce711488adff4f68084ab9
+    m_Address: weapon.kar98k.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 40c0597b9633b4d45be1fc1d43530612
+    m_Address: weapon.l96x.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.l96x
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 43eda683441ae7e41903327d2d4dd1d0
+    m_Address: weapon.svd.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.svd
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 498aecba751906d45a0c3fabaa2aaf8d
+    m_Address: weapon.kinemation.recoil.mk14
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b9d0b1b8b6cc3541862224040f3defe
+    m_Address: weapon.m1911.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.m1911
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ad61b5a3e0968341a9eee28d0396e3d
+    m_Address: weapon.pdw90.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.pdw90
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ae686f72972d1543bdc8b72dd48ea4a
+    m_Address: weapon.kinemation.recoil.mps5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6bec316cc9ccb784d9580ebe298fe1eb
+    m_Address: weapon.viper_357.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.viper-357
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c46f633cdcdfa447b268782afd636fa
+    m_Address: weapon.kinemation.recoil.mgx5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 77816ff7361259249b0a848bb7570b24
+    m_Address: weapon.mgx5.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mgx5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7afbf1e70ac54904a957479194f046f1
+    m_Address: weapon.kinemation.recoil.l96x
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82e14385f13665f448bbe47b08855281
+    m_Address: weapon.kinemation.recoil.ak
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 873329038aee0904b9d544992804ed51
+    m_Address: weapon.g3.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.g3
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 88ca262daccc2af478b0fa6138581526
+    m_Address: weapon.x18.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8e94c9a9277d6584c9542a8e3000873c
+    m_Address: weapon.kinemation.recoil.kar98k
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 922d9cdca0e56b847b3d45c3cd2a9ffd
+    m_Address: weapon.kinemation.recoil.val
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 92673ffc2b52cbe49b5ca835e895cc09
+    m_Address: weapon.kinemation.recoil.m1911
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 95be6c22eb55fc04e9bca8fd7ad198f7
+    m_Address: weapon.kinemation.recoil.svd
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ce8145f3e6955840a0ae1cbf890b0ba
+    m_Address: weapon.kxg_12.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.kxg-12
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a51f5fed4bf954f46bfe27463b9140ac
+    m_Address: weapon.kinemation.recoil.mx16a4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a7cd968069402c74f889c586e403aa4c
+    m_Address: weapon.mx16a4.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mx16a4
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ab0d94ee482228446b1d0d681489febb
+    m_Address: weapon.striker_v.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de70d9def269c144e94d3eca9fe020f9
+    m_Address: weapon.kolibri.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e5826642d7422da46b3fff4ba9c184f4
+    m_Address: weapon.kinemation.recoil.x18
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e5aa7967ab8b47d41a092a19856fe96b
+    m_Address: weapon.kinemation.recoil.kolibri
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f9f7a274348619e4488d962b77fd0b5c
+    m_Address: weapon.mps5.animator.first_person_character
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animator
+    - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd1f40b74ab8a7a4eb65ec01ce2b7400
+    m_Address: weapon.kinemation.recoil.striker_v
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ffdb152eda02565429ca3224afa8113c
+    m_Address: weapon.kinemation.recoil.kxg12
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}
   m_SchemaSet:

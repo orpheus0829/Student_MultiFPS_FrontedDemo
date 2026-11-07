@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5113594807105934194
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8381557839374920261}
+  m_Layer: 0
+  m_Name: "\u67AA\u53E3"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8381557839374920261
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5113594807105934194}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.01, z: 0.47}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8024667789871786719}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7715830711113931181
 GameObject:
   m_ObjectHideFlags: 0
@@ -10,7 +41,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8024667789871786719}
   - component: {fileID: 8504164826959085353}
-  - component: {fileID: 3468838989121934981}
   m_Layer: 0
   m_Name: AK
   m_TagString: Untagged
@@ -32,6 +62,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 750261356572969290}
+  - {fileID: 8381557839374920261}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8504164826959085353
@@ -44,32 +75,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ea36769902d4f6448c2393eb252e36f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponView
   _weaponDataResourceId: weapon.ak.data
-  _weaponAnimator: {fileID: 3468838989121934981}
---- !u!95 &3468838989121934981
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7715830711113931181}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 22100000, guid: ba96cfd019b157c43813b1b450747a85, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  _weaponAnimator: {fileID: 3371548567039975645}
 --- !u!1001 &1000871999863615137
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -120,7 +129,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8633936021173024789, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
       propertyPath: 'm_Materials.Array.data[6]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 7a7c084238b98de4fbe677bcc5d85bfe, type: 2}
     - target: {fileID: 919132149155446097, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
       propertyPath: m_Name
@@ -129,8 +138,76 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3371548567039975645}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6558998067110151806}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7471741631437465450}
   m_SourcePrefab: {fileID: 100100000, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
+--- !u!1 &81810357027099632 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
+  m_PrefabInstance: {fileID: 1000871999863615137}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &3371548567039975645
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 81810357027099632}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 22100000, guid: ba96cfd019b157c43813b1b450747a85, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &6558998067110151806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 81810357027099632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f79a870c242c4ade8da81b409bd67a31, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponAnimationEventRelay
+--- !u!114 &7471741631437465450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 81810357027099632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f007f1e9e2564284a2bd0fc619755188, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponBoneVisibilityCtrl
+  _defaultHiddenBones: []
+  _eventBones:
+  - {fileID: 703817826019113982}
+--- !u!4 &703817826019113982 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 299411664295794015, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}
+  m_PrefabInstance: {fileID: 1000871999863615137}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &750261356572969290 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 64a228e4bc6735247ba098a04bc0f945, type: 3}

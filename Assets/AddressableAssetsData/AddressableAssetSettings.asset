@@ -135,6 +135,12 @@ MonoBehaviour:
     - weapon.striker-v
     - weapon.viper-357
     - weapon.x18
+    - type.weapon_action
+    - type.effect
+    - effect.weapon
+    - type.animation
+    - type.recoil
+    - effect.impact
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: 091ee3b7ecf690147a371c94278d3774, type: 2}

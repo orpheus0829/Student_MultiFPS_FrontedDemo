@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 45
     _maximumReserveAmmo: 90
     _reloadStyle: 1
-    _tacticalReloadDuration: 3.1
-    _emptyReloadDuration: 3.5
-    _ammoCommitTime: 2.4
-    _perRoundInsertDuration: 0.58
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.78
     _aimMovementSpeedMultiplier: 0.8
     _movementSpeedMultiplier: 0.94
-    _equipDuration: 0.55
-    _unequipDuration: 0.36
     _sprintToFireDuration: 0.25
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.kxg-12.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.kxg-12.prefab.first_person
     _worldModelPrefabResourceId: weapon.kxg-12.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.kxg_12.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.kxg-12.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 2
-    _canInspect: 1
-    _hasFireAnimation: 1
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 1
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 0
     _hasManualCycleAnimation: 1
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.kxg12
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: -0.025, y: 0.01, z: -0.03}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.1}
+    _aimPointLocalPosition: {x: 0, y: 0.078, z: 0.0244}
     _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
     _adsBlend: 0.56
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -150,7 +141,7 @@ MonoBehaviour:
     - weapon.kxg12.audio.s_kxg12_pump_full
     - weapon.kxg12.audio.s_kxg12_reload_shell_insert
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 90
     _maximumReserveAmmo: 180
     _reloadStyle: 0
-    _tacticalReloadDuration: 2.05
-    _emptyReloadDuration: 2.65
-    _ammoCommitTime: 1.55
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.75
     _aimMovementSpeedMultiplier: 0.9
     _movementSpeedMultiplier: 1.02
-    _equipDuration: 0.4
-    _unequipDuration: 0.28
     _sprintToFireDuration: 0.15
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.as-val.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.as-val.prefab.first_person
     _worldModelPrefabResourceId: weapon.as-val.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.as_val.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.as-val.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 1
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.val
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: -0.02, y: 0.005, z: -0.01}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.4}
+    _aimPointLocalPosition: {x: 0, y: 0.029, z: 0.2044}
     _sprintRightHandRotationOffset: {x: 0, y: -0.06104854, z: 0, w: 0.9981348}
     _adsBlend: 0.533
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -147,7 +138,7 @@ MonoBehaviour:
     - weapon.asval.audio.s_as_val_reload_tac_full
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

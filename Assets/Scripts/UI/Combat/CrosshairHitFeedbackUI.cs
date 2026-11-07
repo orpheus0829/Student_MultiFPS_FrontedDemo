@@ -15,7 +15,7 @@ public sealed class CrosshairHitFeedbackUI : MonoBehaviour
 
     [Header("爆头命中")]
     [SerializeField, InspectorName("颜色")] private Color _headshotColor = new Color(1f, 0.12f, 0.12f, 1f);
-    [SerializeField, Min(0f), InspectorName("展开长度")] private float _headshotLength = 34f;
+    [SerializeField, Min(0f), InspectorName("展开长度")] private float _headshotLength = 51f;
     [SerializeField, Min(0.5f), InspectorName("线条粗细")] private float _headshotThickness = 3.5f;
 
     [Header("动画")]

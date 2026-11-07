@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -19,6 +20,14 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
         Settling,
         Holding,
         Fading
+    }
+
+    private enum KillDetailState
+    {
+        Hidden,
+        Entering,
+        Holding,
+        Exiting
     }
 
     private static CombatScoreFeedbackUI _instance;
@@ -54,8 +63,15 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
     [SerializeField, InspectorName("骷髅相对大分数比例"), Range(0.1f, 2f)] private float _killIconScale = 0.9f;
     [SerializeField, InspectorName("名字相对大分数比例"), Range(0.1f, 2f)] private float _victimNameScale = 0.7f;
 
+    [Header("击杀提示动画")]
+    [SerializeField, Min(0f), InspectorName("快速显现时间")] private float _killEnterDuration = 0.07f;
+    [SerializeField, Min(0f), InspectorName("显示时间")] private float _killHoldDuration = 1.15f;
+    [SerializeField, Min(0f), InspectorName("淡出时间")] private float _killFadeDuration = 0.22f;
+
+    private readonly Queue<KillDetail> _killDetails = new Queue<KillDetail>();
     private MainState _mainState;
     private IncrementState _incrementState;
+    private KillDetailState _killDetailState;
     private Vector3 _normalVisualScale;
     private Vector3 _normalIncrementScale;
     private float _targetScore;
@@ -64,6 +80,7 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
     private float _mainInactivityTime;
     private float _mainExitStartAlpha;
     private float _incrementAnimationTime;
+    private float _killDetailTime;
 
     public static CombatScoreFeedbackUI Instance
     {
@@ -103,6 +120,8 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
         ResetFeedback();
+        _killDetailText.text = string.Empty;
+        _killDetailText.alpha = 0f;
     }
 
     private void Update()
@@ -111,6 +130,7 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
         UpdateDisplayedScore(deltaTime);
         UpdateMainFeedback(deltaTime);
         UpdateIncrementFeedback(deltaTime);
+        UpdateKillDetailFeedback(deltaTime);
     }
 
     private void OnDestroy()
@@ -134,33 +154,37 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
 
     public void Show(CombatScoreFeedbackData data)
     {
-        if (data.ScoreDelta <= 0)
+        if (data.ScoreDelta <= 0 && !data.IsKill)
         {
             return;
         }
 
-        bool wasHidden = _mainState == MainState.Hidden;
-        _targetScore += data.ScoreDelta;
-        _mainInactivityTime = 0f;
-
-        if (wasHidden)
+        if (data.ScoreDelta > 0)
         {
-            StartMainEnter();
-        }
-        else if (_mainState == MainState.Exiting)
-        {
-            _mainState = MainState.Showing;
-            _mainAnimationTime = 0f;
+            bool wasHidden = _mainState == MainState.Hidden;
+            _targetScore += data.ScoreDelta;
+            _mainInactivityTime = 0f;
+
+            if (wasHidden)
+            {
+                StartMainEnter();
+            }
+            else if (_mainState == MainState.Exiting)
+            {
+                _mainState = MainState.Showing;
+                _mainAnimationTime = 0f;
+            }
+
+            StartIncrement(data.ScoreDelta);
         }
 
-        StartIncrement(data.ScoreDelta);
         if (data.IsKill)
         {
-            ShowKillDetail(data.DefeatedName, data.IsHeadshot);
-        }
-        else
-        {
-            _killDetailText.text = string.Empty;
+            _killDetails.Enqueue(new KillDetail(data.DefeatedName, data.SourceName, data.IsHeadshot));
+            if (_killDetailState == KillDetailState.Hidden)
+            {
+                ShowNextKillDetail();
+            }
         }
     }
 
@@ -477,12 +501,16 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
         _incrementText.rectTransform.localScale = _normalIncrementScale;
     }
 
-    private void ShowKillDetail(string defeatedName, bool isHeadshot)
+    private void ShowKillDetail(string defeatedName, string sourceName, bool isHeadshot)
     {
         string spriteToken = isHeadshot
             ? _headshotKillSpriteToken
             : _normalKillSpriteToken;
         string safeName = EscapeName(defeatedName);
+        string safeSource = EscapeName(sourceName);
+        string killMessage = string.IsNullOrWhiteSpace(safeSource)
+            ? "你击杀了" + safeName
+            : "你使用" + safeSource + "击杀了" + safeName;
 
         if (IsSafeSpriteToken(spriteToken))
         {
@@ -496,7 +524,7 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
                     : "\n<size=" +
                         ToPercent(_victimNameScale) +
                         "%>" +
-                        safeName +
+                        killMessage +
                         "</size>");
             return;
         }
@@ -504,8 +532,64 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
         _killDetailText.text = "<size=" +
             ToPercent(_victimNameScale) +
             "%>" +
-            safeName +
+            killMessage +
             "</size>";
+    }
+
+    private void ShowNextKillDetail()
+    {
+        if (_killDetails.Count == 0)
+        {
+            _killDetailText.text = string.Empty;
+            _killDetailText.alpha = 0f;
+            _killDetailState = KillDetailState.Hidden;
+            return;
+        }
+
+        KillDetail detail = _killDetails.Dequeue();
+        ShowKillDetail(detail.DefeatedName, detail.SourceName, detail.IsHeadshot);
+        _killDetailText.alpha = 0f;
+        _killDetailTime = 0f;
+        _killDetailState = KillDetailState.Entering;
+    }
+
+    private void UpdateKillDetailFeedback(float deltaTime)
+    {
+        if (_killDetailState == KillDetailState.Hidden)
+        {
+            return;
+        }
+
+        _killDetailTime += deltaTime;
+        if (_killDetailState == KillDetailState.Entering)
+        {
+            _killDetailText.alpha = Mathf.Clamp01(
+                _killDetailTime / Mathf.Max(0.0001f, _killEnterDuration));
+            if (_killDetailTime >= _killEnterDuration)
+            {
+                _killDetailText.alpha = 1f;
+                _killDetailTime = 0f;
+                _killDetailState = KillDetailState.Holding;
+            }
+            return;
+        }
+
+        if (_killDetailState == KillDetailState.Holding)
+        {
+            if (_killDetailTime >= _killHoldDuration)
+            {
+                _killDetailTime = 0f;
+                _killDetailState = KillDetailState.Exiting;
+            }
+            return;
+        }
+
+        _killDetailText.alpha = 1f - Mathf.Clamp01(
+            _killDetailTime / Mathf.Max(0.0001f, _killFadeDuration));
+        if (_killDetailTime >= _killFadeDuration)
+        {
+            ShowNextKillDetail();
+        }
     }
 
     private void ResetFeedback()
@@ -523,7 +607,20 @@ public sealed class CombatScoreFeedbackUI : MonoBehaviour
         _incrementText.text = string.Empty;
         _incrementText.alpha = 0f;
         _incrementText.rectTransform.localScale = _normalIncrementScale;
-        _killDetailText.text = string.Empty;
+    }
+
+    private readonly struct KillDetail
+    {
+        public string DefeatedName { get; }
+        public string SourceName { get; }
+        public bool IsHeadshot { get; }
+
+        public KillDetail(string defeatedName, string sourceName, bool isHeadshot)
+        {
+            DefeatedName = defeatedName;
+            SourceName = sourceName;
+            IsHeadshot = isHeadshot;
+        }
     }
 
     private static string EscapeName(string playerName)

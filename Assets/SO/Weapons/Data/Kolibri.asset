@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 42
     _maximumReserveAmmo: 84
     _reloadStyle: 0
-    _tacticalReloadDuration: 1.65
-    _emptyReloadDuration: 2.05
-    _ammoCommitTime: 1.2
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.78
     _aimMovementSpeedMultiplier: 1
     _movementSpeedMultiplier: 1.08
-    _equipDuration: 0.26
-    _unequipDuration: 0.18
     _sprintToFireDuration: 0.08
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.kolibri.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.kolibri.prefab.first_person
     _worldModelPrefabResourceId: weapon.kolibri.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.kolibri.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.kolibri.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 1
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 1
     _hasFireModeSwitchAnimation: 0
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 0
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.kolibri
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0.01, z: 0.03}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.1}
+    _aimPointLocalPosition: {x: 0, y: -0.0026, z: -0.0123}
     _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
     _adsBlend: 0.271
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -147,7 +138,7 @@ MonoBehaviour:
     - weapon.kolibri.audio.s_colibri_reload_full
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

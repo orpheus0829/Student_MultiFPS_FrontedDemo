@@ -16,6 +16,9 @@ public class PlayerDataSO : ScriptableObject
     [SerializeField, Min(0f)] private float _vaultDistance = 0.9f;
     [SerializeField, Min(0f)] private float _vaultLowHeight = 0.45f;
     [SerializeField, Min(0f)] private float _vaultHighHeight = 1.4f;
+    [SerializeField, Min(0f), InspectorName("落点前移距离")] private float _vaultLandingForwardOffset = 0.2f;
+    [SerializeField, Range(0f, 60f), InspectorName("落点最大坡度")] private float _vaultMaxSurfaceAngle = 45f;
+    [SerializeField, Min(0f), InspectorName("站立空间余量")] private float _vaultClearancePadding = 0.03f;
     [SerializeField] private LayerMask _vaultMask = ~0;
 
     [Header("第一人称视角")]
@@ -84,6 +87,30 @@ public class PlayerDataSO : ScriptableObject
         get
         {
             return _vaultHighHeight;
+        }
+    }
+
+    public float VaultLandingForwardOffset
+    {
+        get
+        {
+            return _vaultLandingForwardOffset;
+        }
+    }
+
+    public float VaultMaxSurfaceAngle
+    {
+        get
+        {
+            return _vaultMaxSurfaceAngle;
+        }
+    }
+
+    public float VaultClearancePadding
+    {
+        get
+        {
+            return _vaultClearancePadding;
         }
     }
 

@@ -1,0 +1,159 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 762c54c5290e4c6ca0f7722c8f5dd0cf, type: 3}
+  m_Name: MPS5
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponActionSetSO
+  _dataVersion: 1
+  _fire:
+    _actionType: 1
+    _enabled: 1
+    _duration: 0.075
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 1
+    _allowsFire: 1
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers:
+    - _markerType: 0
+      _progress: 0
+  _reload:
+    _actionType: 2
+    _enabled: 1
+    _duration: 3
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers:
+    - _markerType: 1
+      _progress: 0.7297297
+  _emptyReload:
+    _actionType: 3
+    _enabled: 1
+    _duration: 4
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers:
+    - _markerType: 1
+      _progress: 0.57446814
+  _perRoundStart:
+    _actionType: 4
+    _enabled: 0
+    _duration: 0.65
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers: []
+  _perRoundInsert:
+    _actionType: 5
+    _enabled: 0
+    _duration: 0.65
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers:
+    - _markerType: 2
+      _progress: 0.5
+  _perRoundEnd:
+    _actionType: 6
+    _enabled: 0
+    _duration: 0.65
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers: []
+  _equip:
+    _actionType: 7
+    _enabled: 1
+    _duration: 0.32
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 1
+    _firstPersonStateOverride: Equip
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers: []
+  _holster:
+    _actionType: 8
+    _enabled: 1
+    _duration: 0.2
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 1
+    _firstPersonStateOverride: UnEquip
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers: []

@@ -49,12 +49,7 @@ MonoBehaviour:
     _magazineCapacity: 5
     _startingReserveAmmo: 25
     _maximumReserveAmmo: 50
-    _reloadStyle: 0
-    _tacticalReloadDuration: 2.45
-    _emptyReloadDuration: 3.05
-    _ammoCommitTime: 2.05
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
+    _reloadStyle: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.65
     _aimMovementSpeedMultiplier: 0.72
     _movementSpeedMultiplier: 0.88
-    _equipDuration: 0.68
-    _unequipDuration: 0.45
     _sprintToFireDuration: 0.32
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.kar98k.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.kar98k.prefab.first_person
     _worldModelPrefabResourceId: weapon.kar98k.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.kar98k.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.kar98k.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 3
-    _canInspect: 1
-    _hasFireAnimation: 1
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 0
     _hasManualCycleAnimation: 1
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.kar98k
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0, z: 0}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: -0.2}
     _aimPointOffset: {x: 0, y: 0, z: -0.4}
+    _aimPointLocalPosition: {x: 0, y: 0.0249, z: 0.2359}
     _sprintRightHandRotationOffset: {x: 0.12940961, y: 0.12940952, z: -0.017037096, w: 0.9829629}
     _adsBlend: 0.549
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -150,7 +141,7 @@ MonoBehaviour:
     - weapon.kar98k.audio.s_kar98k_reload_bolt_close
     - weapon.kar98k.audio.s_kar98k_reload_bolt_open
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

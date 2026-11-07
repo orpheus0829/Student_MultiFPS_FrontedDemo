@@ -58,6 +58,13 @@ public sealed class CliPlayerItem
     public bool HasInput { get; set; }
     public bool HasAction { get; set; }
     public bool HasCharacterController { get; set; }
+    public bool HasMove { get; set; }
+    public bool HasAim { get; set; }
+    public bool HasWeaponAction { get; set; }
+    public bool HasWeaponInventory { get; set; }
+    public bool HasWeaponCombat { get; set; }
+    public bool HasWeaponView { get; set; }
+    public bool HasCameraMotion { get; set; }
     public bool HasPlayerData { get; set; }
     public bool HasAnimationController { get; set; }
     public bool HasFirstPersonView { get; set; }
@@ -66,6 +73,8 @@ public sealed class CliPlayerItem
     public bool HasHealth { get; set; }
     public bool HasCombatScore { get; set; }
     public int BodyHitboxCount { get; set; }
+    public int WeaponSlotCount { get; set; }
+    public int ConfiguredWeaponCount { get; set; }
     public string PlayerName { get; set; }
     public string WeaponData { get; set; }
 }
@@ -101,6 +110,7 @@ public sealed class CliUiReport
     public int ScoreFeedbackCount { get; set; }
     public int CombatFeedbackControllerCount { get; set; }
     public int PlayerHudCount { get; set; }
+    public int PlayerCrosshairCount { get; set; }
     public int CrosshairFeedbackCount { get; set; }
     public int CrosshairFeedbackLineCount { get; set; }
     public List<string> Canvases { get; set; }
@@ -112,6 +122,7 @@ public sealed class CliDataReport
 {
     public int ScriptableObjectCount { get; set; }
     public int WeaponDataCount { get; set; }
+    public int WeaponActionSetCount { get; set; }
     public int WeaponPrefabCount { get; set; }
     public int PlayerDataCount { get; set; }
     public int InputCatalogCount { get; set; }

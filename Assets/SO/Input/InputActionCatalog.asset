@@ -144,7 +144,7 @@ MonoBehaviour:
     _activationMode: 1
     _bindings:
     - _name: "\u952E\u76D8"
-      _path: <Keyboard>/tab
+      _path: <Keyboard>/f1
       _interactions: 
       _processors: 
       _groups: 
@@ -160,5 +160,41 @@ MonoBehaviour:
       _interactions: 
       _processors: 
       _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 10
+    _type: 2
+    _expectedControlType: Vector2
+    _activationMode: 0
+    _bindings:
+    - _name: "\u9F20\u6807\u6EDA\u8F6E"
+      _path: <Mouse>/scroll
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 11
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/c
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 12
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/tab
+      _interactions:
+      _processors:
+      _groups:
       _isComposite: 0
       _isPartOfComposite: 0

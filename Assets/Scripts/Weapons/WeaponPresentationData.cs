@@ -11,15 +11,12 @@ public class WeaponAnimationData
     [SerializeField, ResourceId(typeof(RuntimeAnimatorController))] private string _thirdPersonWeaponAnimatorControllerResourceId;
     [SerializeField] private WeaponHoldStyle _holdStyle;
     [SerializeField] private bool _canInspect;
-    [SerializeField] private bool _hasFireAnimation;
     [SerializeField] private bool _hasLastRoundFireAnimation;
-    [SerializeField] private bool _hasTacticalReloadAnimation = true;
-    [SerializeField] private bool _hasEmptyReloadAnimation = true;
-    [SerializeField] private bool _hasPerRoundReloadAnimation;
-    [SerializeField] private bool _hasEquipOverrideAnimation;
     [SerializeField] private bool _hasFireModeSwitchAnimation;
     [SerializeField] private bool _hasManualCycleAnimation;
     [SerializeField] private bool _usesSprintTriggerDiscipline = true;
+    [SerializeField, ResourceId(typeof(KINEMATION.ProceduralRecoilAnimationSystem.Runtime.RecoilAnimData))]
+    private string _kinemationRecoilResourceId;
 
     public string CharacterAnimatorControllerResourceId { get { return _characterAnimatorControllerResourceId; } }
     public string WeaponAnimatorControllerResourceId { get { return _weaponAnimatorControllerResourceId; } }
@@ -27,15 +24,11 @@ public class WeaponAnimationData
     public string ThirdPersonWeaponAnimatorControllerResourceId { get { return _thirdPersonWeaponAnimatorControllerResourceId; } }
     public WeaponHoldStyle HoldStyle { get { return _holdStyle; } }
     public bool CanInspect { get { return _canInspect; } }
-    public bool HasFireAnimation { get { return _hasFireAnimation; } }
     public bool HasLastRoundFireAnimation { get { return _hasLastRoundFireAnimation; } }
-    public bool HasTacticalReloadAnimation { get { return _hasTacticalReloadAnimation; } }
-    public bool HasEmptyReloadAnimation { get { return _hasEmptyReloadAnimation; } }
-    public bool HasPerRoundReloadAnimation { get { return _hasPerRoundReloadAnimation; } }
-    public bool HasEquipOverrideAnimation { get { return _hasEquipOverrideAnimation; } }
     public bool HasFireModeSwitchAnimation { get { return _hasFireModeSwitchAnimation; } }
     public bool HasManualCycleAnimation { get { return _hasManualCycleAnimation; } }
     public bool UsesSprintTriggerDiscipline { get { return _usesSprintTriggerDiscipline; } }
+    public string KinemationRecoilResourceId { get { return _kinemationRecoilResourceId; } }
 }
 
 [Serializable]
@@ -46,6 +39,7 @@ public class WeaponIkData
     [SerializeField] private Vector3 _leftClavicleOffset;
     [SerializeField] private Vector3 _rightClavicleOffset;
     [SerializeField] private Vector3 _aimPointOffset;
+    [SerializeField] private Vector3 _aimPointLocalPosition;
     [SerializeField] private Quaternion _sprintRightHandRotationOffset = Quaternion.identity;
     [SerializeField, Range(0f, 1f)] private float _adsBlend;
     [SerializeField] private string _aimPointPath;
@@ -59,6 +53,7 @@ public class WeaponIkData
     public Vector3 LeftClavicleOffset { get { return _leftClavicleOffset; } }
     public Vector3 RightClavicleOffset { get { return _rightClavicleOffset; } }
     public Vector3 AimPointOffset { get { return _aimPointOffset; } }
+    public Vector3 AimPointLocalPosition { get { return _aimPointLocalPosition; } }
     public Quaternion SprintRightHandRotationOffset { get { return _sprintRightHandRotationOffset; } }
     public float AdsBlend { get { return _adsBlend; } }
     public string AimPointPath { get { return _aimPointPath; } }

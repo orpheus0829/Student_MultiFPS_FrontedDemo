@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 90
     _maximumReserveAmmo: 180
     _reloadStyle: 0
-    _tacticalReloadDuration: 1.95
-    _emptyReloadDuration: 2.5
-    _ammoCommitTime: 1.42
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,41 +84,37 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.76
     _aimMovementSpeedMultiplier: 0.88
     _movementSpeedMultiplier: 1
-    _equipDuration: 0.43
-    _unequipDuration: 0.29
     _sprintToFireDuration: 0.17
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.mx16a4.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.mx16a4.prefab.first_person
     _worldModelPrefabResourceId: weapon.mx16a4.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.mx16a4.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.mx16a4.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 0
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 0
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 1
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.mx16a4
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: -0.01, y: 0, z: -0.02}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.1}
+    _aimPointLocalPosition: {x: 0, y: 0.049999982, z: -0.1003}
     _sprintRightHandRotationOffset: {x: -0.0888853, y: 0.03961395, z: 0.039614365, w: -0.9944652}
     _adsBlend: 0.307
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
@@ -147,7 +138,7 @@ MonoBehaviour:
     - weapon.mx16a4.audio.s_mx16a4_reload_tac
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 

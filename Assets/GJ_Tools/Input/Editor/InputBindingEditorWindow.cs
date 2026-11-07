@@ -531,6 +531,8 @@ public class InputBindingEditorWindow : EditorWindow
                 return "检视";
             case GJInputAction.Scoreboard:
                 return "战绩板";
+            case GJInputAction.ToggleView:
+                return "切换视角";
             case GJInputAction.Settings:
                 return "设置";
             default:

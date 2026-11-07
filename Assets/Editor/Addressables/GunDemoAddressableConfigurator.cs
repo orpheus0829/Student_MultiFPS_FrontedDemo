@@ -20,6 +20,17 @@ public static class GunDemoAddressableConfigurator
     private const string WeaponPrefabFolder = "Assets/Prefabs/Weapons";
     private const string WeaponSilhouetteFolder = "Assets/Resource/UI/WeaponSilhouettes";
     private const string WeaponResourceFolder = "Assets/Resource/Weapons";
+    private const string FirstPersonCharacterFolder =
+        "Assets/Resource/Animations/FirstPerson/KINEMATION/Weapons";
+    private const string KinemationRecoilFolder =
+        "Assets/Resource/Animations/FirstPerson/KINEMATION/Weapons";
+    private const string MuzzleFlashPath =
+        "Assets/Prefabs/Effects/Weapons/MuzzleFlash.prefab";
+    private const string MuzzleFlashAddress = "effect.weapon.muzzle_flash";
+    private const string BulletImpactPrefabPath =
+        "Assets/Prefabs/Effects/BulletImpacts/BulletImpactDecal.prefab";
+    private const string BulletImpactTextureFolder =
+        "Assets/Resource/Effects/BulletImpacts/Textures";
 
     [MenuItem("工具/Gun Demo/资源/配置 Addressables")]
     public static void ConfigureFromMenu()
@@ -33,10 +44,19 @@ public static class GunDemoAddressableConfigurator
 
     public static GunDemoAddressableConfigureReport Configure()
     {
+        WeaponActionConfigureReport actionReport = WeaponActionSetConfigurator.Configure();
         AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
         Dictionary<string, AddressableAssetGroup> groups = CreateGroups(settings);
         GunDemoAddressableConfigureReport report = new GunDemoAddressableConfigureReport();
+        report.MigratedFieldCount += actionReport.MigratedFieldCount;
+        report.Problems.AddRange(actionReport.Problems);
         Dictionary<string, string> configuredGuids = new Dictionary<string, string>();
+        ConfigureSharedEffects(settings, groups[EffectsGroup], configuredGuids, report);
+        ConfigureKinemationRecoil(
+            settings,
+            groups[CharactersGroup],
+            configuredGuids,
+            report);
 
         string[] weaponGuids = AssetDatabase.FindAssets(
             "t:WeaponDefinitionSO",
@@ -73,6 +93,19 @@ public static class GunDemoAddressableConfigurator
         return report;
     }
 
+    public static void ConfigureFromBatchMode()
+    {
+        GunDemoAddressableConfigureReport report = Configure();
+        if (!report.Passed)
+        {
+            throw new InvalidOperationException(
+                "Addressables 配置失败：" + string.Join("；", report.Problems));
+        }
+
+        Debug.Log(
+            $"Addressables 配置完成：{report.WeaponCount} 把枪，登记 {report.EntryCount} 个资源。");
+    }
+
     private static void ReserializeWeaponData()
     {
         List<string> paths = new List<string>();
@@ -86,6 +119,14 @@ public static class GunDemoAddressableConfigurator
         for (int i = 0; i < catalogGuids.Length; i++)
         {
             paths.Add(AssetDatabase.GUIDToAssetPath(catalogGuids[i]));
+        }
+
+        string[] actionGuids = AssetDatabase.FindAssets(
+            "t:WeaponActionSetSO",
+            new[] { WeaponActionSetConfigurator.WeaponActionFolder });
+        for (int i = 0; i < actionGuids.Length; i++)
+        {
+            paths.Add(AssetDatabase.GUIDToAssetPath(actionGuids[i]));
         }
 
         AssetDatabase.ForceReserializeAssets(paths, ForceReserializeAssetsOptions.ReserializeAssets);
@@ -146,6 +187,14 @@ public static class GunDemoAddressableConfigurator
         string fileName = Path.GetFileNameWithoutExtension(dataPath);
 
         Register(settings, groups[WeaponsGroup], dataPath, "weapon." + weaponId + ".data", new[] { weaponLabel, "type.data" }, configuredGuids, report);
+        RegisterResourceId(
+            settings,
+            groups[WeaponsGroup],
+            WeaponActionSetConfigurator.GetActionSetPath(weapon),
+            weapon.ActionSetResourceId,
+            new[] { weaponLabel, "type.data", "type.weapon_action" },
+            configuredGuids,
+            report);
         ConfigureUi(settings, groups[WeaponUiGroup], weapon, fileName, weaponLabel, configuredGuids, report);
         ConfigurePrefabs(settings, groups[WeaponsGroup], weapon, fileName, weaponLabel, configuredGuids, report);
         ConfigureControllers(settings, groups, weapon, fileName, weaponLabel, configuredGuids, report);
@@ -208,9 +257,38 @@ public static class GunDemoAddressableConfigurator
         string weaponControllerPath = FindFirstAssetWithExtension(weaponFolder, ".overrideController");
         RegisterResourceId(settings, groups[WeaponsGroup], weaponControllerPath, weapon.Animation.WeaponAnimatorControllerResourceId, new[] { weaponLabel, "type.animator" }, configuredGuids, report);
 
-        RegisterExistingResourceId(settings, groups[CharactersGroup], weapon.Animation.CharacterAnimatorControllerResourceId, new[] { weaponLabel, "type.animator" }, configuredGuids, report);
+        string characterFolder = FirstPersonCharacterFolder + "/" + fileName + "/Character";
+        string characterControllerPath = FindFirstAssetWithExtension(
+            characterFolder,
+            ".overrideController");
+        RegisterResourceId(settings, groups[CharactersGroup], characterControllerPath, weapon.Animation.CharacterAnimatorControllerResourceId, new[] { weaponLabel, "type.animator" }, configuredGuids, report);
         RegisterExistingResourceId(settings, groups[CharactersGroup], weapon.Animation.ThirdPersonAnimatorControllerResourceId, new[] { weaponLabel, "type.animator" }, configuredGuids, report);
         RegisterExistingResourceId(settings, groups[WeaponsGroup], weapon.Animation.ThirdPersonWeaponAnimatorControllerResourceId, new[] { weaponLabel, "type.animator" }, configuredGuids, report);
+    }
+
+    private static void ConfigureKinemationRecoil(
+        AddressableAssetSettings settings,
+        AddressableAssetGroup group,
+        Dictionary<string, string> configuredGuids,
+        GunDemoAddressableConfigureReport report)
+    {
+        string[] recoilGuids = AssetDatabase.FindAssets(
+            "t:RecoilAnimData",
+            new[] { KinemationRecoilFolder });
+        for (int i = 0; i < recoilGuids.Length; i++)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(recoilGuids[i]);
+            string address = "weapon.kinemation.recoil." +
+                Normalize(Path.GetFileNameWithoutExtension(path));
+            Register(
+                settings,
+                group,
+                path,
+                address,
+                new[] { "type.animation", "type.recoil" },
+                configuredGuids,
+                report);
+        }
     }
 
     private static void ConfigureAudio(
@@ -302,6 +380,56 @@ public static class GunDemoAddressableConfigurator
         if (!string.IsNullOrWhiteSpace(AssetDatabase.AssetPathToGUID(spriteAssetPath)))
         {
             Register(settings, group, spriteAssetPath, "ui.killfeed.sprite_asset", new[] { "type.ui" }, configuredGuids, report);
+        }
+    }
+
+    private static void ConfigureSharedEffects(
+        AddressableAssetSettings settings,
+        AddressableAssetGroup group,
+        Dictionary<string, string> configuredGuids,
+        GunDemoAddressableConfigureReport report)
+    {
+        Register(
+            settings,
+            group,
+            MuzzleFlashPath,
+            MuzzleFlashAddress,
+            new[] { "type.effect", "effect.weapon" },
+            configuredGuids,
+            report);
+
+        Register(
+            settings,
+            group,
+            BulletImpactPrefabPath,
+            "effect.impact.decal",
+            new[] { "type.effect", "effect.impact" },
+            configuredGuids,
+            report);
+
+        string[] textureFiles =
+        {
+            "DirtBulletDecal2.png",
+            "MetalBulletDecal.png",
+            "WoodDecal2.png",
+            "DirtBulletDecal3.png",
+            "BrickBulletDecal3.png",
+            "BrokenGlassDecal.png"
+        };
+        string[] surfaceNames =
+        {
+            "concrete", "metal", "wood", "dirt", "brick", "glass"
+        };
+        for (int i = 0; i < textureFiles.Length; i++)
+        {
+            Register(
+                settings,
+                group,
+                BulletImpactTextureFolder + "/" + textureFiles[i],
+                "effect.impact.texture." + surfaceNames[i],
+                new[] { "type.effect", "effect.impact" },
+                configuredGuids,
+                report);
         }
     }
 

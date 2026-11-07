@@ -50,11 +50,6 @@ MonoBehaviour:
     _startingReserveAmmo: 42
     _maximumReserveAmmo: 84
     _reloadStyle: 0
-    _tacticalReloadDuration: 1.75
-    _emptyReloadDuration: 2.15
-    _ammoCommitTime: 1.25
-    _perRoundInsertDuration: 0.65
-    _canInterruptReload: 1
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
@@ -89,46 +84,46 @@ MonoBehaviour:
     _aimSensitivityMultiplier: 0.76
     _aimMovementSpeedMultiplier: 0.98
     _movementSpeedMultiplier: 1.06
-    _equipDuration: 0.28
-    _unequipDuration: 0.2
     _sprintToFireDuration: 0.09
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
     _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.m1911.actions
   _resources:
     _firstPersonPrefabResourceId: weapon.m1911.prefab.first_person
     _worldModelPrefabResourceId: weapon.m1911.prefab.first_person
   _animation:
-    _characterAnimatorControllerResourceId: 
+    _characterAnimatorControllerResourceId: weapon.m1911.animator.first_person_character
     _weaponAnimatorControllerResourceId: weapon.m1911.animator.first_person_weapon
     _thirdPersonAnimatorControllerResourceId: 
     _thirdPersonWeaponAnimatorControllerResourceId: 
     _holdStyle: 1
-    _canInspect: 1
-    _hasFireAnimation: 0
+    _canInspect: 0
     _hasLastRoundFireAnimation: 1
-    _hasTacticalReloadAnimation: 1
-    _hasEmptyReloadAnimation: 1
-    _hasPerRoundReloadAnimation: 0
-    _hasEquipOverrideAnimation: 0
     _hasFireModeSwitchAnimation: 0
     _hasManualCycleAnimation: 0
     _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: weapon.kinemation.recoil.m1911
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0, z: 0}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.2}
+    _aimPointLocalPosition: {x: 0, y: 0.0154, z: -0.0452}
     _sprintRightHandRotationOffset: {x: 0, y: 0.08715574, z: 0, w: 0.9961947}
     _adsBlend: 0.496
     _aimPointPath: 
-    _muzzlePointPath: 
+    _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
   _audio:
-    _fireSoundResourceIds: []
+    _fireSoundResourceIds:
+    - weapon.x18.audio.s_x18_01_sounds
+    - weapon.x18.audio.s_x18_02_sounds
+    - weapon.x18.audio.s_x18_03_sounds
+    - weapon.x18.audio.s_x18_04_sounds
     _firePitchRange: {x: 0.96, y: 1.02}
     _fireVolumeRange: {x: 0.94, y: 1.03}
     _weaponEventSoundResourceIds:
@@ -143,7 +138,7 @@ MonoBehaviour:
     - weapon.m1911.audio.s_m1911_reload_tac
     _mechanicalSoundResourceIds: []
   _effects:
-    _muzzleFlashResourceId: 
+    _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
     _tracerResourceId: 
