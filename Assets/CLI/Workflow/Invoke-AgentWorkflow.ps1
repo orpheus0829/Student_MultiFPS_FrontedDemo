@@ -96,11 +96,41 @@ try
     } -Required | Out-Null
 
     $compiled = Invoke-CapturedStep "Unity编译" "compile.json" {
-        & $unityCli recompile --project-path=$ProjectPath --format json
+        & $unityCli recompile --project-path=$ProjectPath --timeout 300 --format json
     } -Required
 
     if ($compiled)
     {
+        Invoke-CapturedStep "等待编译后连接恢复" "ready-after-compile.json" {
+            $deadline = (Get-Date).AddSeconds(90)
+            while ((Get-Date) -lt $deadline)
+            {
+                $statusText = & $unityCli command --project-path=$ProjectPath editor status --format json 2>&1 | Out-String
+                if ($LASTEXITCODE -eq 0)
+                {
+                    try
+                    {
+                        $status = $statusText | ConvertFrom-Json
+                        if ($status.success -and $status.data.result.status -eq "ready" -and
+                            !$status.data.result.compiling -and !$status.data.result.domainReloadInProgress)
+                        {
+                            Write-Output $statusText
+                            $global:LASTEXITCODE = 0
+                            return
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                Start-Sleep -Seconds 1
+            }
+
+            Write-Output '{"success":false,"error":"编译后 Unity Pipeline 连接未在 90 秒内恢复"}'
+            $global:LASTEXITCODE = 1
+        } -Required | Out-Null
+
         $verified = Invoke-CapturedStep "项目专属检查" "verification.json" {
             & $unityCli command --project-path=$ProjectPath gundemo verification_bundle --format json
         } -Required
@@ -131,7 +161,10 @@ try
                 try
                 {
                     $testResult = $testText | ConvertFrom-Json
-                    if ($testResult.data.result.Summary.Failed -gt 0)
+                    if (!$testResult.success -or
+                        !$testResult.data.result.success -or
+                        $testResult.data.result.Summary.Total -le 0 -or
+                        $testResult.data.result.Summary.Failed -gt 0)
                     {
                         $global:LASTEXITCODE = 1
                         return
@@ -173,13 +206,15 @@ try
                     if ($status.data.result.status -eq "completed")
                     {
                         Write-Output $statusText
-                        if ($status.data.result.summary.failed -gt 0)
+                        if (!$status.success -or
+                            $status.data.result.summary.total -le 0 -or
+                            $status.data.result.summary.failed -gt 0)
                         {
                             $global:LASTEXITCODE = 1
                             return
                         }
 
-                        $playModeExitDeadline = (Get-Date).AddSeconds(30)
+                        $playModeExitDeadline = (Get-Date).AddSeconds(90)
                         while ((Get-Date) -lt $playModeExitDeadline)
                         {
                             Start-Sleep -Seconds 1

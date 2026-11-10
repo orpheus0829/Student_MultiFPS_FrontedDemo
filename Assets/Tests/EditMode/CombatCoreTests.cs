@@ -81,8 +81,8 @@ namespace GunDemo.Tests
             Assert.That(GetProperty(result, "Outcome").ToString(), Is.EqualTo("Hit"));
             Assert.That(GetProperty<float>(result, "AppliedDamage"), Is.EqualTo(25f));
             Assert.That(GetProperty<float>(victimHealth, "CurrentHealth"), Is.EqualTo(75f));
-            Assert.That(GetProperty<int>(result, "AwardedScore"), Is.EqualTo(30));
-            Assert.That(GetProperty<int>(score, "TotalScore"), Is.EqualTo(30));
+            Assert.That(GetProperty<int>(result, "AwardedScore"), Is.EqualTo(52));
+            Assert.That(GetProperty<int>(score, "TotalScore"), Is.EqualTo(52));
         }
 
         [Test]
@@ -109,9 +109,9 @@ namespace GunDemo.Tests
 
                 Assert.That(GetProperty(killResult, "Outcome").ToString(), Is.EqualTo("Kill"));
                 Assert.That(GetProperty<float>(killResult, "AppliedDamage"), Is.EqualTo(100f));
-                Assert.That(GetProperty<int>(killResult, "AwardedScore"), Is.EqualTo(120));
+                Assert.That(GetProperty<int>(killResult, "AwardedScore"), Is.EqualTo(110));
                 Assert.That(GetProperty(ignoredResult, "Outcome").ToString(), Is.EqualTo("Ignored"));
-                Assert.That(GetProperty<int>(score, "TotalScore"), Is.EqualTo(120));
+                Assert.That(GetProperty<int>(score, "TotalScore"), Is.EqualTo(110));
                 Assert.That(resolvedCount, Is.EqualTo(1));
             }
             finally
@@ -208,8 +208,8 @@ namespace GunDemo.Tests
             Assert.That(GetProperty(result, "Outcome").ToString(), Is.EqualTo("Hit"));
             Assert.That(GetProperty<bool>(result, "WasHeadshot"), Is.True);
             Assert.That(GetProperty<float>(result, "AppliedDamage"), Is.EqualTo(40f));
-            Assert.That(GetProperty<int>(result, "AwardedScore"), Is.EqualTo(30));
-            Assert.That(GetProperty<int>(score, "TotalScore"), Is.EqualTo(30));
+            Assert.That(GetProperty<int>(result, "AwardedScore"), Is.EqualTo(75));
+            Assert.That(GetProperty<int>(score, "TotalScore"), Is.EqualTo(75));
         }
 
         [Test]

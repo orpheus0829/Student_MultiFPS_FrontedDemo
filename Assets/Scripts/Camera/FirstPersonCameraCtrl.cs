@@ -26,7 +26,7 @@ public class FirstPersonCameraCtrl : MonoBehaviour
 
     [Header("视角切换")]
     [SerializeField, InspectorName("第三人称镜头偏移")]
-    private Vector3 _thirdPersonOffset = new Vector3(0.55f, 0.25f, -2.05f);
+    private Vector3 _thirdPersonOffset = new Vector3(0.45f, 0.18f, -1.6f);
     [SerializeField, Min(0f), InspectorName("镜头避障半径")]
     private float _cameraCollisionRadius = 0.16f;
     [SerializeField, Min(0f), InspectorName("滑铲镜头降低")]
@@ -38,6 +38,8 @@ public class FirstPersonCameraCtrl : MonoBehaviour
     private FirstPersonCameraMotionCtrl _motionCtrl;
     private PlayerMoveCtrl _moveCtrl;
     private PlayerActionCtrl _actionCtrl;
+    private PlayerAnimationCtrl _animationCtrl;
+    private PlayerWeaponViewCtrl _weaponViewCtrl;
     private Vector3 _pitchPivotBasePosition;
     private int _firstPersonCullingMask;
     private bool _isThirdPerson;
@@ -79,14 +81,15 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         if (_viewCamera)
         {
             _firstPersonCullingMask = _viewCamera.cullingMask;
-            _firstPersonCullingMask &= ~(1 << ThirdPersonLayer);
+            _firstPersonCullingMask |= 1 << ThirdPersonLayer;
             _firstPersonCullingMask |= 1 << FirstPersonLayer;
         }
 
-        PlayerAnimationCtrl animationCtrl = GetComponentInParent<PlayerAnimationCtrl>();
-        if (animationCtrl)
+        _animationCtrl = GetComponentInParent<PlayerAnimationCtrl>();
+        _weaponViewCtrl = GetComponentInParent<PlayerWeaponViewCtrl>();
+        if (_animationCtrl)
         {
-            foreach (PlayerAnimationView view in animationCtrl.GetComponentsInChildren<PlayerAnimationView>(true))
+            foreach (PlayerAnimationView view in _animationCtrl.GetComponentsInChildren<PlayerAnimationView>(true))
             {
                 SetLayerRecursively(view.transform, view.ViewType == PlayerViewType.FirstPerson
                     ? FirstPersonLayer : ThirdPersonLayer);
@@ -105,6 +108,15 @@ public class FirstPersonCameraCtrl : MonoBehaviour
 
     private void OnEnable()
     {
+        if (_viewCamera)
+        {
+            _viewCamera.cullingMask = _firstPersonCullingMask;
+        }
+        if (_weaponViewCtrl)
+        {
+            _weaponViewCtrl.ThirdPersonWeaponReady += HandleThirdPersonWeaponReady;
+        }
+        SetLocalThirdPersonVisible(_isThirdPerson);
         if (Application.isPlaying)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -123,6 +135,11 @@ public class FirstPersonCameraCtrl : MonoBehaviour
 
     private void OnDisable()
     {
+        if (_weaponViewCtrl)
+        {
+            _weaponViewCtrl.ThirdPersonWeaponReady -= HandleThirdPersonWeaponReady;
+        }
+        SetLocalThirdPersonVisible(true);
         if (_hasCursorControl)
         {
             Cursor.lockState = CursorLockMode.None;
@@ -212,6 +229,14 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         return new Ray(_pitchPivot.position, _pitchPivot.forward);
     }
 
+    public void ApplyRecoilAngles(Vector2 angles)
+    {
+        _yaw += angles.x;
+        float minPitch = _playerData ? _playerData.MinPitch : -85f;
+        float maxPitch = _playerData ? _playerData.MaxPitch : 85f;
+        _pitch = Mathf.Clamp(_pitch - angles.y, minPitch, maxPitch);
+    }
+
     public Vector3 GetPlanarLookDirection()
     {
         Vector3 direction = Vector3.ProjectOnPlane(_pitchPivot.forward, Vector3.up);
@@ -257,6 +282,7 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         }
 
         _isThirdPerson = enabledView;
+        SetLocalThirdPersonVisible(enabledView);
         if (!enabledView)
         {
             FaceAimDirection();
@@ -269,6 +295,11 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         }
         RefreshViewOffset();
         ViewChanged?.Invoke(enabledView);
+    }
+
+    public void RefreshCharacterVisibility()
+    {
+        SetLocalThirdPersonVisible(_isThirdPerson);
     }
 
     private void RefreshCameraHeight()
@@ -330,6 +361,40 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         for (int index = 0; index < root.childCount; index++)
         {
             SetLayerRecursively(root.GetChild(index), layer);
+        }
+    }
+
+    private void HandleThirdPersonWeaponReady(WeaponDefinitionSO weapon, Transform muzzle)
+    {
+        SetLocalThirdPersonVisible(_isThirdPerson);
+    }
+
+    private void SetLocalThirdPersonVisible(bool visible)
+    {
+        if (_animationCtrl && _animationCtrl.ThirdPersonView &&
+            _animationCtrl.ThirdPersonView.CharacterAnimator)
+        {
+            Transform characterRoot = _animationCtrl.ThirdPersonView.CharacterAnimator.transform;
+            Transform firstPersonRoot = _animationCtrl.FirstPersonView
+                ? _animationCtrl.FirstPersonView.transform : null;
+            Renderer[] bodyRenderers = characterRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < bodyRenderers.Length; i++)
+            {
+                if (firstPersonRoot && bodyRenderers[i].transform.IsChildOf(firstPersonRoot))
+                {
+                    continue;
+                }
+                bodyRenderers[i].forceRenderingOff = !visible;
+            }
+        }
+
+        if (_weaponViewCtrl && _weaponViewCtrl.ThirdPersonWeapon)
+        {
+            Renderer[] weaponRenderers = _weaponViewCtrl.ThirdPersonWeapon.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < weaponRenderers.Length; i++)
+            {
+                weaponRenderers[i].forceRenderingOff = !visible;
+            }
         }
     }
 

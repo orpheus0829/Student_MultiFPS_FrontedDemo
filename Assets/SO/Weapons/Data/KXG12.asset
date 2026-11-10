@@ -23,8 +23,8 @@ MonoBehaviour:
     _allowedModes: 1
     _defaultMode: 0
     _canSwitchMode: 0
-    _semiAutomaticRpm: 400
-    _automaticRpm: 400
+    _semiAutomaticRpm: 90
+    _automaticRpm: 90
     _burstRpm: 400
     _burstCount: 3
     _burstCooldown: 0.12
@@ -32,19 +32,22 @@ MonoBehaviour:
     _fireDelay: 0
     _dryFireEnabled: 1
   _damage:
-    _closeDamage: 18
-    _farDamage: 9
+    _closeDamage: 13
+    _farDamage: 5
     _closeDamageRange: 9
-    _farDamageRange: 30
+    _farDamageRange: 22
     _maximumHitRange: 90
+    _projectileSpeed: 320
+    _projectileRadius: 0.015
     _headMultiplier: 1.2
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
-    _baseHitScore: 10
+    _baseHitScore: 5
+    _damageScorePerHealth: 0.72
     _weaponScoreFactor: 1
-    _closeDistanceScoreFactor: 1
-    _farDistanceScoreFactor: 1
-    _killBonus: 100
+    _closeDistanceScoreFactor: 1.25
+    _farDistanceScoreFactor: 0.75
+    _killBonus: 115
   _ammo:
     _magazineCapacity: 15
     _startingReserveAmmo: 45
@@ -53,7 +56,7 @@ MonoBehaviour:
     _autoReloadWhenEmpty: 1
     _originalAmmoResetTimeScale: 1
   _accuracy:
-    _hipSpread: 4.5
+    _hipSpread: 4.8
     _aimSpread: 0.3
     _maximumSpread: 8.2
     _spreadPerShot: 0.72
@@ -73,9 +76,14 @@ MonoBehaviour:
     _aimMultiplier: 0.8
     _crouchMultiplier: 0.85
     _recoveryDelay: 0.08
-    _recoverySpeed: 12
-    _pattern: []
-    _patternResetTime: 0.25
+    _recoverySpeed: 8
+    _pattern:
+    - {x: 0, y: 0}
+    - {x: 0.7, y: 4}
+    - {x: -1.1, y: 8.5}
+    - {x: 1.2, y: 12.5}
+    _patternResetTime: 0.9
+    _kickSpeed: 105
   _handling:
     _canAim: 1
     _aimFov: 60
@@ -83,7 +91,7 @@ MonoBehaviour:
     _aimOutDuration: 0.22
     _aimSensitivityMultiplier: 0.78
     _aimMovementSpeedMultiplier: 0.8
-    _movementSpeedMultiplier: 0.94
+    _movementSpeedMultiplier: 0.96
     _sprintToFireDuration: 0.25
     _aimToFireDuration: 0.08
     _canFireWhileSprinting: 0
@@ -107,6 +115,10 @@ MonoBehaviour:
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: -0.025, y: 0.01, z: -0.03}
+    _useThirdPersonGrip: 1
+    _thirdPersonGripPosition: {x: 0.108, y: -0.098, z: 0.069}
+    _thirdPersonGripRotation: {x: 0.6597422, y: 0.372177, z: 0.26006314, w: 0.5988253}
+    _thirdPersonGripScale: {x: 1, y: 1, z: 1}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.1}
@@ -117,7 +129,88 @@ MonoBehaviour:
     _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
-    _leftHandIkPointPath: 
+    _leftHandIkPointPath: ThirdPersonGrip/LeftHand
+    _thirdPersonFingerPose:
+      _useLeftGripPose: 1
+      _leftGripPose:
+        _thumb:
+          _proximal: -0.35
+          _intermediate: -0.3
+          _distal: -0.15
+          _spread: 0.05
+        _index:
+          _proximal: -0.55
+          _intermediate: -0.65
+          _distal: -0.4
+          _spread: 0
+        _middle:
+          _proximal: -0.6
+          _intermediate: -0.7
+          _distal: -0.45
+          _spread: 0
+        _ring:
+          _proximal: -0.65
+          _intermediate: -0.75
+          _distal: -0.45
+          _spread: 0
+        _little:
+          _proximal: -0.7
+          _intermediate: -0.75
+          _distal: -0.4
+          _spread: 0
+      _useRightGripPose: 1
+      _rightIdlePose:
+        _thumb:
+          _proximal: -0.3
+          _intermediate: -0.2
+          _distal: -0.1
+          _spread: -0.1
+        _index:
+          _proximal: -0.45
+          _intermediate: -0.35
+          _distal: -0.25
+          _spread: 0
+        _middle:
+          _proximal: -0.75
+          _intermediate: -0.8
+          _distal: -0.55
+          _spread: 0
+        _ring:
+          _proximal: -0.8
+          _intermediate: -0.85
+          _distal: -0.6
+          _spread: 0
+        _little:
+          _proximal: -0.85
+          _intermediate: -0.85
+          _distal: -0.6
+          _spread: 0
+      _rightFirePose:
+        _thumb:
+          _proximal: -0.3
+          _intermediate: -0.2
+          _distal: -0.1
+          _spread: -0.1
+        _index:
+          _proximal: -0.4
+          _intermediate: -0.6
+          _distal: -0.5
+          _spread: 0
+        _middle:
+          _proximal: -0.75
+          _intermediate: -0.8
+          _distal: -0.55
+          _spread: 0
+        _ring:
+          _proximal: -0.8
+          _intermediate: -0.85
+          _distal: -0.6
+          _spread: 0
+        _little:
+          _proximal: -0.85
+          _intermediate: -0.85
+          _distal: -0.6
+          _spread: 0
   _audio:
     _fireSoundResourceIds:
     - weapon.kxg12.audio.s_kxg12_01_sounds
@@ -144,7 +237,7 @@ MonoBehaviour:
     _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
-    _tracerResourceId: 
+    _tracerResourceId: effect.weapon.bullet_tracer
     _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:

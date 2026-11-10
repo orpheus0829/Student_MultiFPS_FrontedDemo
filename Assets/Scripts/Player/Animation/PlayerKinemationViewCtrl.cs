@@ -9,6 +9,7 @@ using UnityEngine.Animations;
 using UnityEngine.Experimental.Animations;
 using UnityEngine.Playables;
 
+[DefaultExecutionOrder(200)]
 [DisallowMultipleComponent]
 public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 {
@@ -43,12 +44,17 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private Vector3 _inspectRotationOffset = new Vector3(6f, -10f, -7f);
 
     private ResourceMgr _resourceMgr;
+    private FirstPersonCameraCtrl _cameraCtrl;
+    private PlayerThirdPersonGripCtrl _thirdPersonGripCtrl;
     private Animator _animator;
     private RecoilAnimation _recoilAnimation;
     private RuntimeAnimatorController _layerController;
     private FPSWeaponSettings _runtimeWeaponSettings;
+    private WeaponDefinitionSO _configuredWeaponData;
     private FPSProceduralJob _job;
     private AnimationScriptPlayable _playable;
+    private AnimationPlayableOutput _proceduralOutput;
+    private PlayableGraph _proceduralGraph;
     private Transform _weaponBone;
     private IKTransforms _rightArm;
     private KTransform _localCameraPoint;
@@ -60,8 +66,9 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private float _smoothGait;
     private float _sprintLayerWeight;
     private bool _isReady;
+    private bool _hasStarted;
     private bool _hasWeaponConfigured;
-    private bool _isReloading;
+    private bool _sprintActionOverrides;
     private Vector3 _restLocalPosition;
     private Quaternion _restLocalRotation;
     private Vector3 _laggedCameraPosition;
@@ -102,11 +109,26 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             _weaponViewCtrl.FirstPersonWeaponReady += HandleWeaponReady;
         }
+        if (_cameraCtrl)
+        {
+            _cameraCtrl.ViewChanged += HandleViewChanged;
+        }
+        if (_hasStarted)
+        {
+            InitializeKinemation();
+            TryConfigureCurrentWeapon();
+        }
     }
 
     private void Start()
     {
+        _hasStarted = true;
         InitializeKinemation();
+        TryConfigureCurrentWeapon();
+    }
+
+    private void TryConfigureCurrentWeapon()
+    {
         WeaponDefinitionSO weaponData = _weaponActionCtrl
             ? _weaponActionCtrl.CurrentWeaponData
             : null;
@@ -118,7 +140,12 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 
     private void Update()
     {
-        if (!_isReady || !_hasWeaponConfigured)
+        if (!_isReady)
+        {
+            InitializeKinemation();
+            TryConfigureCurrentWeapon();
+        }
+        if (!_hasWeaponConfigured || !EnsureProceduralPlayable())
         {
             return;
         }
@@ -181,7 +208,11 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             (_laggedCameraRotation - motionRotation) * _cameraMotionLagWeight +
             _inspectRotationOffset * inspectWeight);
 
-        if (_showWeaponNextFrame && Time.frameCount >= _showWeaponFrame)
+        bool equipIsSettling = action != null &&
+            action.ActionType == WeaponActionType.Equip &&
+            _weaponActionCtrl.Progress < 0.22f;
+        if (_showWeaponNextFrame && Time.frameCount >= _showWeaponFrame &&
+            !equipIsSettling)
         {
             SetFirstPersonRenderersHidden(false);
             _showWeaponNextFrame = false;
@@ -205,6 +236,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             _weaponViewCtrl.FirstPersonWeaponReady -= HandleWeaponReady;
         }
+        if (_cameraCtrl)
+        {
+            _cameraCtrl.ViewChanged -= HandleViewChanged;
+        }
 
         _weaponLoadVersion++;
         ReleaseRecoilProfile();
@@ -214,6 +249,18 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             _animator.transform.localRotation = _restLocalRotation;
         }
         SetFirstPersonRenderersHidden(true);
+        _hasWeaponConfigured = false;
+        _configuredWeaponData = null;
+        _showWeaponNextFrame = false;
+        _isReady = false;
+        if (_proceduralOutput.IsOutputValid())
+        {
+            _proceduralGraph.DestroyOutput(_proceduralOutput);
+        }
+        if (_playable.IsValid())
+        {
+            _playable.GetGraph().DestroyPlayable(_playable);
+        }
         if (_runtimeWeaponSettings)
         {
             Destroy(_runtimeWeaponSettings);
@@ -223,6 +270,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 
     private void CacheProjectComponents()
     {
+        _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
+        TryGetComponent(out _thirdPersonGripCtrl);
         if (!_moveCtrl)
         {
             TryGetComponent(out _moveCtrl);
@@ -298,8 +347,6 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     {
         if (!_animator || !_animator.playableGraph.IsValid())
         {
-            Debug.LogError($"{name} 无法取得 Animator PlayableGraph。", this);
-            enabled = false;
             return;
         }
 
@@ -310,19 +357,41 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         _job.recoilAnimation = _recoilAnimation;
-        _job.Setup();
-        _playable = AnimationScriptPlayable.Create(_animator.playableGraph, _job);
-        AnimationPlayableOutput output = AnimationPlayableOutput.Create(
-            _animator.playableGraph,
-            "GunDemo KINEMATION Output",
-            _animator);
-        output.SetAnimationStreamSource(AnimationStreamSource.PreviousInputs);
-        output.SetSourcePlayable(_playable);
-
-        RefreshLayerIndices();
         KTransform root = new KTransform(_animator.transform);
         _localCameraPoint = root.GetRelativeTransform(new KTransform(_cameraPoint), false);
-        _isReady = true;
+        _isReady = EnsureProceduralPlayable();
+    }
+
+    private bool EnsureProceduralPlayable()
+    {
+        if (!_animator || !_animator.isActiveAndEnabled ||
+            !_animator.playableGraph.IsValid())
+        {
+            return false;
+        }
+        if (_playable.IsValid() && _proceduralOutput.IsOutputValid())
+        {
+            return true;
+        }
+
+        // 切换 AnimatorController 会重建图，旧 Job 与骨骼流句柄必须一起重新绑定。
+        if (_playable.IsValid())
+        {
+            _playable.GetGraph().DestroyPlayable(_playable);
+        }
+        if (_proceduralOutput.IsOutputValid())
+        {
+            _proceduralGraph.DestroyOutput(_proceduralOutput);
+        }
+        _job.Setup();
+        _proceduralGraph = _animator.playableGraph;
+        _playable = AnimationScriptPlayable.Create(_proceduralGraph, _job);
+        _proceduralOutput = AnimationPlayableOutput.Create(
+            _proceduralGraph, "GunDemo KINEMATION Output", _animator);
+        _proceduralOutput.SetAnimationStreamSource(AnimationStreamSource.PreviousInputs);
+        _proceduralOutput.SetSourcePlayable(_playable);
+        RefreshLayerIndices();
+        return true;
     }
 
     private void RefreshAnimatorState()
@@ -345,8 +414,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             desiredGait,
             KMath.ExpDecayAlpha(GaitSmoothing, Time.deltaTime));
         _animator.SetFloat(PlayerAnimatorContract.Gait, _smoothGait);
-        float targetSprintWeight = _isReloading ? 0f : Mathf.Clamp01(_smoothGait - 2f);
-        _sprintLayerWeight = _isReloading
+        float targetSprintWeight = _sprintActionOverrides || !_moveCtrl || !_moveCtrl.IsSprinting
+            ? 0f
+            : 1f;
+        _sprintLayerWeight = _sprintActionOverrides
             ? 0f
             : Mathf.MoveTowards(_sprintLayerWeight, targetSprintWeight, Time.deltaTime / 0.14f);
         SetLayerWeight(_tacSprintLayerIndex, _sprintLayerWeight);
@@ -381,9 +452,13 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 
     private void HandleWeaponChanged(WeaponDefinitionSO weaponData)
     {
-        ClearWeaponPose();
+        // 预加载可在 WeaponChanged 的前一个监听中同步完成，不能把刚配置好的新枪再清空。
+        if (!_hasWeaponConfigured || _configuredWeaponData != weaponData)
+        {
+            ClearWeaponPose();
+        }
         _holsterWeight = 1f;
-        _isReloading = false;
+        _sprintActionOverrides = false;
     }
 
     private void ClearWeaponPose()
@@ -394,6 +469,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             _recoilAnimation.Init(null, 1f, FireMode.Semi);
         }
         _hasWeaponConfigured = false;
+        _configuredWeaponData = null;
         _showWeaponNextFrame = false;
         _laggedCameraPosition = _cameraMotionCtrl
             ? _cameraMotionCtrl.CurrentPositionOffset
@@ -416,7 +492,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _job.animator = null;
         _job.Update();
         _job.animator = sampledAnimator;
-        _playable.SetJobData(_job);
+        if (_playable.IsValid())
+        {
+            _playable.SetJobData(_job);
+        }
     }
 
     private void ConfigureWeapon(WeaponDefinitionSO weaponData)
@@ -434,9 +513,19 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
         _runtimeWeaponSettings = CreateRuntimeSettings(weaponData, null);
         ConfigureWeaponPose(weaponData, _weaponViewCtrl.FirstPersonWeapon.transform);
+        if (!EnsureProceduralPlayable())
+        {
+            _isReady = false;
+            return;
+        }
         _job.recoilAnimation = _recoilAnimation;
+        // 配置有效标记也在显示前更新，首帧不执行资源包的无配置默认旋转。
+        _job.Update();
+        _job.adsWeight = _aimCtrl ? _aimCtrl.AimProgress : 0f;
+        _job.ikWeight = _ikWeight;
         _playable.SetJobData(_job);
         _hasWeaponConfigured = true;
+        _configuredWeaponData = weaponData;
         _showWeaponFrame = Time.frameCount + 2;
         _showWeaponNextFrame = true;
         _ = LoadWeaponRecoilAsync(weaponData, loadVersion);
@@ -491,6 +580,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private void ConfigureWeaponPose(WeaponDefinitionSO weaponData, Transform weapon)
     {
         SampleWeaponIdlePose();
+        if (_thirdPersonGripCtrl)
+        {
+            _thirdPersonGripCtrl.CacheNeutralGrip();
+        }
 
         Transform aimPoint = FindOrCreateChild(weapon, "AimPoint");
         aimPoint.localPosition = weaponData.Ik.AimPointLocalPosition;
@@ -507,7 +600,6 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _job.additiveAdsPose.rotation = Quaternion.Inverse(localWeapon.rotation);
         _job.aimPointTransform = aimPoint;
         _job.gunSettings = _runtimeWeaponSettings;
-        _playable.SetJobData(_job);
     }
 
     private void SampleWeaponIdlePose()
@@ -516,28 +608,41 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             return;
         }
-
-        AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
-        AnimationClip idlePose = null;
-        for (int i = 0; i < clips.Length; i++)
+        // 只采样原始待机，避免上一把枪的程序 IK 再次修饰骨骼后被当作绑定姿势。
+        if (_proceduralOutput.IsOutputValid())
         {
-            AnimationClip clip = clips[i];
-            if (!clip)
-            {
-                continue;
-            }
-            if (!clip.name.Contains("Idle") && !clip.name.Contains("Pose"))
-            {
-                continue;
-            }
-
-            idlePose = clip;
-            break;
+            _proceduralOutput.SetSourcePlayable(Playable.Null);
         }
-
-        if (idlePose)
+        try
         {
-            idlePose.SampleAnimation(_animator.gameObject, 0f);
+            // 同源 OverrideController 会保留上一把枪的动作层和过渡。
+            // 新枪首次显示前重置一次，避免旧检视/右手/疾跑姿态被采成握枪基准。
+            _animator.Rebind();
+            int idleState = Animator.StringToHash("Base Layer.Idle");
+            if (_animator.HasState(0, idleState))
+            {
+                _animator.Play(idleState, 0, 0f);
+            }
+            _animator.Update(0f);
+            // Animator.Update 会保留切枪时的过渡/换弹层姿势，不能用来计算永久的瞄准基准。
+            // 与资源自带 Demo 一致，直接采样当前枪械的原始待机片段。
+            AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                AnimationClip clip = clips[i];
+                if (clip && clip.name.IndexOf("Idle", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    clip.SampleAnimation(_animator.gameObject, 0f);
+                    return;
+                }
+            }
+        }
+        finally
+        {
+            if (_proceduralOutput.IsOutputValid() && _playable.IsValid())
+            {
+                _proceduralOutput.SetSourcePlayable(_playable);
+            }
         }
     }
 
@@ -579,8 +684,9 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         WeaponActionDefinition action,
         bool startedWhileAiming)
     {
-        _isReloading = action != null && IsReloadAction(action.ActionType);
-        if (_isReloading)
+        _sprintActionOverrides = action != null &&
+            (IsReloadAction(action.ActionType) || action.ActionType == WeaponActionType.Inspect);
+        if (_sprintActionOverrides)
         {
             _sprintLayerWeight = 0f;
             SetLayerWeight(_tacSprintLayerIndex, 0f);
@@ -613,9 +719,9 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             PlayEquipImpact();
             _holsterWeight = 0f;
         }
-        if (IsReloadAction(actionType))
+        if (IsReloadAction(actionType) || actionType == WeaponActionType.Inspect)
         {
-            _isReloading = false;
+            _sprintActionOverrides = false;
         }
         if (_firstPersonView)
         {
@@ -627,9 +733,9 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         WeaponActionType actionType,
         WeaponActionCancelReason cancelReason)
     {
-        if (IsReloadAction(actionType))
+        if (IsReloadAction(actionType) || actionType == WeaponActionType.Inspect)
         {
-            _isReloading = false;
+            _sprintActionOverrides = false;
         }
         if (actionType == WeaponActionType.Equip ||
             actionType == WeaponActionType.Holster)
@@ -710,6 +816,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             return;
         }
 
+        hidden = hidden || (_cameraCtrl && _cameraCtrl.IsThirdPerson);
+
         Renderer[] renderers = _animator.GetComponentsInChildren<Renderer>(true);
         for (int i = 0; i < renderers.Length; i++)
         {
@@ -727,6 +835,14 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             weaponRenderers[i].forceRenderingOff = hidden;
         }
+    }
+
+    private void HandleViewChanged(bool isThirdPerson)
+    {
+        SetFirstPersonRenderersHidden(
+            isThirdPerson || !_hasWeaponConfigured || _showWeaponNextFrame ||
+            (_weaponActionCtrl && _weaponActionCtrl.CurrentAction != null &&
+             _weaponActionCtrl.CurrentAction.ActionType == WeaponActionType.Holster));
     }
 
     private void ReleaseRecoilProfile()

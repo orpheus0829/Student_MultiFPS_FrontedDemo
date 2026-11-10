@@ -122,7 +122,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         GameObject instance = await handle.Task;
         if (handle.Status != AsyncOperationStatus.Succeeded || !instance)
         {
-            if (handle.IsValid())
+            if (CanRelease(handle))
             {
                 Addressables.Release(handle);
             }
@@ -155,7 +155,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         GameObject instance = await handle.Task;
         if (handle.Status != AsyncOperationStatus.Succeeded || !instance)
         {
-            if (handle.IsValid())
+            if (CanRelease(handle))
             {
                 Addressables.Release(handle);
             }
@@ -174,7 +174,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         }
 
         _instances.Remove(instance);
-        if (!handle.IsValid())
+        if (!CanRelease(handle))
         {
             return false;
         }
@@ -221,7 +221,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         }
 
         _labels.Remove(label);
-        if (record.Handle.IsValid())
+        if (CanRelease(record.Handle))
         {
             Addressables.Release(record.Handle);
         }
@@ -256,9 +256,15 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         }
 
         _scenes.Remove(sceneHandle);
-        AsyncOperationHandle<SceneInstance> unload = Addressables.UnloadSceneAsync(handle, true);
+        // 自动释放会在 await 返回前使句柄失效，保留到读取结果后再释放。
+        AsyncOperationHandle<SceneInstance> unload = Addressables.UnloadSceneAsync(handle, false);
         await unload.Task;
-        return unload.Status == AsyncOperationStatus.Succeeded;
+        bool succeeded = unload.IsValid() && unload.Status == AsyncOperationStatus.Succeeded;
+        if (CanRelease(unload))
+        {
+            Addressables.Release(unload);
+        }
+        return succeeded;
     }
 
     private async Task InitializeInternalAsync()
@@ -284,7 +290,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
 
         _resources.Remove(key);
         System.Exception exception = record.Handle.OperationException;
-        if (record.Handle.IsValid())
+        if (CanRelease(record.Handle))
         {
             Addressables.Release(record.Handle);
         }
@@ -301,7 +307,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
 
         _labels.Remove(label);
         System.Exception exception = record.Handle.OperationException;
-        if (record.Handle.IsValid())
+        if (CanRelease(record.Handle))
         {
             Addressables.Release(record.Handle);
         }
@@ -322,7 +328,7 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
         }
 
         _resources.Remove(key);
-        if (record.Handle.IsValid())
+        if (CanRelease(record.Handle))
         {
             Addressables.Release(record.Handle);
         }
@@ -330,34 +336,45 @@ public sealed class ResourceMgr : BaseMgr<ResourceMgr>
 
     private void OnDestroy()
     {
-        foreach (ResourceRecord record in _resources.Values)
-        {
-            if (record.Handle.IsValid())
-            {
-                Addressables.Release(record.Handle);
-            }
-        }
+        // 释放实例会触发其他组件的 OnDisable/OnDestroy，先摘下快照避免回调修改正在遍历的字典。
+        List<AsyncOperationHandle<GameObject>> instances =
+            new List<AsyncOperationHandle<GameObject>>(_instances.Values);
+        List<ResourceRecord> resources = new List<ResourceRecord>(_resources.Values);
+        List<LabelRecord> labels = new List<LabelRecord>(_labels.Values);
+        _instances.Clear();
+        _resources.Clear();
+        _labels.Clear();
+        _scenes.Clear();
 
-        foreach (LabelRecord record in _labels.Values)
+        foreach (AsyncOperationHandle<GameObject> handle in instances)
         {
-            if (record.Handle.IsValid())
-            {
-                Addressables.Release(record.Handle);
-            }
-        }
-
-        foreach (AsyncOperationHandle<GameObject> handle in _instances.Values)
-        {
-            if (handle.IsValid())
+            if (CanRelease(handle))
             {
                 Addressables.ReleaseInstance(handle);
             }
         }
 
-        _resources.Clear();
-        _labels.Clear();
-        _instances.Clear();
-        _scenes.Clear();
+        foreach (ResourceRecord record in resources)
+        {
+            if (CanRelease(record.Handle))
+            {
+                Addressables.Release(record.Handle);
+            }
+        }
+
+        foreach (LabelRecord record in labels)
+        {
+            if (CanRelease(record.Handle))
+            {
+                Addressables.Release(record.Handle);
+            }
+        }
+    }
+
+    private static bool CanRelease(AsyncOperationHandle handle)
+    {
+        // Addressables 的销毁回调在版本失效前执行，此时 IsValid 仍可能为真但引用已归零。
+        return handle.IsValid() && handle.ReferenceCount > 0;
     }
 
     private readonly struct ResourceKey

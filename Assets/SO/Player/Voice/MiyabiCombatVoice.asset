@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69487c63fa4b45f8a42984a15952e814, type: 3}
+  m_Name: MiyabiCombatVoice
+  m_EditorClassIdentifier: Assembly-CSharp::CombatVoiceSO
+  _characterModelId: character.miyabi
+  _hearingDistance: 24
+  _textDuration: 2.2
+  _automaticCooldown: 6
+  _streakWindow: 15
+  _groups:
+  - _cue: 0
+    _chance: 0.18
+    _lines:
+    - _subtitle: 换弹，保持警戒。
+      _audioResourceId:
+    - _subtitle: 稍等，换好就继续。
+      _audioResourceId:
+  - _cue: 1
+    _chance: 0.12
+    _lines:
+    - _subtitle: 受伤了，还能继续。
+      _audioResourceId:
+    - _subtitle: 先稳住，不急。
+      _audioResourceId:
+  - _cue: 2
+    _chance: 0.25
+    _lines:
+    - _subtitle: 目标肃清。
+      _audioResourceId:
+    - _subtitle: 下一个。
+      _audioResourceId:
+  - _cue: 3
+    _chance: 0.65
+    _lines:
+    - _subtitle: 三人已倒，继续推进。
+      _audioResourceId:
+    - _subtitle: 节奏已经掌握了。
+      _audioResourceId:
+  - _cue: 4
+    _chance: 0.25
+    _lines:
+    - _subtitle: 我回来了，行动继续。
+      _audioResourceId:

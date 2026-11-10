@@ -115,7 +115,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
                 ? new Vector2(0f, move.y)
                 : Vector2.zero;
             speed = hasForwardMove ? speed : 0f;
-            isSprinting = hasForwardMove && isSprinting;
+            isSprinting = !isVaulting && isSprinting;
             isGrounded = isVaulting || frame.IsGrounded;
             verticalSpeed = isVaulting ? 0f : frame.VerticalSpeed;
             isVaulting = false;
@@ -186,6 +186,27 @@ public sealed class PlayerAnimationView : MonoBehaviour
         RefreshAnimatorBindings();
     }
 
+    public void SetCharacterAnimator(Animator characterAnimator)
+    {
+        if (_characterAnimator == characterAnimator || !characterAnimator)
+        {
+            return;
+        }
+
+        RuntimeAnimatorController controller = _characterAnimator
+            ? _characterAnimator.runtimeAnimatorController
+            : null;
+        _characterAnimator = characterAnimator;
+        characterAnimator.runtimeAnimatorController = controller;
+        _isUpperBodyWeaponActionActive = false;
+        _upperBodyWeaponWeight = 0f;
+        _upperBodyActionType = WeaponActionType.None;
+        _isFullBodyMotion = false;
+        RefreshAnimatorBindings();
+        PlayStateImmediately(_characterAnimator, _characterIdleStateName);
+        _characterAnimator.Update(0f);
+    }
+
     public void SetCharacterAnimatorController(RuntimeAnimatorController controller)
     {
         if (!_characterAnimator || _characterAnimator.runtimeAnimatorController == controller)
@@ -200,7 +221,8 @@ public sealed class PlayerAnimationView : MonoBehaviour
         _upperBodyActionType = WeaponActionType.None;
         _isFullBodyMotion = false;
         SetLayerWeight(_upperBodyWeaponLayerIndex, 0f);
-        PlayState(_characterAnimator, _characterIdleStateName);
+        PlayStateImmediately(_characterAnimator, _characterIdleStateName);
+        _characterAnimator.Update(0f);
     }
 
     public void StartVault()
@@ -336,17 +358,28 @@ public sealed class PlayerAnimationView : MonoBehaviour
     public void CancelWeaponAction(WeaponActionType actionType)
     {
         EnsureAnimatorBindings();
+        if (actionType == WeaponActionType.Inspect || IsPerRoundAction(actionType))
+        {
+            ResetTrigger(
+                _characterAnimator,
+                _characterParameters,
+                PlayerAnimatorContract.WeaponActionStarted);
+            ResetTrigger(
+                _weaponAnimator,
+                _weaponParameters,
+                PlayerAnimatorContract.WeaponActionStarted);
+        }
         ApplyWeaponActionSignal(
             PlayerAnimatorContract.WeaponActionCancelled,
             (int)actionType);
         if (_viewType == PlayerViewType.ThirdPerson && _upperBodyWeaponLayerIndex >= 0)
         {
             _isUpperBodyWeaponActionActive = false;
-            if (actionType == WeaponActionType.Inspect)
+            if (actionType == WeaponActionType.Inspect || IsPerRoundAction(actionType))
             {
                 _upperBodyWeaponWeight = 0f;
                 SetLayerWeight(_upperBodyWeaponLayerIndex, 0f);
-                PlayState(_weaponAnimator, _weaponIdleStateName, 0f);
+                PlayStateImmediately(_weaponAnimator, _weaponIdleStateName);
                 return;
             }
 
@@ -355,8 +388,22 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
         if (actionType == WeaponActionType.Inspect)
         {
-            PlayState(_characterAnimator, _characterIdleStateName, 0f);
-            PlayState(_weaponAnimator, _weaponIdleStateName, 0f);
+            // 检视位于 Reload 层；仅重播 Base Layer 的 Idle 不会停止检视。
+            PlayStateImmediatelyOnActionLayer(
+                _characterAnimator,
+                WeaponActionStateContract.Inspect,
+                "Empty");
+            PlayStateImmediately(_weaponAnimator, _weaponIdleStateName);
+            return;
+        }
+        if (IsPerRoundAction(actionType))
+        {
+            // 装弹被开火打断时，先清掉 Reload 层的旧姿势，再切入开火状态。
+            PlayStateImmediatelyOnActionLayer(
+                _characterAnimator,
+                WeaponActionStateContract.GetStateName(actionType),
+                "Empty");
+            PlayStateImmediately(_weaponAnimator, _weaponIdleStateName);
             return;
         }
         PlayState(_characterAnimator, _characterIdleStateName);
@@ -523,6 +570,67 @@ public sealed class PlayerAnimationView : MonoBehaviour
         PlayState(animator, stateName, _actionTransitionDuration);
     }
 
+    private void PlayStateImmediately(Animator animator, string stateName)
+    {
+        if (!animator || !animator.runtimeAnimatorController ||
+            string.IsNullOrWhiteSpace(stateName))
+        {
+            return;
+        }
+
+        for (int layer = 0; layer < animator.layerCount; layer++)
+        {
+            int stateHash = Animator.StringToHash(stateName);
+            int fullPathHash = Animator.StringToHash(
+                animator.GetLayerName(layer) + "." + stateName);
+            if (!animator.HasState(layer, fullPathHash) &&
+                !animator.HasState(layer, stateHash))
+            {
+                continue;
+            }
+
+            int targetHash = animator.HasState(layer, fullPathHash)
+                ? fullPathHash
+                : stateHash;
+            animator.Play(targetHash, layer, 0f);
+            return;
+        }
+    }
+
+    private void PlayStateImmediatelyOnActionLayer(
+        Animator animator,
+        string actionStateName,
+        string emptyStateName)
+    {
+        if (!animator || !animator.runtimeAnimatorController)
+        {
+            return;
+        }
+
+        int actionHash = Animator.StringToHash(actionStateName);
+        int emptyHash = Animator.StringToHash(emptyStateName);
+        for (int layer = 0; layer < animator.layerCount; layer++)
+        {
+            int actionFullPathHash = Animator.StringToHash(
+                animator.GetLayerName(layer) + "." + actionStateName);
+            int fullPathHash = Animator.StringToHash(
+                animator.GetLayerName(layer) + "." + emptyStateName);
+            if ((!animator.HasState(layer, actionHash) &&
+                 !animator.HasState(layer, actionFullPathHash)) ||
+                (!animator.HasState(layer, emptyHash) &&
+                 !animator.HasState(layer, fullPathHash)))
+            {
+                continue;
+            }
+
+            animator.Play(
+                animator.HasState(layer, fullPathHash) ? fullPathHash : emptyHash,
+                layer,
+                0f);
+            return;
+        }
+    }
+
     private void PlayState(Animator animator, string stateName, float transitionDuration)
     {
         if (!animator ||
@@ -634,6 +742,13 @@ public sealed class PlayerAnimationView : MonoBehaviour
         return actionType == WeaponActionType.Reload ||
             actionType == WeaponActionType.EmptyReload ||
             actionType == WeaponActionType.PerRoundStart ||
+            actionType == WeaponActionType.PerRoundInsert ||
+            actionType == WeaponActionType.PerRoundEnd;
+    }
+
+    private static bool IsPerRoundAction(WeaponActionType actionType)
+    {
+        return actionType == WeaponActionType.PerRoundStart ||
             actionType == WeaponActionType.PerRoundInsert ||
             actionType == WeaponActionType.PerRoundEnd;
     }

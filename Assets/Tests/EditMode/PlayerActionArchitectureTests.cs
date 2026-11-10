@@ -138,9 +138,12 @@ public sealed class PlayerActionArchitectureTests
             BlendTree sprint = states[i].state.motion as BlendTree;
             Assert.That(sprint, Is.Not.Null);
             ChildMotion[] motions = sprint.children;
-            Assert.That(motions.Length, Is.EqualTo(3));
+            Assert.That(motions.Length, Is.EqualTo(5));
             Assert.That(motions[1].motion.name, Is.EqualTo("Rifle_StrafeRunLeftLoop"));
             Assert.That(motions[2].motion.name, Is.EqualTo("Rifle_StrafeRunRightLoop"));
+            Assert.That(motions[3].motion.name, Is.EqualTo("Rifle_StrafeRun135LeftLoop"));
+            Assert.That(motions[4].motion.name, Is.EqualTo("Rifle_StrafeRun135LeftLoop"));
+            Assert.That(motions[4].mirror, Is.True);
             return;
         }
 

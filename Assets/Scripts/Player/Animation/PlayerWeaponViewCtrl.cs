@@ -12,6 +12,10 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
     [Header("双视角表现")]
     [SerializeField, InspectorName("第一人称表现")] private PlayerAnimationView _firstPersonView;
     [SerializeField, InspectorName("第三人称表现")] private PlayerAnimationView _thirdPersonView;
+    [SerializeField, InspectorName("第三人称右手握枪位置")]
+    private Vector3 _thirdPersonGripPosition = new Vector3(0f, 0f, 0f);
+    [SerializeField, InspectorName("第三人称右手握枪旋转")]
+    private Vector3 _thirdPersonGripRotation = Vector3.zero;
 
     private ResourceMgr _resourceMgr;
     private Transform _firstPersonPoseRoot;
@@ -32,6 +36,8 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
     private WeaponDefinitionSO _preparedWeaponData;
     private GameObject _preparedFirstPersonWeapon;
     private GameObject _preparedThirdPersonWeapon;
+    private Quaternion _defaultHandFrame;
+    private bool _hasDefaultHandFrame;
 
     public event Action<WeaponDefinitionSO, Transform> FirstPersonWeaponReady;
     public event Action<WeaponDefinitionSO, Transform> ThirdPersonWeaponReady;
@@ -44,11 +50,27 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         }
     }
 
+    public Transform ThirdPersonMuzzlePoint
+    {
+        get
+        {
+            return _thirdPersonMuzzlePoint;
+        }
+    }
+
     public GameObject FirstPersonWeapon
     {
         get
         {
             return _firstPersonWeapon;
+        }
+    }
+
+    public GameObject ThirdPersonWeapon
+    {
+        get
+        {
+            return _thirdPersonWeapon;
         }
     }
 
@@ -76,6 +98,7 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         }
         if (_thirdPersonView && _thirdPersonView.WeaponRoot)
         {
+            AttachThirdPersonWeaponRootToHand();
             _thirdPersonStagingRoot = CreateStagingRoot(_thirdPersonView.WeaponRoot);
         }
 
@@ -109,6 +132,14 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         _prepareVersion++;
         ReleasePreparedViews();
         ReleaseWeaponViews();
+    }
+
+    public void RefreshThirdPersonWeaponGrip()
+    {
+        if (_thirdPersonView && _thirdPersonView.WeaponRoot)
+        {
+            AttachThirdPersonWeaponRootToHand();
+        }
     }
 
     public async Task<bool> PrepareWeaponViewsAsync(WeaponDefinitionSO weaponData)
@@ -276,8 +307,12 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
             firstPersonWeapon = null;
             thirdPersonWeapon = null;
             adoptedInstances = true;
-            _firstPersonView.SetWeaponAnimator(GetWeaponAnimator(_firstPersonWeapon));
-            _thirdPersonView.SetWeaponAnimator(GetWeaponAnimator(_thirdPersonWeapon));
+            Animator firstPersonAnimator = GetWeaponAnimator(_firstPersonWeapon);
+            Animator thirdPersonAnimator = GetWeaponAnimator(_thirdPersonWeapon);
+            InitializeWeaponIdle(firstPersonAnimator);
+            InitializeWeaponIdle(thirdPersonAnimator);
+            _firstPersonView.SetWeaponAnimator(firstPersonAnimator);
+            _thirdPersonView.SetWeaponAnimator(thirdPersonAnimator);
             _muzzlePoint = ResolveWeaponPoint(_firstPersonWeapon, weaponData.Ik.MuzzlePointPath);
             _thirdPersonMuzzlePoint = ResolveWeaponPoint(
                 _thirdPersonWeapon, weaponData.Ik.MuzzlePointPath);
@@ -415,15 +450,22 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
                 for (int i = 0; i < renderers.Length; i++)
                 {
                     renderers[i].forceRenderingOff = true;
+                    renderers[i].allowOcclusionWhenDynamic = false;
+                    if (renderers[i] is SkinnedMeshRenderer skinned)
+                    {
+                        skinned.updateWhenOffscreen = true;
+                    }
                 }
             }
             instanceTransform.localPosition = usesProceduralPose
                 ? Vector3.zero
-                : pose.WeaponPositionOffset;
+                : pose.UseThirdPersonGrip ? pose.ThirdPersonGripPosition : pose.WeaponPositionOffset;
             instanceTransform.localRotation = usesProceduralPose
                 ? Quaternion.identity
-                : pose.WeaponRotationOffset;
-            instanceTransform.localScale = Vector3.one;
+                : pose.UseThirdPersonGrip ? pose.ThirdPersonGripRotation : pose.WeaponRotationOffset;
+            instanceTransform.localScale = !usesProceduralPose && pose.UseThirdPersonGrip
+                ? pose.ThirdPersonGripScale
+                : Vector3.one;
             SetLayerRecursively(instanceTransform, usesProceduralPose ? 9 : 8);
             instanceTransform.SetParent(parent, false);
         }
@@ -445,6 +487,34 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         return weaponInstance.GetComponentInChildren<Animator>(true);
     }
 
+    private static void InitializeWeaponIdle(Animator animator)
+    {
+        if (!animator || !animator.isActiveAndEnabled || !animator.runtimeAnimatorController)
+        {
+            return;
+        }
+
+        // 商店枪械控制器默认进入 Equip_Override。项目切枪由根节点升降，
+        // 必须同时将枪网格自己的 Animator 初始化为 Idle，不能只摆正手臂/枪口挂点。
+        animator.Rebind();
+        int idleHash = Animator.StringToHash("Idle");
+        for (int layer = 0; layer < animator.layerCount; layer++)
+        {
+            int fullPathHash = Animator.StringToHash(animator.GetLayerName(layer) + ".Idle");
+            if (animator.HasState(layer, fullPathHash))
+            {
+                animator.Play(fullPathHash, layer, 0f);
+                break;
+            }
+            if (animator.HasState(layer, idleHash))
+            {
+                animator.Play(idleHash, layer, 0f);
+                break;
+            }
+        }
+        animator.Update(0f);
+    }
+
     private bool IsLoadCurrent(int loadVersion)
     {
         return this && isActiveAndEnabled && loadVersion == _loadVersion;
@@ -458,6 +528,63 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         {
             renderers[i].updateWhenOffscreen = true;
         }
+    }
+
+    private void AttachThirdPersonWeaponRootToHand()
+    {
+        Animator characterAnimator = _thirdPersonView.CharacterAnimator;
+        if (!characterAnimator || !characterAnimator.isHuman)
+        {
+            Debug.LogError($"{name} 的第三人称角色没有可用的 Humanoid 骨架。", this);
+            return;
+        }
+
+        Transform rightHand = characterAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+        if (!rightHand)
+        {
+            Debug.LogError($"{name} 的第三人称角色缺少右手骨。", this);
+            return;
+        }
+
+        Transform weaponRoot = _thirdPersonView.WeaponRoot;
+        Quaternion handFrame = GetHandFrame(characterAnimator, rightHand);
+        if (!_hasDefaultHandFrame)
+        {
+            _defaultHandFrame = handFrame;
+            _hasDefaultHandFrame = true;
+        }
+        // Humanoid 只保证动作语义相同，不保证各模型腕骨的局部坐标轴相同。
+        Quaternion gripCorrection = handFrame * Quaternion.Inverse(_defaultHandFrame);
+        weaponRoot.SetParent(rightHand, false);
+        // 不同 FBX 的骨骼可能保留厘米导入缩放，挂点按玩家的米制空间使用。
+        Vector3 handScale = rightHand.lossyScale;
+        Vector3 playerScale = transform.lossyScale;
+        Vector3 scale = new Vector3(
+            playerScale.x / Mathf.Max(0.0001f, Mathf.Abs(handScale.x)),
+            playerScale.y / Mathf.Max(0.0001f, Mathf.Abs(handScale.y)),
+            playerScale.z / Mathf.Max(0.0001f, Mathf.Abs(handScale.z)));
+        weaponRoot.localPosition = Vector3.Scale(gripCorrection * _thirdPersonGripPosition, scale);
+        weaponRoot.localRotation = gripCorrection * Quaternion.Euler(_thirdPersonGripRotation);
+        weaponRoot.localScale = scale;
+    }
+
+    private static Quaternion GetHandFrame(Animator animator, Transform hand)
+    {
+        Transform middle = animator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
+        Transform index = animator.GetBoneTransform(HumanBodyBones.RightIndexProximal);
+        Transform little = animator.GetBoneTransform(HumanBodyBones.RightLittleProximal);
+        if (!middle || !index || !little)
+        {
+            return Quaternion.identity;
+        }
+
+        Vector3 forward = middle.position - hand.position;
+        Vector3 up = Vector3.Cross(forward, index.position - little.position);
+        if (forward.sqrMagnitude < 0.000001f || up.sqrMagnitude < 0.000000001f)
+        {
+            return Quaternion.identity;
+        }
+        return Quaternion.Inverse(hand.rotation) * Quaternion.LookRotation(forward, up);
     }
 
     private static Transform CreateStagingRoot(Transform parent)

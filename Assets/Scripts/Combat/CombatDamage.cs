@@ -6,6 +6,7 @@ public static class CombatDamage
 {
     private const float DefaultHitScore = 10f;
     private const float DefaultKillBonus = 100f;
+    private const float ScoreScale = 0.5f;
     private static readonly HashSet<CharacterHealth> ResolvingTargets =
         new HashSet<CharacterHealth>();
 
@@ -91,10 +92,10 @@ public static class CombatDamage
         int killScore = 0;
         if (CanAwardScore(request, target))
         {
-            hitScore = CalculateHitScore(request);
+            hitScore = CalculateHitScore(request, appliedDamage);
             if (wasKilled)
             {
-                killScore = Mathf.Max(0, Mathf.RoundToInt(request.KillBonus));
+                killScore = Mathf.Max(0, Mathf.RoundToInt(request.KillBonus * ScoreScale));
             }
         }
 
@@ -123,13 +124,14 @@ public static class CombatDamage
         return !victim || victim != request.Instigator;
     }
 
-    private static int CalculateHitScore(DamageRequest request)
+    private static int CalculateHitScore(DamageRequest request, float appliedDamage)
     {
-        float score = Mathf.Max(0f, request.BaseHitScore) *
+        float score = (Mathf.Max(0f, request.BaseHitScore) +
+            Mathf.Max(0f, appliedDamage) * Mathf.Max(0f, request.DamageScorePerHealth)) *
             Mathf.Max(0f, request.WeaponScoreFactor) *
             Mathf.Max(0f, request.DistanceScoreFactor) *
             Mathf.Max(0f, request.BodyScoreFactor);
-        return Mathf.Max(0, Mathf.RoundToInt(score));
+        return Mathf.Max(0, Mathf.RoundToInt(score * ScoreScale));
     }
 
     private static DamageResult CreateIgnoredResult(DamageRequest request)

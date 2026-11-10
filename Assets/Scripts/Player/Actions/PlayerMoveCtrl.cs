@@ -35,6 +35,7 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
     private Vector3 _horizontalVelocity;
     private Vector3 _airSprintCarryVelocity;
     private FirstPersonCameraCtrl _cameraCtrl;
+    private PlayerAimCtrl _aimCtrl;
     private Vector3 _queuedDisplacement;
     private Vector3 _vaultStartPosition;
     private Vector3 _vaultTargetPosition;
@@ -191,6 +192,7 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
     private void Awake()
     {
         _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
+        TryGetComponent(out _aimCtrl);
         if (!_characterController)
         {
             TryGetComponent(out _characterController);
@@ -237,7 +239,7 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
     public void SetMoveInput(Vector2 moveInput)
     {
         _moveInput = Vector2.ClampMagnitude(moveInput, 1f);
-        BreakSprintForDirection();
+        RefreshSprintState();
     }
 
     public void SetSprintInput(bool isPressed)
@@ -604,22 +606,6 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
         return targetCollider && targetCollider.transform.IsChildOf(transform);
     }
 
-    private void BreakSprintForDirection()
-    {
-        if (!_sprintRequested || _moveInput.sqrMagnitude <= InputThreshold * InputThreshold)
-        {
-            RefreshSprintState();
-            return;
-        }
-
-        if (_moveInput.y < -InputThreshold)
-        {
-            _sprintRequested = false;
-        }
-
-        RefreshSprintState();
-    }
-
     private Vector3 GetWorldMoveDirection()
     {
         if (!_cameraCtrl || !_cameraCtrl.IsThirdPerson)
@@ -653,7 +639,9 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
         bool wasSprinting = _isSprinting;
         _isSprinting = !_isVaulting && !_isSliding &&
             _sprintRequested &&
-            _moveInput.y >= -InputThreshold &&
+            (!_aimCtrl || !_aimCtrl.IsAimRequested) &&
+            (_moveInput.y >= -InputThreshold ||
+             (_cameraCtrl && _cameraCtrl.IsThirdPerson)) &&
             _moveInput.sqrMagnitude > InputThreshold * InputThreshold;
         if (wasSprinting && !_isSprinting &&
             (!_characterController.isGrounded || _verticalSpeed > 0f))

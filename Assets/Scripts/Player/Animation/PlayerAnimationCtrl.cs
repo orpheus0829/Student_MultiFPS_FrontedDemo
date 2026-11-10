@@ -100,10 +100,16 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
 
     private PlayerAnimationFrame CreateAnimationFrame()
     {
-        Vector2 move = _moveCtrl ? _moveCtrl.MoveInput : Vector2.zero;
-        Vector3 localVelocity = _moveCtrl ? _moveCtrl.LocalVelocity : Vector3.zero;
-        bool isVaulting = _moveCtrl && _moveCtrl.IsVaulting;
+        Vector2 move = Vector2.zero;
+        bool hasMovement = _moveCtrl && _moveCtrl.isActiveAndEnabled;
+        Vector3 localVelocity = hasMovement ? _moveCtrl.LocalVelocity : Vector3.zero;
+        bool isVaulting = hasMovement && _moveCtrl.IsVaulting;
         float speed = new Vector2(localVelocity.x, localVelocity.z).magnitude;
+
+        if (hasMovement && _moveCtrl.MoveInput.sqrMagnitude > 0.01f && speed > 0.01f)
+        {
+            move = new Vector2(localVelocity.x, localVelocity.z).normalized;
+        }
 
         if (isVaulting)
         {
@@ -114,12 +120,12 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         return new PlayerAnimationFrame(
             move,
             speed,
-            !_moveCtrl || _moveCtrl.IsGrounded,
-            _moveCtrl ? _moveCtrl.VerticalSpeed : 0f,
-            _moveCtrl && _moveCtrl.IsSprinting,
+            !hasMovement || _moveCtrl.IsGrounded,
+            hasMovement ? _moveCtrl.VerticalSpeed : 0f,
+            hasMovement && _moveCtrl.IsSprinting,
             _aimCtrl ? _aimCtrl.AimProgress : 0f,
             isVaulting,
-            _moveCtrl && _moveCtrl.IsSliding);
+            hasMovement && _moveCtrl.IsSliding);
     }
 
     private void HandleVaultStarted()

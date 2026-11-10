@@ -145,7 +145,7 @@ public sealed class CombatFeedbackCtrl : MonoBehaviour
 
     private void ShowKillFeed(DamageResult result)
     {
-        string killerName = result.Instigator
+        string killerName = result.Instigator && result.Instigator != result.Victim
             ? result.Instigator.PlayerName
             : string.Empty;
         string victimName = result.Victim ? result.Victim.PlayerName : string.Empty;

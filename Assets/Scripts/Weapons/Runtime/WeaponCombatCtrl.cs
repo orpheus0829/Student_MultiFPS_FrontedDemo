@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 public sealed class WeaponCombatCtrl : MonoBehaviour
 {
-    private const int HitBufferSize = 32;
-    private const float BodyHitboxPreferenceTolerance = 0.75f;
-
     [Header("动作与瞄准")]
     [SerializeField, InspectorName("枪械动作")] private WeaponActionCtrl _actionCtrl;
     [SerializeField, InspectorName("玩家瞄准")] private PlayerAimCtrl _aimCtrl;
     [SerializeField, InspectorName("玩家移动")] private PlayerMoveCtrl _moveCtrl;
+    [SerializeField, InspectorName("枪械表现")] private PlayerWeaponViewCtrl _weaponViewCtrl;
 
     [Header("射击来源")]
     [SerializeField, InspectorName("第一人称相机")] private FirstPersonCameraCtrl _cameraCtrl;
@@ -23,8 +22,13 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
 
     private readonly Dictionary<WeaponDefinitionSO, WeaponAmmoState> _ammoStates =
         new Dictionary<WeaponDefinitionSO, WeaponAmmoState>();
-    private readonly RaycastHit[] _hitBuffer = new RaycastHit[HitBufferSize];
+    private readonly RaycastHit[] _aimHits = new RaycastHit[128];
 
+    private ResourceMgr _resourceMgr;
+    private ObjectPool _projectilePool;
+    private GameObject _projectilePrefab;
+    private string _projectileResourceId;
+    private int _projectileLoadVersion;
     private WeaponDefinitionSO _weaponData;
     private WeaponAmmoState _ammoState;
     private WeaponFireMode _fireMode;
@@ -33,6 +37,11 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
     private float _nextShotTime;
     private float _lastShotTime = float.NegativeInfinity;
     private float _spreadFromShots;
+    private int _recoilShotIndex;
+    private float _lastRecoilShotTime = float.NegativeInfinity;
+    private Vector2 _lastPatternPoint;
+    private Vector2 _recoilTarget;
+    private Vector2 _recoilApplied;
 
     public event Action<int, int> AmmoChanged;
     public event Action<WeaponDefinitionSO> ShotFired;
@@ -50,6 +59,16 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         get
         {
             return _ammoState != null ? _ammoState.ReserveAmmo : 0;
+        }
+    }
+
+    public bool CanFireDuringPerRoundReload
+    {
+        get
+        {
+            return _ammoState != null && _ammoState.MagazineAmmo > 0 &&
+                _actionCtrl && _actionCtrl.CurrentAction != null &&
+                IsPerRoundAction(_actionCtrl.CurrentAction.ActionType);
         }
     }
 
@@ -93,6 +112,10 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         {
             TryGetComponent(out _moveCtrl);
         }
+        if (!_weaponViewCtrl)
+        {
+            TryGetComponent(out _weaponViewCtrl);
+        }
         if (!_playerInfo)
         {
             TryGetComponent(out _playerInfo);
@@ -129,6 +152,7 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
     private void Update()
     {
         RecoverSpread();
+        UpdateRecoil();
         ContinueFireInput();
     }
 
@@ -143,6 +167,8 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
 
         _isFireHeld = false;
         _burstShotsRemaining = 0;
+        _projectileLoadVersion++;
+        ReleaseProjectilePrefab();
     }
 
     public void ReceiveFireInput(PlayerInputPhase phase)
@@ -171,7 +197,12 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
 
     public bool TryFire()
     {
-        if (!_weaponData || _ammoState == null || Time.time < _nextShotTime)
+        if (!_weaponData || _ammoState == null || !_projectilePrefab ||
+            Time.time < _nextShotTime)
+        {
+            return false;
+        }
+        if (!GetMuzzlePoint())
         {
             return false;
         }
@@ -189,9 +220,14 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
                 return false;
             }
 
+            if (isPerRoundReload && _ammoState.MagazineAmmo <= 0)
+            {
+                return false;
+            }
+
             if (!_actionCtrl.CancelCurrentAction(
                 WeaponActionCancelReason.Manual,
-                !isPerRoundReload))
+                true))
             {
                 return false;
             }
@@ -270,13 +306,22 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
 
     private void ReceiveWeaponChanged(WeaponDefinitionSO weaponData)
     {
+        if (_cameraCtrl)
+        {
+            _cameraCtrl.ApplyRecoilAngles(-_recoilApplied);
+        }
         _weaponData = weaponData;
+        _ = LoadProjectilePrefabAsync(weaponData, ++_projectileLoadVersion);
         _ammoState = GetOrCreateAmmoState(weaponData);
         _fireMode = weaponData ? GetValidDefaultFireMode(weaponData.Fire) : WeaponFireMode.SemiAutomatic;
         _isFireHeld = false;
         _burstShotsRemaining = 0;
         _nextShotTime = 0f;
         _spreadFromShots = 0f;
+        _recoilShotIndex = 0;
+        _lastPatternPoint = Vector2.zero;
+        _recoilTarget = Vector2.zero;
+        _recoilApplied = Vector2.zero;
         NotifyAmmoChanged();
     }
 
@@ -324,6 +369,12 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
             return;
         }
 
+        Transform muzzlePoint = GetMuzzlePoint();
+        if (!muzzlePoint || !_projectilePrefab)
+        {
+            return;
+        }
+
         _ammoState.MagazineAmmo--;
         if (_fireMode == WeaponFireMode.Burst && _burstShotsRemaining > 0)
         {
@@ -338,167 +389,151 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         }
 
         float spread = CalculateCurrentSpread();
-        Ray centerRay = _cameraCtrl.GetCenterAimRay();
+        float maximumRange = Mathf.Max(0f, _weaponData.Damage.MaximumHitRange);
+        Ray aimRay = _cameraCtrl.GetCenterAimRay();
+        Ray centerRay = CreateProjectileRay(muzzlePoint.position, aimRay, maximumRange);
         int pelletCount = Mathf.Max(1, _weaponData.Fire.PelletsPerShot);
         for (int i = 0; i < pelletCount; i++)
         {
             Ray shotRay = CreateSpreadRay(centerRay, spread, pelletCount > 1);
-            ResolveShot(shotRay);
+            SpawnProjectile(shotRay);
         }
 
         _spreadFromShots = Mathf.Min(
             _weaponData.Accuracy.MaximumSpread,
             _spreadFromShots + _weaponData.Accuracy.SpreadPerShot);
         _lastShotTime = Time.time;
+        AddShotRecoil();
         NotifyAmmoChanged();
         ShotFired?.Invoke(_weaponData);
     }
 
-    private void ResolveShot(Ray shotRay)
+    private Ray CreateProjectileRay(Vector3 muzzlePosition, Ray aimRay, float maximumRange)
     {
-        float maximumRange = Mathf.Max(0f, _weaponData.Damage.MaximumHitRange);
+        // 准星只确定视差收敛点；实际命中和伤害仍由枪口发出的实体弹丸裁决。
+        Vector3 aimPoint = aimRay.GetPoint(maximumRange);
         int hitCount = Physics.RaycastNonAlloc(
-            shotRay,
-            _hitBuffer,
-            maximumRange,
-            _hitMask,
-            QueryTriggerInteraction.Collide);
-
-        if (!TryFindDamageHit(
-                hitCount,
-                out RaycastHit nearestHit,
-                out BodyHitbox bodyHitbox,
-                out CharacterHealth target))
-        {
-            if (_impactCtrl && TryFindWorldHit(hitCount, out RaycastHit worldHit))
-            {
-                _impactCtrl.ShowImpact(worldHit);
-            }
-            return;
-        }
-
-        DamageRequest request = CreateDamageRequest(nearestHit, shotRay.direction);
-        if (bodyHitbox)
-        {
-            bodyHitbox.ReceiveHit(request);
-            return;
-        }
-
-        request.Target = target;
-        CombatDamage.Apply(request);
-    }
-
-    private bool TryFindWorldHit(int hitCount, out RaycastHit worldHit)
-    {
-        worldHit = default;
+            aimRay, _aimHits, maximumRange, _hitMask, QueryTriggerInteraction.Collide);
         float nearestDistance = float.PositiveInfinity;
         for (int i = 0; i < hitCount; i++)
         {
-            RaycastHit hit = _hitBuffer[i];
-            if (!hit.collider || hit.collider.transform.IsChildOf(transform) ||
-                hit.distance >= nearestDistance)
+            RaycastHit hit = _aimHits[i];
+            if (hit.distance < nearestDistance &&
+                WeaponProjectileCtrl.CanHitCollider(hit.collider, transform))
             {
-                continue;
+                nearestDistance = hit.distance;
+                aimPoint = hit.point;
             }
-
-            if (hit.collider.GetComponentInParent<CharacterHealth>())
-            {
-                continue;
-            }
-
-            nearestDistance = hit.distance;
-            worldHit = hit;
         }
 
-        return worldHit.collider;
+        Vector3 direction = aimPoint - muzzlePosition;
+        if (direction.sqrMagnitude < 0.000001f)
+        {
+            direction = aimRay.direction;
+        }
+        return new Ray(muzzlePosition, direction.normalized);
     }
 
-    private bool TryFindDamageHit(
-        int hitCount,
-        out RaycastHit damageHit,
-        out BodyHitbox bodyHitbox,
-        out CharacterHealth target)
+    private void SpawnProjectile(Ray shotRay)
     {
-        int bodyIndex = -1;
-        int targetIndex = -1;
-        float bodyDistance = float.PositiveInfinity;
-        float targetDistance = float.PositiveInfinity;
-        float blockingDistance = float.PositiveInfinity;
-        BodyHitbox nearestBody = null;
-        CharacterHealth nearestTarget = null;
-
-        for (int i = 0; i < hitCount; i++)
+        if (!_projectilePool)
         {
-            RaycastHit hit = _hitBuffer[i];
-            if (!hit.collider || hit.collider.transform.IsChildOf(transform))
+            _projectilePool = ObjectPool.instance;
+        }
+        GameObject instance = _projectilePool.Spawn(
+            _projectilePrefab,
+            shotRay.origin,
+            Quaternion.LookRotation(shotRay.direction, Vector3.up));
+        if (!instance || !instance.TryGetComponent(out WeaponProjectileCtrl projectile))
+        {
+            if (instance)
             {
-                continue;
+                _projectilePool.Despawn(instance);
             }
-            if (hit.collider.TryGetComponent(out BodyHitbox hitBody))
-            {
-                if (hit.distance < bodyDistance)
-                {
-                    bodyIndex = i;
-                    bodyDistance = hit.distance;
-                    nearestBody = hitBody;
-                }
-                continue;
-            }
-
-            CharacterHealth hitTarget = hit.collider.GetComponentInParent<CharacterHealth>();
-            if (hitTarget)
-            {
-                if (hit.distance < targetDistance)
-                {
-                    targetIndex = i;
-                    targetDistance = hit.distance;
-                    nearestTarget = hitTarget;
-                }
-                continue;
-            }
-
-            blockingDistance = Mathf.Min(blockingDistance, hit.distance);
+            Debug.LogError("子弹拖尾 Prefab 缺少 WeaponProjectileCtrl。", this);
+            return;
         }
 
-        if (bodyIndex >= 0 &&
-            bodyDistance <= blockingDistance &&
-            bodyDistance <= targetDistance + BodyHitboxPreferenceTolerance)
-        {
-            damageHit = _hitBuffer[bodyIndex];
-            bodyHitbox = nearestBody;
-            target = nearestBody.CharacterHealth;
-            return true;
-        }
-        if (targetIndex >= 0 && targetDistance <= blockingDistance)
-        {
-            damageHit = _hitBuffer[targetIndex];
-            bodyHitbox = null;
-            target = nearestTarget;
-            return true;
-        }
-
-        damageHit = default;
-        bodyHitbox = null;
-        target = null;
-        return false;
+        projectile.Initialize(
+            _weaponData,
+            _playerInfo,
+            transform,
+            _impactCtrl,
+            _hitMask,
+            shotRay.direction);
     }
 
-    private DamageRequest CreateDamageRequest(RaycastHit hit, Vector3 direction)
+    private Transform GetMuzzlePoint()
     {
-        WeaponDamageData damageData = _weaponData.Damage;
-        DamageRequest request = new DamageRequest(null, damageData.GetDamageAtDistance(hit.distance));
-        request.Instigator = _playerInfo;
-        request.SourceId = _weaponData.Basic.WeaponId;
-        request.SourceName = _weaponData.Basic.WeaponName;
-        request.SourceIconId = _weaponData.Basic.SilhouetteResourceId;
-        request.HitDistance = hit.distance;
-        request.BaseHitScore = damageData.BaseHitScore;
-        request.WeaponScoreFactor = damageData.WeaponScoreFactor;
-        request.DistanceScoreFactor = damageData.GetDistanceScoreFactor(hit.distance);
-        request.KillBonus = damageData.KillBonus;
-        request.HitPoint = hit.point;
-        request.HitDirection = direction;
-        return request;
+        if (!_weaponViewCtrl)
+        {
+            return null;
+        }
+
+        return _cameraCtrl.IsThirdPerson
+            ? _weaponViewCtrl.ThirdPersonMuzzlePoint
+            : _weaponViewCtrl.MuzzlePoint;
+    }
+
+    private async Task LoadProjectilePrefabAsync(
+        WeaponDefinitionSO weaponData,
+        int loadVersion)
+    {
+        string resourceId = weaponData ? weaponData.Effects.TracerResourceId : string.Empty;
+        if (_projectilePrefab &&
+            string.Equals(resourceId, _projectileResourceId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        ReleaseProjectilePrefab();
+        if (string.IsNullOrWhiteSpace(resourceId))
+        {
+            return;
+        }
+
+        _resourceMgr = ResourceMgr.instance;
+        try
+        {
+            GameObject prefab = await _resourceMgr.LoadAsync<GameObject>(resourceId);
+            if (loadVersion != _projectileLoadVersion || !this)
+            {
+                _resourceMgr.Release<GameObject>(resourceId);
+                return;
+            }
+
+            if (!prefab || !prefab.GetComponent<WeaponProjectileCtrl>())
+            {
+                _resourceMgr.Release<GameObject>(resourceId);
+                Debug.LogError($"子弹拖尾资源无效或缺少 WeaponProjectileCtrl：{resourceId}", this);
+                return;
+            }
+
+            _projectilePrefab = prefab;
+            _projectileResourceId = resourceId;
+            _projectilePool = ObjectPool.instance;
+            _projectilePool.Warmup(_projectilePrefab, 32);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"加载子弹拖尾资源失败：{resourceId}，{exception.Message}", this);
+        }
+    }
+
+    private void ReleaseProjectilePrefab()
+    {
+        // 场景退出时池可能已先销毁，清理阶段不能通过 instance 再创建管理器。
+        if (_projectilePrefab && _projectilePool)
+        {
+            _projectilePool.ClearPool(_projectilePrefab);
+        }
+        if (_resourceMgr != null && !string.IsNullOrWhiteSpace(_projectileResourceId))
+        {
+            _resourceMgr.Release<GameObject>(_projectileResourceId);
+        }
+
+        _projectilePrefab = null;
+        _projectileResourceId = string.Empty;
     }
 
     private void CommitMagazineReload()
@@ -619,6 +654,73 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
             _spreadFromShots,
             0f,
             _weaponData.Accuracy.SpreadRecoverySpeed * Time.deltaTime);
+    }
+
+    private void AddShotRecoil()
+    {
+        WeaponGameplayRecoilData recoil = _weaponData.GameplayRecoil;
+        if (Time.time - _lastRecoilShotTime > recoil.PatternResetTime)
+        {
+            _recoilShotIndex = 0;
+            _lastPatternPoint = Vector2.zero;
+        }
+
+        _recoilShotIndex++;
+        _lastRecoilShotTime = Time.time;
+        Vector2 step;
+        if (recoil.Pattern.Count >= 2)
+        {
+            float progress = Mathf.Clamp01(
+                (float)_recoilShotIndex / Mathf.Max(1, _weaponData.Ammo.MagazineCapacity));
+            float position = progress * (recoil.Pattern.Count - 1);
+            int index = Mathf.Min(Mathf.FloorToInt(position), recoil.Pattern.Count - 2);
+            Vector2 point = Vector2.Lerp(
+                recoil.Pattern[index], recoil.Pattern[index + 1], position - index);
+            step = point - _lastPatternPoint;
+            _lastPatternPoint = point;
+            step += new Vector2(
+                UnityEngine.Random.Range(recoil.HorizontalRecoil.x, recoil.HorizontalRecoil.y),
+                UnityEngine.Random.Range(-recoil.VerticalRecoil.y, recoil.VerticalRecoil.y)) *
+                recoil.Randomness;
+        }
+        else
+        {
+            step = new Vector2(
+                UnityEngine.Random.Range(recoil.HorizontalRecoil.x, recoil.HorizontalRecoil.y),
+                UnityEngine.Random.Range(recoil.VerticalRecoil.x, recoil.VerticalRecoil.y));
+        }
+
+        if (_recoilShotIndex == 1)
+        {
+            step *= recoil.FirstShotMultiplier;
+        }
+        if (_aimCtrl)
+        {
+            step *= Mathf.Lerp(1f, recoil.AimMultiplier, _aimCtrl.AimProgress);
+        }
+        _recoilTarget += step;
+    }
+
+    private void UpdateRecoil()
+    {
+        if (!_weaponData || !_cameraCtrl)
+        {
+            return;
+        }
+
+        WeaponGameplayRecoilData recoil = _weaponData.GameplayRecoil;
+        if (Time.time - _lastRecoilShotTime >= recoil.RecoveryDelay &&
+            (_fireMode == WeaponFireMode.SemiAutomatic || !_isFireHeld ||
+             _ammoState == null || _ammoState.MagazineAmmo <= 0))
+        {
+            _recoilTarget = Vector2.MoveTowards(
+                _recoilTarget, Vector2.zero, recoil.RecoverySpeed * Time.deltaTime);
+        }
+
+        Vector2 next = Vector2.MoveTowards(
+            _recoilApplied, _recoilTarget, recoil.KickSpeed * Time.deltaTime);
+        _cameraCtrl.ApplyRecoilAngles(next - _recoilApplied);
+        _recoilApplied = next;
     }
 
     private float GetRoundsPerMinute()

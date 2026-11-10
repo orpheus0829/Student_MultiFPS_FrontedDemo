@@ -11,6 +11,7 @@ public sealed class WeaponDefinitionSOEditor : Editor
     private bool _showActions = true;
     private bool _showPresentation = true;
     private bool _showOriginalRecoil;
+    private int _draggedRecoilPoint = -1;
 
     public override void OnInspectorGUI()
     {
@@ -106,11 +107,14 @@ public sealed class WeaponDefinitionSOEditor : Editor
         Draw("_damage._closeDamageRange", "满伤害距离");
         Draw("_damage._farDamageRange", "最低伤害距离");
         Draw("_damage._maximumHitRange", "最大命中距离");
+        Draw("_damage._projectileSpeed", "弹丸初速（米/秒）");
+        Draw("_damage._projectileRadius", "弹丸碰撞半径");
         Draw("_damage._headMultiplier", "头部倍率");
         Draw("_damage._upperBodyMultiplier", "上半身倍率");
         Draw("_damage._lowerBodyMultiplier", "下半身倍率");
         DrawSubTitle("命中与击杀得分");
         Draw("_damage._baseHitScore", "基础命中分");
+        Draw("_damage._damageScorePerHealth", "每点实际伤害得分");
         Draw("_damage._weaponScoreFactor", "武器得分系数");
         Draw("_damage._closeDistanceScoreFactor", "近距离得分系数");
         Draw("_damage._farDistanceScoreFactor", "远距离得分系数");
@@ -161,8 +165,9 @@ public sealed class WeaponDefinitionSOEditor : Editor
             Draw("_gameplayRecoil._crouchMultiplier", "蹲姿后坐倍率");
             Draw("_gameplayRecoil._recoveryDelay", "后坐恢复延迟");
             Draw("_gameplayRecoil._recoverySpeed", "后坐恢复速度");
-            DrawVector2List(Find("_gameplayRecoil._pattern"), "后坐趋势点");
-            Draw("_gameplayRecoil._patternResetTime", "趋势重置时间");
+            DrawRecoilCanvas(Find("_gameplayRecoil._pattern"));
+            Draw("_gameplayRecoil._kickSpeed", "每发抬升速度", "单位：度/秒；决定从当前点冲向下一后坐点有多快。");
+            Draw("_gameplayRecoil._patternResetTime", "连续射击保留时间");
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
     }
@@ -253,6 +258,16 @@ public sealed class WeaponDefinitionSOEditor : Editor
         DrawSubTitle("持枪姿势与节点");
         Draw("_ik._weaponRotationOffset", "武器旋转偏移");
         Draw("_ik._weaponPositionOffset", "武器位置偏移");
+        DrawSubTitle("第三人称握枪");
+        SerializedProperty thirdPersonGrip = Find("_ik._useThirdPersonGrip");
+        DrawProperty(thirdPersonGrip, "使用专属握枪位置");
+        if (thirdPersonGrip.boolValue)
+        {
+            Draw("_ik._thirdPersonGripPosition", "挂点下的局部位置");
+            Draw("_ik._thirdPersonGripRotation", "挂点下的局部旋转");
+            Draw("_ik._thirdPersonGripScale", "挂点下的局部缩放");
+        }
+        DrawSubTitle("第一人称姿势与节点");
         Draw("_ik._leftClavicleOffset", "左锁骨偏移");
         Draw("_ik._rightClavicleOffset", "右锁骨偏移");
         Draw("_ik._aimPointOffset", "瞄准点偏移");
@@ -421,6 +436,54 @@ public sealed class WeaponDefinitionSOEditor : Editor
             EditorGUILayout.PropertyField(item, new GUIContent("第 " + (i + 1) + " 点"));
         }
         EditorGUI.indentLevel--;
+    }
+
+    private void DrawRecoilCanvas(SerializedProperty points)
+    {
+        EditorGUILayout.LabelField("后坐轨迹（从下往上；单位：视角角度）", EditorStyles.miniBoldLabel);
+        Rect canvas = GUILayoutUtility.GetRect(240f, 240f, GUILayout.ExpandWidth(true));
+        EditorGUI.DrawRect(canvas, new Color(0.13f, 0.15f, 0.18f));
+        Vector2 center = canvas.center;
+        Handles.color = new Color(0.38f, 0.4f, 0.43f);
+        Handles.DrawLine(new Vector3(center.x, canvas.yMin), new Vector3(center.x, canvas.yMax));
+        Handles.DrawLine(new Vector3(canvas.xMin, canvas.yMax - 16f),
+            new Vector3(canvas.xMax, canvas.yMax - 16f));
+
+        float scale = Mathf.Min(canvas.width, canvas.height) / 32f;
+        Handles.color = Color.white;
+        Vector2 previous = new Vector2(center.x, canvas.yMax - 16f);
+        for (int i = 0; i < points.arraySize; i++)
+        {
+            SerializedProperty point = points.GetArrayElementAtIndex(i);
+            Vector2 value = point.vector2Value;
+            Vector2 screen = new Vector2(center.x + value.x * scale,
+                canvas.yMax - 16f - value.y * scale);
+            Handles.DrawLine(previous, screen);
+            EditorGUI.DrawRect(new Rect(screen.x - 3f, screen.y - 3f, 6f, 6f), Color.white);
+            previous = screen;
+
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 &&
+                Vector2.Distance(Event.current.mousePosition, screen) < 9f)
+            {
+                _draggedRecoilPoint = i;
+                Event.current.Use();
+            }
+            if (Event.current.type == EventType.MouseDrag && Event.current.button == 0 &&
+                _draggedRecoilPoint == i)
+            {
+                Undo.RecordObject(target, "调整后坐轨迹");
+                point.vector2Value = new Vector2(
+                    (Event.current.mousePosition.x - center.x) / scale,
+                    (canvas.yMax - 16f - Event.current.mousePosition.y) / scale);
+                Event.current.Use();
+            }
+        }
+        if (Event.current.type == EventType.MouseUp)
+        {
+            _draggedRecoilPoint = -1;
+        }
+        DrawVector2List(points, "轨迹控制点");
+        EditorGUILayout.HelpBox("拖动白色方点调整轨迹。满弹匣连续射击走完整条线；停火超过保留时间后从起点重新走。", MessageType.None);
     }
 
     private void DrawObjectList(SerializedProperty property, string label)

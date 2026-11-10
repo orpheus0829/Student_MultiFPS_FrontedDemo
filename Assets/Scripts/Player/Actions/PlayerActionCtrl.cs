@@ -311,10 +311,6 @@ public class PlayerActionCtrl : MonoBehaviour
         }
 
         _aimCtrl.ReceiveAimInput(command.Phase);
-        if (_aimCtrl.IsAimRequested)
-        {
-            _moveCtrl.SetSprintInput(false);
-        }
 
         if (!IsOperationLocked)
         {
@@ -513,7 +509,8 @@ public class PlayerActionCtrl : MonoBehaviour
         WeaponDefinitionSO weaponData = _weaponActionCtrl.CurrentWeaponData;
         if (!weaponData ||
             (!_weaponActionCtrl.AllowsFire &&
-                !_weaponActionCtrl.CanFireAfterReloadCommit))
+                !_weaponActionCtrl.CanFireAfterReloadCommit &&
+                !_weaponCombatCtrl.CanFireDuringPerRoundReload))
         {
             return false;
         }

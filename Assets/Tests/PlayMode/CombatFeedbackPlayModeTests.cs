@@ -52,6 +52,15 @@ namespace GunDemo.Tests
             string newestContent = (string)textType.GetProperty("text").GetValue(newestText);
             Assert.That(newestContent, Does.Contain("目标乙"));
 
+            object noWeaponMessage = Activator.CreateInstance(
+                messageType, string.Empty, "自杀玩家", string.Empty, false);
+            showKill.Invoke(killFeeds[0], new[] { noWeaponMessage });
+            Component selfKillText = content.GetChild(0).GetComponentInChildren(textType, true);
+            string selfKillContent = (string)textType.GetProperty("text").GetValue(selfKillText);
+            Assert.That(selfKillContent, Does.Contain("skull_white"));
+            Assert.That(selfKillContent, Does.Contain("自杀玩家"));
+            Assert.That(selfKillContent, Does.Not.Contain("weapon."));
+
             ClearWordNoteRegion("TopRight");
             yield return DestroyWordNoteUI();
         }

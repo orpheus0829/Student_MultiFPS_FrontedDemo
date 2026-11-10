@@ -26,6 +26,10 @@ public class PlayerDataSO : ScriptableObject
     [SerializeField] private float _minPitch = -85f;
     [SerializeField] private float _maxPitch = 85f;
 
+    [Header("死亡与复活")]
+    [SerializeField, Min(0.1f), InspectorName("死亡后复活间隔（秒）")]
+    private float _respawnDelay = 5f;
+
     public float MoveSpeed
     {
         get
@@ -143,6 +147,14 @@ public class PlayerDataSO : ScriptableObject
         get
         {
             return _maxPitch;
+        }
+    }
+
+    public float RespawnDelay
+    {
+        get
+        {
+            return _respawnDelay;
         }
     }
 }

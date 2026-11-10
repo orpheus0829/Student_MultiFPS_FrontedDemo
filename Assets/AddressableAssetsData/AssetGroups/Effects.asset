@@ -76,6 +76,33 @@ MonoBehaviour:
     - weapon.viper-357
     - weapon.x18
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f1dc4df701f37324c98ea16f41770afc
+    m_Address: effect.weapon.bullet_tracer
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - effect.projectile
+    - effect.weapon
+    - type.effect
+    - weapon.ak
+    - weapon.as-val
+    - weapon.dgl-50
+    - weapon.drake-12
+    - weapon.g3
+    - weapon.kar98k
+    - weapon.kolibri
+    - weapon.kxg-12
+    - weapon.l96x
+    - weapon.m1911
+    - weapon.mgx5
+    - weapon.mk14-ebr
+    - weapon.mps5
+    - weapon.mx16a4
+    - weapon.pdw90
+    - weapon.striker-v
+    - weapon.svd
+    - weapon.viper-357
+    - weapon.x18
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f2a8ce770f9745047ae3b51ac03e8497
     m_Address: effect.impact.texture.concrete
     m_ReadOnly: 0

@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69487c63fa4b45f8a42984a15952e814, type: 3}
+  m_Name: EllenCombatVoice
+  m_EditorClassIdentifier: Assembly-CSharp::CombatVoiceSO
+  _characterModelId: character.ellen
+  _hearingDistance: 24
+  _textDuration: 2.2
+  _automaticCooldown: 6
+  _streakWindow: 15
+  _groups:
+  - _cue: 0
+    _chance: 0.18
+    _lines:
+    - _subtitle: 等一下，我换弹。
+      _audioResourceId:
+    - _subtitle: 啧，又打空了。
+      _audioResourceId:
+  - _cue: 1
+    _chance: 0.12
+    _lines:
+    - _subtitle: 嘶……这下真疼。
+      _audioResourceId:
+    - _subtitle: 糟了，被盯上了。
+      _audioResourceId:
+  - _cue: 2
+    _chance: 0.25
+    _lines:
+    - _subtitle: 好，少一个麻烦。
+      _audioResourceId:
+    - _subtitle: 解决了，能歇会儿吗？
+      _audioResourceId:
+  - _cue: 3
+    _chance: 0.65
+    _lines:
+    - _subtitle: 三个？今天效率还行。
+      _audioResourceId:
+    - _subtitle: 这下能早点收工了吧。
+      _audioResourceId:
+  - _cue: 4
+    _chance: 0.25
+    _lines:
+    - _subtitle: 又得上班了……我来了。
+      _audioResourceId:

@@ -32,10 +32,63 @@ public class WeaponAnimationData
 }
 
 [Serializable]
+public struct HumanoidFingerData
+{
+    [SerializeField, Range(-1f, 1f)] private float _proximal;
+    [SerializeField, Range(-1f, 1f)] private float _intermediate;
+    [SerializeField, Range(-1f, 1f)] private float _distal;
+    [SerializeField, Range(-1f, 1f)] private float _spread;
+
+    public float Proximal { get { return _proximal; } }
+    public float Intermediate { get { return _intermediate; } }
+    public float Distal { get { return _distal; } }
+    public float Spread { get { return _spread; } }
+}
+
+[Serializable]
+public class HumanoidFingerPoseData
+{
+    [SerializeField] private HumanoidFingerData _thumb;
+    [SerializeField] private HumanoidFingerData _index;
+    [SerializeField] private HumanoidFingerData _middle;
+    [SerializeField] private HumanoidFingerData _ring;
+    [SerializeField] private HumanoidFingerData _little;
+
+    public HumanoidFingerData Thumb { get { return _thumb; } }
+    public HumanoidFingerData Index { get { return _index; } }
+    public HumanoidFingerData Middle { get { return _middle; } }
+    public HumanoidFingerData Ring { get { return _ring; } }
+    public HumanoidFingerData Little { get { return _little; } }
+}
+
+[Serializable]
+public class ThirdPersonFingerPoseData
+{
+    [SerializeField] private bool _useLeftGripPose;
+    [SerializeField] private HumanoidFingerPoseData _leftGripPose =
+        new HumanoidFingerPoseData();
+    [SerializeField] private bool _useRightGripPose;
+    [SerializeField] private HumanoidFingerPoseData _rightIdlePose =
+        new HumanoidFingerPoseData();
+    [SerializeField] private HumanoidFingerPoseData _rightFirePose =
+        new HumanoidFingerPoseData();
+
+    public bool UseLeftGripPose { get { return _useLeftGripPose; } }
+    public HumanoidFingerPoseData LeftGripPose { get { return _leftGripPose; } }
+    public bool UseRightGripPose { get { return _useRightGripPose; } }
+    public HumanoidFingerPoseData RightIdlePose { get { return _rightIdlePose; } }
+    public HumanoidFingerPoseData RightFirePose { get { return _rightFirePose; } }
+}
+
+[Serializable]
 public class WeaponIkData
 {
     [SerializeField] private Quaternion _weaponRotationOffset = Quaternion.Euler(90f, 0f, 0f);
     [SerializeField] private Vector3 _weaponPositionOffset;
+    [SerializeField] private bool _useThirdPersonGrip;
+    [SerializeField] private Vector3 _thirdPersonGripPosition;
+    [SerializeField] private Quaternion _thirdPersonGripRotation = Quaternion.identity;
+    [SerializeField] private Vector3 _thirdPersonGripScale = Vector3.one;
     [SerializeField] private Vector3 _leftClavicleOffset;
     [SerializeField] private Vector3 _rightClavicleOffset;
     [SerializeField] private Vector3 _aimPointOffset;
@@ -47,9 +100,16 @@ public class WeaponIkData
     [SerializeField] private string _shellEjectionPointPath;
     [SerializeField] private string _magazinePointPath;
     [SerializeField] private string _leftHandIkPointPath;
+    [SerializeField]
+    private ThirdPersonFingerPoseData _thirdPersonFingerPose =
+        new ThirdPersonFingerPoseData();
 
     public Quaternion WeaponRotationOffset { get { return _weaponRotationOffset; } }
     public Vector3 WeaponPositionOffset { get { return _weaponPositionOffset; } }
+    public bool UseThirdPersonGrip { get { return _useThirdPersonGrip; } }
+    public Vector3 ThirdPersonGripPosition { get { return _thirdPersonGripPosition; } }
+    public Quaternion ThirdPersonGripRotation { get { return _thirdPersonGripRotation; } }
+    public Vector3 ThirdPersonGripScale { get { return _thirdPersonGripScale; } }
     public Vector3 LeftClavicleOffset { get { return _leftClavicleOffset; } }
     public Vector3 RightClavicleOffset { get { return _rightClavicleOffset; } }
     public Vector3 AimPointOffset { get { return _aimPointOffset; } }
@@ -61,6 +121,13 @@ public class WeaponIkData
     public string ShellEjectionPointPath { get { return _shellEjectionPointPath; } }
     public string MagazinePointPath { get { return _magazinePointPath; } }
     public string LeftHandIkPointPath { get { return _leftHandIkPointPath; } }
+    public ThirdPersonFingerPoseData ThirdPersonFingerPose
+    {
+        get
+        {
+            return _thirdPersonFingerPose;
+        }
+    }
 }
 
 [Serializable]

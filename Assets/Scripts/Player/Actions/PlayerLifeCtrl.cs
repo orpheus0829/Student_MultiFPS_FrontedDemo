@@ -1,0 +1,324 @@
+using System;
+using UnityEngine;
+
+[DisallowMultipleComponent]
+public sealed class PlayerLifeCtrl : MonoBehaviour
+{
+    [Header("复活")]
+    [SerializeField, InspectorName("玩家数据")] private PlayerDataSO _playerData;
+    [SerializeField, InspectorName("自动复活")] private bool _autoRespawn = true;
+    [SerializeField, InspectorName("绑定复活区域（可暂留空）")]
+    private PlayerSpawnZone _spawnZone;
+
+    [Header("死亡镜头")]
+    [SerializeField, Min(0.1f), InspectorName("镜头后退距离")] private float _cameraBackDistance = 2.7f;
+    [SerializeField, Min(0f), InspectorName("镜头抬高距离")] private float _cameraRise = 1.2f;
+    [SerializeField, Min(0.1f), InspectorName("镜头跟随速度")] private float _cameraFollowSpeed = 5f;
+
+    [Header("死亡表现")]
+    [SerializeField, InspectorName("布娃娃")] private PlayerRagdollCtrl _ragdoll;
+    [SerializeField, InspectorName("双视角动画")] private PlayerAnimationCtrl _animationCtrl;
+    [SerializeField, InspectorName("枪械表现")] private PlayerWeaponViewCtrl _weaponViewCtrl;
+
+    private CharacterHealth _health;
+    private CharacterController _characterController;
+    private PlayerInputCtrl _inputCtrl;
+    private PlayerActionCtrl _actionCtrl;
+    private PlayerMoveCtrl _moveCtrl;
+    private PlayerAimCtrl _aimCtrl;
+    private WeaponCombatCtrl _combatCtrl;
+    private WeaponActionCtrl _weaponActionCtrl;
+    private FirstPersonCameraCtrl _cameraCtrl;
+    private FirstPersonCameraMotionCtrl _cameraMotionCtrl;
+    private Camera _camera;
+    private Transform _cameraParent;
+    private Vector3 _cameraLocalPosition;
+    private Quaternion _cameraLocalRotation;
+    private int _cameraMask;
+    private bool _hasCameraPose;
+    private bool _isDead;
+    private Vector3 _initialPosition;
+    private Quaternion _initialRotation;
+    private GameObject _droppedWeapon;
+    private Collider[] _hitboxColliders;
+    private bool[] _hitboxEnabled;
+    private SmartTimer.TimerTask _respawnTask;
+    private bool _isClosing;
+
+    public event Action Respawned;
+
+    public float RespawnDelay
+    {
+        get { return _playerData ? _playerData.RespawnDelay : 5f; }
+    }
+
+    private void Awake()
+    {
+        _initialPosition = transform.position;
+        _initialRotation = transform.rotation;
+        TryGetComponent(out _health);
+        TryGetComponent(out _characterController);
+        TryGetComponent(out _inputCtrl);
+        TryGetComponent(out _actionCtrl);
+        TryGetComponent(out _moveCtrl);
+        TryGetComponent(out _aimCtrl);
+        TryGetComponent(out _combatCtrl);
+        TryGetComponent(out _weaponActionCtrl);
+        if (!_ragdoll)
+        {
+            TryGetComponent(out _ragdoll);
+        }
+        if (!_animationCtrl)
+        {
+            TryGetComponent(out _animationCtrl);
+        }
+        if (!_weaponViewCtrl)
+        {
+            TryGetComponent(out _weaponViewCtrl);
+        }
+        _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
+        _cameraMotionCtrl = GetComponentInChildren<FirstPersonCameraMotionCtrl>(true);
+        _camera = _cameraCtrl ? _cameraCtrl.GetComponentInChildren<Camera>(true) : null;
+        BodyHitbox[] hitboxes = GetComponentsInChildren<BodyHitbox>(true);
+        _hitboxColliders = new Collider[hitboxes.Length];
+        _hitboxEnabled = new bool[hitboxes.Length];
+        for (int i = 0; i < hitboxes.Length; i++)
+        {
+            _hitboxColliders[i] = hitboxes[i].GetComponent<Collider>();
+        }
+    }
+
+    private void OnEnable()
+    {
+        _isClosing = false;
+        CombatDamage.DamageResolved += HandleDamageResolved;
+    }
+
+    private void LateUpdate()
+    {
+        if (!_isDead || !_hasCameraPose || !_camera)
+        {
+            return;
+        }
+
+        Vector3 focus = _ragdoll ? _ragdoll.FocusPoint :
+            transform.position + Vector3.up * 0.95f;
+        Vector3 desired = focus - transform.forward * _cameraBackDistance +
+            Vector3.up * _cameraRise;
+        float blend = 1f - Mathf.Exp(-_cameraFollowSpeed * Time.deltaTime);
+        _camera.transform.position = Vector3.Lerp(_camera.transform.position, desired, blend);
+        Quaternion look = Quaternion.LookRotation(focus - _camera.transform.position, Vector3.up);
+        _camera.transform.rotation = Quaternion.Slerp(_camera.transform.rotation, look, blend);
+    }
+
+    private void OnDisable()
+    {
+        _isClosing = true;
+        CombatDamage.DamageResolved -= HandleDamageResolved;
+        if (_respawnTask != null && _respawnTask.IsRunning)
+        {
+            _respawnTask.Stop();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        RestoreCamera();
+        if (_droppedWeapon)
+        {
+            Destroy(_droppedWeapon);
+        }
+    }
+
+    public void BindSpawnZone(PlayerSpawnZone zone)
+    {
+        _spawnZone = zone;
+    }
+
+    public void Respawn()
+    {
+        if (_isClosing || !_isDead || !_health)
+        {
+            return;
+        }
+
+        if (_characterController)
+        {
+            _characterController.enabled = false;
+        }
+        _ragdoll?.StandUp();
+        if (_spawnZone && _spawnZone.TryGetRandomPosition(out Vector3 position))
+        {
+            transform.position = position;
+            transform.rotation = _spawnZone.transform.rotation;
+        }
+        else
+        {
+            transform.position = _initialPosition;
+            transform.rotation = _initialRotation;
+        }
+
+        if (_droppedWeapon)
+        {
+            Destroy(_droppedWeapon);
+            _droppedWeapon = null;
+        }
+        RestoreCamera();
+        SetHitboxesEnabled(true);
+        _health.ResetHealth();
+        if (_characterController)
+        {
+            _characterController.enabled = true;
+        }
+        SetControlsEnabled(true);
+        if (_animationCtrl && _animationCtrl.FirstPersonView)
+        {
+            _animationCtrl.FirstPersonView.gameObject.SetActive(true);
+        }
+        _isDead = false;
+        Respawned?.Invoke();
+    }
+
+    private void HandleDamageResolved(DamageResult result)
+    {
+        if (_isDead || result == null || !result.WasKill || result.Target != _health)
+        {
+            return;
+        }
+
+        _isDead = true;
+        DropWeapon();
+        PrepareDeathCamera();
+        SetControlsEnabled(false);
+        if (_hasCameraPose && _camera)
+        {
+            _camera.cullingMask = (_camera.cullingMask | (1 << 8)) & ~(1 << 9);
+        }
+        SetHitboxesEnabled(false);
+        if (_characterController)
+        {
+            _characterController.enabled = false;
+        }
+        if (_animationCtrl && _animationCtrl.FirstPersonView)
+        {
+            _animationCtrl.FirstPersonView.gameObject.SetActive(false);
+        }
+        _ragdoll?.Fall(result.HitPoint, result.HitDirection, result.AppliedDamage);
+        if (_autoRespawn)
+        {
+            _respawnTask = SmartTimer.instance.SetTimer(this, RespawnDelay, Respawn);
+        }
+    }
+
+    private void SetControlsEnabled(bool isEnabled)
+    {
+        if (_inputCtrl) _inputCtrl.enabled = isEnabled;
+        if (_actionCtrl) _actionCtrl.enabled = isEnabled;
+        if (_moveCtrl) _moveCtrl.enabled = isEnabled;
+        if (_aimCtrl) _aimCtrl.enabled = isEnabled;
+        if (_combatCtrl) _combatCtrl.enabled = isEnabled;
+        if (_weaponActionCtrl) _weaponActionCtrl.enabled = isEnabled;
+        if (_weaponViewCtrl) _weaponViewCtrl.enabled = isEnabled;
+        if (_animationCtrl) _animationCtrl.enabled = isEnabled;
+        if (_cameraCtrl) _cameraCtrl.enabled = isEnabled;
+        if (_cameraMotionCtrl) _cameraMotionCtrl.enabled = isEnabled;
+    }
+
+    private void SetHitboxesEnabled(bool isEnabled)
+    {
+        for (int i = 0; i < _hitboxColliders.Length; i++)
+        {
+            if (!_hitboxColliders[i])
+            {
+                continue;
+            }
+            if (!isEnabled)
+            {
+                _hitboxEnabled[i] = _hitboxColliders[i].enabled;
+            }
+            _hitboxColliders[i].enabled = isEnabled && _hitboxEnabled[i];
+        }
+    }
+
+    private void PrepareDeathCamera()
+    {
+        if (!_camera || !_cameraCtrl || !_cameraCtrl.enabled)
+        {
+            return;
+        }
+
+        _cameraParent = _camera.transform.parent;
+        _cameraLocalPosition = _camera.transform.localPosition;
+        _cameraLocalRotation = _camera.transform.localRotation;
+        _cameraMask = _camera.cullingMask;
+        _camera.transform.SetParent(null, true);
+        _hasCameraPose = true;
+    }
+
+    private void RestoreCamera()
+    {
+        if (!_hasCameraPose || !_camera)
+        {
+            return;
+        }
+
+        _camera.transform.SetParent(_cameraParent, false);
+        _camera.transform.localPosition = _cameraLocalPosition;
+        _camera.transform.localRotation = _cameraLocalRotation;
+        _camera.cullingMask = _cameraMask;
+        _hasCameraPose = false;
+    }
+
+    private void DropWeapon()
+    {
+        if (!_weaponViewCtrl || !_weaponViewCtrl.ThirdPersonWeapon)
+        {
+            return;
+        }
+
+        _droppedWeapon = Instantiate(_weaponViewCtrl.ThirdPersonWeapon);
+        _droppedWeapon.name = "掉落枪械";
+        _droppedWeapon.transform.SetParent(null, true);
+        Animator[] animators = _droppedWeapon.GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < animators.Length; i++)
+        {
+            animators[i].enabled = false;
+        }
+        Collider[] sourceColliders = _droppedWeapon.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < sourceColliders.Length; i++)
+        {
+            sourceColliders[i].enabled = false;
+        }
+        MonoBehaviour[] behaviours = _droppedWeapon.GetComponentsInChildren<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            behaviours[i].enabled = false;
+        }
+
+        Renderer[] renderers = _droppedWeapon.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
+        {
+            Destroy(_droppedWeapon);
+            _droppedWeapon = null;
+            return;
+        }
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].forceRenderingOff = false;
+        }
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            bounds.Encapsulate(renderers[i].bounds);
+        }
+        BoxCollider collider = _droppedWeapon.AddComponent<BoxCollider>();
+        collider.center = _droppedWeapon.transform.InverseTransformPoint(bounds.center);
+        Vector3 scale = _droppedWeapon.transform.lossyScale;
+        collider.size = new Vector3(
+            bounds.size.x / Mathf.Max(0.01f, Mathf.Abs(scale.x)),
+            bounds.size.y / Mathf.Max(0.01f, Mathf.Abs(scale.y)),
+            bounds.size.z / Mathf.Max(0.01f, Mathf.Abs(scale.z)));
+        Rigidbody body = _droppedWeapon.AddComponent<Rigidbody>();
+        body.mass = 2f;
+    }
+}

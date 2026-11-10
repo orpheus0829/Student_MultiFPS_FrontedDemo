@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DefaultExecutionOrder(100)]
 [DisallowMultipleComponent]
 public sealed class FirstPersonCameraMotionCtrl : MonoBehaviour
 {

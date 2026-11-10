@@ -8,6 +8,30 @@ namespace GunDemo.Tests
     public sealed class WeaponActionDataTests
     {
         [Test]
+        public void PlayableWeaponsHaveDistinctScoreAndRecoilData()
+        {
+            string[] names = { "AK", "ASVal", "KXG12", "Kar98k", "M1911", "MPS5", "PDW90" };
+            System.Collections.Generic.HashSet<float> scoreRates =
+                new System.Collections.Generic.HashSet<float>();
+            for (int i = 0; i < names.Length; i++)
+            {
+                string path = "Assets/SO/Weapons/Data/" + names[i] + ".asset";
+                Object weapon = AssetDatabase.LoadMainAssetAtPath(path);
+                Assert.That(weapon, Is.Not.Null, path);
+                SerializedObject data = new SerializedObject(weapon);
+                float rate = data.FindProperty("_damage._damageScorePerHealth").floatValue;
+                Assert.That(rate, Is.GreaterThan(0f), path);
+                scoreRates.Add(rate);
+                Assert.That(data.FindProperty("_gameplayRecoil._pattern").arraySize,
+                    Is.GreaterThanOrEqualTo(2), path);
+                Assert.That(data.FindProperty("_gameplayRecoil._kickSpeed").floatValue,
+                    Is.GreaterThan(0f), path);
+            }
+
+            Assert.That(scoreRates.Count, Is.GreaterThanOrEqualTo(4));
+        }
+
+        [Test]
         public void OnlyPdw90HasNativeInspectAction()
         {
             string[] weaponGuids = AssetDatabase.FindAssets(

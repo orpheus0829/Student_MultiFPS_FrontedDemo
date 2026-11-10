@@ -37,10 +37,13 @@ MonoBehaviour:
     _closeDamageRange: 12
     _farDamageRange: 36
     _maximumHitRange: 110
+    _projectileSpeed: 320
+    _projectileRadius: 0.015
     _headMultiplier: 1.65
     _upperBodyMultiplier: 1
     _lowerBodyMultiplier: 0.9
     _baseHitScore: 10
+    _damageScorePerHealth: 1
     _weaponScoreFactor: 1
     _closeDistanceScoreFactor: 1
     _farDistanceScoreFactor: 1
@@ -76,6 +79,7 @@ MonoBehaviour:
     _recoverySpeed: 12
     _pattern: []
     _patternResetTime: 0.25
+    _kickSpeed: 45
   _handling:
     _canAim: 1
     _aimFov: 60
@@ -107,6 +111,10 @@ MonoBehaviour:
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0.01, z: 0.03}
+    _useThirdPersonGrip: 0
+    _thirdPersonGripPosition: {x: 0, y: 0, z: 0}
+    _thirdPersonGripRotation: {x: 0, y: 0, z: 0, w: 1}
+    _thirdPersonGripScale: {x: 1, y: 1, z: 1}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.1}
@@ -141,7 +149,7 @@ MonoBehaviour:
     _muzzleFlashResourceId: effect.weapon.muzzle_flash
     _muzzleSmokeResourceId: 
     _shellResourceId: 
-    _tracerResourceId: 
+    _tracerResourceId: effect.weapon.bullet_tracer
     _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:

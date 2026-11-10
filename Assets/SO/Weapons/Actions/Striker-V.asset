@@ -157,3 +157,20 @@ MonoBehaviour:
     _firstPersonAimStateOverride: 
     _thirdPersonAimStateOverride: 
     _markers: []
+  _inspect:
+    _actionType: 9
+    _enabled: 1
+    _duration: 0.75
+    _canInterrupt: 1
+    _interruptStartProgress: 0
+    _allowsMovement: 1
+    _movementSpeedMultiplier: 1
+    _allowsAim: 0
+    _allowsFire: 0
+    _overrideAnimatorState: 0
+    _firstPersonStateOverride: 
+    _thirdPersonStateOverride: 
+    _hasAimStateOverride: 0
+    _firstPersonAimStateOverride: 
+    _thirdPersonAimStateOverride: 
+    _markers: []

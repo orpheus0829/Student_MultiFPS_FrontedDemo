@@ -29,6 +29,13 @@ MonoBehaviour:
     - type.animator
     - weapon.drake-12
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 20fb4fc03e5d78846ac9549039634f65
+    m_Address: character.ai_player.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2353df21bac501e43b4f32a8171043d5
     m_Address: weapon.kinemation.recoil.g3
     m_ReadOnly: 0
@@ -134,6 +141,13 @@ MonoBehaviour:
     - type.animation
     - type.recoil
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 76d92bbbe94b278408bc10e6d7025d6f
+    m_Address: character.belle.arms
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 77816ff7361259249b0a848bb7570b24
     m_Address: weapon.mgx5.animator.first_person_character
     m_ReadOnly: 0
@@ -147,6 +161,13 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.animation
     - type.recoil
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 812fa77b7f1592a4db4455537155ad97
+    m_Address: character.ellen.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 82e14385f13665f448bbe47b08855281
     m_Address: weapon.kinemation.recoil.ak
@@ -204,6 +225,13 @@ MonoBehaviour:
     - type.animator
     - weapon.kxg-12
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a2f6d9f27ea0484d9c1718b7e752ce62
+    m_Address: character.anbi.voice
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.voice
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a51f5fed4bf954f46bfe27463b9140ac
     m_Address: weapon.kinemation.recoil.mx16a4
     m_ReadOnly: 0
@@ -218,12 +246,61 @@ MonoBehaviour:
     - type.animator
     - weapon.mx16a4
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aa62ab141fc412f4586b0157335301d2
+    m_Address: character.belle.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ab0d94ee482228446b1d0d681489febb
     m_Address: weapon.striker_v.animator.first_person_character
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.animator
     - weapon.striker-v
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bdaffbbaf7444e289f221ff0bb8a1101
+    m_Address: character.ellen.voice
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.voice
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bdaffbbaf7444e289f221ff0bb8a1103
+    m_Address: character.zhuyuan.voice
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.voice
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bdaffbbaf7444e289f221ff0bb8a1104
+    m_Address: character.belle.voice
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.voice
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: be5a30b85a508f144997d7ebd68220b4
+    m_Address: character.zhuyuan.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c44f170eee4bf0e40b8f2132421314c8
+    m_Address: character.zhuyuan.arms
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf31dd4daa2102c4fb164ae118f6262c
+    m_Address: character.ellen.arms
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.character
+    - type.prefab
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: de70d9def269c144e94d3eca9fe020f9
     m_Address: weapon.kolibri.animator.first_person_character

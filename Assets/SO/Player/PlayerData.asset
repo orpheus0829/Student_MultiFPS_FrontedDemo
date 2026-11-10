@@ -29,3 +29,4 @@ MonoBehaviour:
   _lookSensitivity: 0.1
   _minPitch: -85
   _maxPitch: 85
+  _respawnDelay: 5

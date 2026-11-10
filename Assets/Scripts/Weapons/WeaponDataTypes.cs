@@ -126,10 +126,13 @@ public class WeaponDamageData
     [SerializeField, Min(0f)] private float _closeDamageRange = 20f;
     [SerializeField, Min(0f)] private float _farDamageRange = 60f;
     [SerializeField, Min(0f)] private float _maximumHitRange = 200f;
+    [SerializeField, Min(0.01f)] private float _projectileSpeed = 320f;
+    [SerializeField, Min(0f)] private float _projectileRadius = 0.015f;
     [SerializeField, Min(0f)] private float _headMultiplier = 1.5f;
     [SerializeField, Min(0f)] private float _upperBodyMultiplier = 1f;
     [SerializeField, Min(0f)] private float _lowerBodyMultiplier = 0.9f;
     [SerializeField, Min(0f)] private float _baseHitScore = 10f;
+    [SerializeField, Min(0f)] private float _damageScorePerHealth = 1f;
     [SerializeField, Min(0f)] private float _weaponScoreFactor = 1f;
     [SerializeField, Min(0f)] private float _closeDistanceScoreFactor = 1f;
     [SerializeField, Min(0f)] private float _farDistanceScoreFactor = 1f;
@@ -140,10 +143,13 @@ public class WeaponDamageData
     public float CloseDamageRange { get { return _closeDamageRange; } }
     public float FarDamageRange { get { return _farDamageRange; } }
     public float MaximumHitRange { get { return _maximumHitRange; } }
+    public float ProjectileSpeed { get { return _projectileSpeed; } }
+    public float ProjectileRadius { get { return _projectileRadius; } }
     public float HeadMultiplier { get { return _headMultiplier; } }
     public float UpperBodyMultiplier { get { return _upperBodyMultiplier; } }
     public float LowerBodyMultiplier { get { return _lowerBodyMultiplier; } }
     public float BaseHitScore { get { return _baseHitScore; } }
+    public float DamageScorePerHealth { get { return _damageScorePerHealth; } }
     public float WeaponScoreFactor { get { return _weaponScoreFactor; } }
     public float CloseDistanceScoreFactor { get { return _closeDistanceScoreFactor; } }
     public float FarDistanceScoreFactor { get { return _farDistanceScoreFactor; } }
@@ -235,6 +241,7 @@ public class WeaponGameplayRecoilData
     [SerializeField, Min(0f)] private float _recoverySpeed = 12f;
     [SerializeField] private List<Vector2> _pattern = new List<Vector2>();
     [SerializeField, Min(0f)] private float _patternResetTime = 0.25f;
+    [SerializeField, Min(0.01f)] private float _kickSpeed = 45f;
 
     public Vector2 VerticalRecoil { get { return _verticalRecoil; } }
     public Vector2 HorizontalRecoil { get { return _horizontalRecoil; } }
@@ -246,6 +253,7 @@ public class WeaponGameplayRecoilData
     public float RecoverySpeed { get { return _recoverySpeed; } }
     public IReadOnlyList<Vector2> Pattern { get { return _pattern; } }
     public float PatternResetTime { get { return _patternResetTime; } }
+    public float KickSpeed { get { return _kickSpeed; } }
 }
 
 [Serializable]

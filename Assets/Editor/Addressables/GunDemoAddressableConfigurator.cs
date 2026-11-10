@@ -27,6 +27,9 @@ public static class GunDemoAddressableConfigurator
     private const string MuzzleFlashPath =
         "Assets/Prefabs/Effects/Weapons/MuzzleFlash.prefab";
     private const string MuzzleFlashAddress = "effect.weapon.muzzle_flash";
+    private const string BulletTracerPath =
+        "Assets/Prefabs/Effects/Weapons/HovlBulletTracer.prefab";
+    private const string BulletTracerAddress = "effect.weapon.bullet_tracer";
     private const string BulletImpactPrefabPath =
         "Assets/Prefabs/Effects/BulletImpacts/BulletImpactDecal.prefab";
     private const string BulletImpactTextureFolder =
@@ -57,6 +60,51 @@ public static class GunDemoAddressableConfigurator
             groups[CharactersGroup],
             configuredGuids,
             report);
+        Register(
+            settings,
+            groups[CharactersGroup],
+            "Assets/Prefabs/Characters/IdleAIPlayer.prefab",
+            "character.ai_player.prefab",
+            new[] { "type.prefab", "type.character" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[CharactersGroup],
+            "Assets/SO/Player/Voice/AnbiCombatVoice.asset",
+            "character.anbi.voice",
+            new[] { "type.character", "type.voice" },
+            configuredGuids,
+            report);
+        string[] voiceCharacters = { "Ellen", "ZhuYuan", "Belle" };
+        string[] voiceIds = { "ellen", "zhuyuan", "belle" };
+        for (int i = 0; i < voiceCharacters.Length; i++)
+        {
+            Register(
+                settings,
+                groups[CharactersGroup],
+                "Assets/Prefabs/Characters/Models/" + voiceCharacters[i] + ".prefab",
+                "character." + voiceIds[i] + ".prefab",
+                new[] { "type.prefab", "type.character" },
+                configuredGuids,
+                report);
+            Register(
+                settings,
+                groups[CharactersGroup],
+                "Assets/Prefabs/Characters/Arms/" + voiceCharacters[i] + ".prefab",
+                "character." + voiceIds[i] + ".arms",
+                new[] { "type.prefab", "type.character" },
+                configuredGuids,
+                report);
+            Register(
+                settings,
+                groups[CharactersGroup],
+                "Assets/SO/Player/Voice/" + voiceCharacters[i] + "CombatVoice.asset",
+                "character." + voiceIds[i] + ".voice",
+                new[] { "type.character", "type.voice" },
+                configuredGuids,
+                report);
+        }
 
         string[] weaponGuids = AssetDatabase.FindAssets(
             "t:WeaponDefinitionSO",
@@ -73,6 +121,7 @@ public static class GunDemoAddressableConfigurator
                 continue;
             }
 
+            MigrateSharedTracerId(weapon, report);
             ConfigureWeapon(settings, groups, weapon, configuredGuids, report);
         }
 
@@ -401,6 +450,15 @@ public static class GunDemoAddressableConfigurator
         Register(
             settings,
             group,
+            BulletTracerPath,
+            BulletTracerAddress,
+            new[] { "type.effect", "effect.weapon", "effect.projectile" },
+            configuredGuids,
+            report);
+
+        Register(
+            settings,
+            group,
             BulletImpactPrefabPath,
             "effect.impact.decal",
             new[] { "type.effect", "effect.impact" },
@@ -431,6 +489,24 @@ public static class GunDemoAddressableConfigurator
                 configuredGuids,
                 report);
         }
+    }
+
+    private static void MigrateSharedTracerId(
+        WeaponDefinitionSO weapon,
+        GunDemoAddressableConfigureReport report)
+    {
+        SerializedObject serializedWeapon = new SerializedObject(weapon);
+        SerializedProperty tracerId = serializedWeapon.FindProperty(
+            "_effects._tracerResourceId");
+        if (tracerId == null || !string.IsNullOrWhiteSpace(tracerId.stringValue))
+        {
+            return;
+        }
+
+        tracerId.stringValue = BulletTracerAddress;
+        serializedWeapon.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(weapon);
+        report.MigratedFieldCount++;
     }
 
     private static void RegisterResourceId(

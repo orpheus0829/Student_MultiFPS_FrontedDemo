@@ -8,6 +8,52 @@ using UnityEngine.TestTools;
 public sealed class PlayerMovementPlayModeTests
 {
     [UnityTest]
+    public IEnumerator SprintHeldDuringAimStartsAfterAimEnds()
+    {
+        Type moveType = Type.GetType("PlayerMoveCtrl, Assembly-CSharp");
+        Type aimType = Type.GetType("PlayerAimCtrl, Assembly-CSharp");
+        Type dataType = Type.GetType("PlayerDataSO, Assembly-CSharp");
+        Type actionSetType = Type.GetType("CharacterActionSetSO, Assembly-CSharp");
+        Type weaponType = Type.GetType("WeaponDefinitionSO, Assembly-CSharp");
+        Type phaseType = Type.GetType("PlayerInputPhase, Assembly-CSharp");
+        Assert.That(moveType, Is.Not.Null);
+        Assert.That(aimType, Is.Not.Null);
+        Assert.That(weaponType, Is.Not.Null);
+        Assert.That(phaseType, Is.Not.Null);
+
+        GameObject player = new GameObject("瞄准疾跑测试玩家");
+        player.AddComponent<CharacterController>();
+        Component aim = player.AddComponent(aimType);
+        Component move = player.AddComponent(moveType);
+        ScriptableObject data = ScriptableObject.CreateInstance(dataType);
+        ScriptableObject actionSet = ScriptableObject.CreateInstance(actionSetType);
+        ScriptableObject weapon = ScriptableObject.CreateInstance(weaponType);
+        SetField(move, "_playerData", data);
+        SetField(move, "_actionSet", actionSet);
+        Invoke(aim, "SetWeaponData", weapon);
+        Invoke(move, "SetMoveInput", Vector2.up);
+
+        Invoke(aim, "ReceiveAimInput", Enum.Parse(phaseType, "Started"));
+        Invoke(move, "SetSprintInput", true);
+        Assert.That(GetBool(move, "IsSprinting"), Is.False,
+            "开镜时按住疾跑不能进入疾跑状态");
+        Invoke(move, "SetMoveInput", Vector2.down);
+        Invoke(move, "SetMoveInput", Vector2.up);
+        Assert.That(GetBool(move, "IsSprinting"), Is.False,
+            "开镜期间改变移动方向仍不能疾跑");
+
+        Invoke(aim, "ReceiveAimInput", Enum.Parse(phaseType, "Canceled"));
+        yield return null;
+        Assert.That(GetBool(move, "IsSprinting"), Is.True,
+            "退镜后仍按住疾跑，应直接开始疾跑");
+
+        UnityEngine.Object.Destroy(player);
+        UnityEngine.Object.Destroy(data);
+        UnityEngine.Object.Destroy(actionSet);
+        UnityEngine.Object.Destroy(weapon);
+    }
+
+    [UnityTest]
     public IEnumerator SlideResumesSprintOnlyWhileSprintInputIsHeld()
     {
         Type moveType = Type.GetType("PlayerMoveCtrl, Assembly-CSharp");
@@ -33,7 +79,8 @@ public sealed class PlayerMovementPlayModeTests
         SetField(move, "_actionSet", actionSet);
 
         yield return null;
-        for (int frame = 0; frame < 12 && !characterController.isGrounded; frame++)
+        float groundingDeadline = Time.time + 0.5f;
+        while (!characterController.isGrounded && Time.time < groundingDeadline)
         {
             yield return null;
         }
@@ -98,7 +145,8 @@ public sealed class PlayerMovementPlayModeTests
         slideStarted.AddEventHandler(move, onSlide);
 
         yield return null;
-        for (int frame = 0; frame < 12 && !characterController.isGrounded; frame++)
+        float groundingDeadline = Time.time + 0.5f;
+        while (!characterController.isGrounded && Time.time < groundingDeadline)
         {
             yield return null;
         }
@@ -119,7 +167,8 @@ public sealed class PlayerMovementPlayModeTests
             "空中取消疾跑后，滑铲键应被预输入缓存接收");
         Assert.That(GetBool(move, "IsSliding"), Is.False);
 
-        for (int frame = 0; frame < 120 && !GetBool(move, "IsSliding"); frame++)
+        float slideDeadline = Time.time + 2f;
+        while (!GetBool(move, "IsSliding") && Time.time < slideDeadline)
         {
             yield return null;
         }

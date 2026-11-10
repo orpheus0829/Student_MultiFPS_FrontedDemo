@@ -15,6 +15,7 @@ public sealed class KillFeedUI : MonoBehaviour
 
     [Header("图标名称")]
     [SerializeField, InspectorName("爆头骷髅图标名称")] private string _headshotSpriteToken = "skull_red";
+    [SerializeField, InspectorName("无武器击杀骷髅图标名称")] private string _normalKillSpriteToken = "skull_white";
 
     [Header("元素排版")]
     [SerializeField, InspectorName("元素间距（字宽）"), Range(0f, 1f)] private float _elementGapEm = 0.25f;
@@ -106,8 +107,11 @@ public sealed class KillFeedUI : MonoBehaviour
     {
         StringBuilder builder = new StringBuilder(96);
         AppendText(builder, EscapeName(message.KillerName));
-        AppendSprite(builder, message.WeaponSpriteToken, 1f);
-        if (message.IsHeadshot)
+        bool hasWeaponIcon = IsSafeSpriteToken(message.WeaponSpriteToken);
+        AppendSprite(builder, hasWeaponIcon
+            ? message.WeaponSpriteToken
+            : message.IsHeadshot ? _headshotSpriteToken : _normalKillSpriteToken, 1f);
+        if (message.IsHeadshot && hasWeaponIcon)
         {
             AppendSprite(builder, _headshotSpriteToken, _headshotSpriteScale);
         }

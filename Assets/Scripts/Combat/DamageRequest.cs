@@ -10,6 +10,7 @@ public sealed class DamageRequest
     private float _baseDamage;
     private float _hitDistance;
     private float _baseHitScore;
+    private float _damageScorePerHealth = 1f;
     private float _weaponScoreFactor;
     private float _distanceScoreFactor;
     private BodyPart _bodyPart;
@@ -113,6 +114,12 @@ public sealed class DamageRequest
         {
             _baseHitScore = value;
         }
+    }
+
+    public float DamageScorePerHealth
+    {
+        get { return _damageScorePerHealth; }
+        set { _damageScorePerHealth = value; }
     }
 
     public float WeaponScoreFactor
@@ -262,6 +269,7 @@ public sealed class DamageRequest
         _baseDamage = source.BaseDamage;
         _hitDistance = source.HitDistance;
         _baseHitScore = source.BaseHitScore;
+        _damageScorePerHealth = source.DamageScorePerHealth;
         _weaponScoreFactor = source.WeaponScoreFactor;
         _distanceScoreFactor = source.DistanceScoreFactor;
         _bodyPart = source.BodyPart;

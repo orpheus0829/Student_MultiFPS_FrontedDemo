@@ -23,6 +23,8 @@ ResourceMgr.instance.ReleaseInstance(weapon);
 
 相同 ID 与相同类型的并发加载共用一次 Addressables 请求。每次成功调用 `LoadAsync` 都应对应一次 `Release`；实例必须使用 `ReleaseInstance`，不能按普通资源释放。
 
+销毁阶段会先摘下已登记的实例与资源再逐项释放，避免子物体销毁回调重复修改登记表。释放前同时检查句柄有效性与剩余引用数，防止 Addressables 销毁回调中的重入释放；场景卸载句柄则在读取卸载结果后由入口自行释放。
+
 ## 编辑器选择
 
 字符串字段添加 `[ResourceId(typeof(资源类型))]` 后，Inspector 会显示中文资源选择器。选择器支持搜索和类型过滤，字段最终只保存字符串 ID，不产生新的 Unity 对象引用。

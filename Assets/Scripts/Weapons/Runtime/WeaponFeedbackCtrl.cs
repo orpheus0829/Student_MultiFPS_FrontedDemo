@@ -19,6 +19,7 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
     private readonly List<string> _loadedAudioIds = new List<string>();
 
     private ResourceMgr _resourceMgr;
+    private FirstPersonCameraCtrl _cameraCtrl;
     private WeaponDefinitionSO _weaponData;
     private GameObject _firstPersonMuzzleFlash;
     private GameObject _thirdPersonMuzzleFlash;
@@ -44,6 +45,7 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         {
             TryGetComponent(out _audioSource);
         }
+        _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
 
         if (!_actionCtrl || !_combatCtrl || !_weaponViewCtrl || !_audioSource)
         {
@@ -63,6 +65,10 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         _combatCtrl.ShotFired += ReceiveShotFired;
         _weaponViewCtrl.FirstPersonWeaponReady += ReceiveFirstPersonWeaponReady;
         _weaponViewCtrl.ThirdPersonWeaponReady += ReceiveThirdPersonWeaponReady;
+        if (_cameraCtrl)
+        {
+            _cameraCtrl.ViewChanged += HandleViewChanged;
+        }
         ReceiveWeaponChanged(_actionCtrl.CurrentWeaponData);
     }
 
@@ -81,6 +87,10 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
             _weaponViewCtrl.FirstPersonWeaponReady -= ReceiveFirstPersonWeaponReady;
             _weaponViewCtrl.ThirdPersonWeaponReady -= ReceiveThirdPersonWeaponReady;
         }
+        if (_cameraCtrl)
+        {
+            _cameraCtrl.ViewChanged -= HandleViewChanged;
+        }
 
         _loadVersion++;
         ReleaseFeedbackResources();
@@ -91,6 +101,11 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         ReleaseMuzzleFlash();
         _weaponData = weaponData;
         _ = LoadAudioAsync(weaponData, ++_loadVersion);
+        if (weaponData && _weaponViewCtrl.FirstPersonWeapon)
+        {
+            ReceiveFirstPersonWeaponReady(weaponData, _weaponViewCtrl.MuzzlePoint);
+            ReceiveThirdPersonWeaponReady(weaponData, _weaponViewCtrl.ThirdPersonMuzzlePoint);
+        }
     }
 
     private async Task LoadAudioAsync(WeaponDefinitionSO weaponData, int loadVersion)
@@ -261,8 +276,27 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
 
     private void PlayMuzzleFlash()
     {
-        PlayMuzzleFlash(_firstPersonMuzzleFlash);
-        PlayMuzzleFlash(_thirdPersonMuzzleFlash);
+        PlayMuzzleFlash(_cameraCtrl && _cameraCtrl.IsThirdPerson
+            ? _thirdPersonMuzzleFlash
+            : _firstPersonMuzzleFlash);
+    }
+
+    private void HandleViewChanged(bool isThirdPerson)
+    {
+        GameObject previousFlash = isThirdPerson
+            ? _firstPersonMuzzleFlash
+            : _thirdPersonMuzzleFlash;
+        if (!previousFlash)
+        {
+            return;
+        }
+
+        ParticleSystem[] particles = previousFlash.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < particles.Length; i++)
+        {
+            particles[i].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+        previousFlash.SetActive(false);
     }
 
     private static void PlayMuzzleFlash(GameObject flash)
