@@ -24,6 +24,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 111100012, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
+      propertyPath: _initialModelId
+      value: character.anbi
+      objectReference: {fileID: 0}
     - target: {fileID: 373516595380792085, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Name
       value: "AI \u73A9\u5BB6"

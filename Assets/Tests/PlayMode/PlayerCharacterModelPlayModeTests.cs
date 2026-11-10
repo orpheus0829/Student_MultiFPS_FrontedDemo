@@ -203,8 +203,13 @@ namespace GunDemo.Tests
                 MethodInfo updateGrip = gripType.GetMethod("LateUpdate",
                     BindingFlags.Instance | BindingFlags.NonPublic);
                 updateGrip.Invoke(grip, null);
-                Assert.That(Quaternion.Angle(animatedWrist, supportHand.rotation),
-                    Is.LessThan(1f), id + " 左腕被第一人称掌面轴强行扭转");
+                // SPEC-001 五-6：空路径旧回退枪 rotWeight=0，左腕不得被程序扭转；
+                // 七把显式锚点枪允许 ≤35° swing / ≤25° twist 的修正，不能用 1° 判据。
+                if (string.IsNullOrWhiteSpace(GetLeftHandIkPointPath(action)))
+                {
+                    Assert.That(Quaternion.Angle(animatedWrist, supportHand.rotation),
+                        Is.LessThan(1f), id + " 旧回退枪左腕被第一人称掌面轴强行扭转");
+                }
                 yield return VerifySprintGripAndWeaponChange(model, grip, body,
                     weaponView, firstGunProperty, thirdGunProperty, action,
                     currentAction, heightScale, id);
@@ -241,6 +246,18 @@ namespace GunDemo.Tests
         {
             return component.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
                 .GetValue(component);
+        }
+
+        private static string GetLeftHandIkPointPath(Component action)
+        {
+            PropertyInfo currentWeapon = action.GetType().GetProperty("CurrentWeaponData");
+            Assert.That(currentWeapon, Is.Not.Null, "WeaponActionCtrl 缺少 CurrentWeaponData");
+            object weaponData = currentWeapon.GetValue(action);
+            Assert.That(weaponData, Is.Not.Null, "当前武器数据为空，无法判定锚点来源");
+            object ikData = weaponData.GetType().GetProperty("Ik").GetValue(weaponData);
+            Assert.That(ikData, Is.Not.Null, "当前武器缺少 Ik 数据");
+            object path = ikData.GetType().GetProperty("LeftHandIkPointPath").GetValue(ikData);
+            return path as string ?? string.Empty;
         }
 
         private static IEnumerator VerifySprintGripAndWeaponChange(Component player,

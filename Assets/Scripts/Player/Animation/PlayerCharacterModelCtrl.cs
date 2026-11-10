@@ -278,7 +278,14 @@ public sealed class PlayerCharacterModelCtrl : MonoBehaviour
             _armsRenderer.bones = bones;
             _armsRenderer.rootBone = rootBone;
             SetDefaultBodyVisible(isDefault);
-            _cameraCtrl?.RefreshCharacterVisibility();
+            // 只有本地玩家（持有启用的 PlayerInputCtrl）且相机组件在运行时，才由相机裁决第三人称身体的可见性。
+            // AI 变体禁用了 PlayerInputCtrl 与第一人称相机；若它们也调这一句，刚换上的身体会被当成第一人称永久隐藏。
+            // 这不是 AI 专属问题：任何非本地玩家实例换模型都不能走这条路径，也不要靠给 AI 启用相机来绕过。
+            PlayerInputCtrl inputCtrl = GetComponent<PlayerInputCtrl>();
+            if (inputCtrl && inputCtrl.enabled && _cameraCtrl && _cameraCtrl.enabled)
+            {
+                _cameraCtrl.RefreshCharacterVisibility();
+            }
 
             GameObject previousBody = _currentBodyInstance;
             string previousArmsId = _currentArmsResourceId;

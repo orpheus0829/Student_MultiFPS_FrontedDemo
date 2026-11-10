@@ -94,10 +94,7 @@ public sealed class CombatDebugWindow : EditorWindow
 
     private static void DrawDefaultModelSelection()
     {
-        GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-            "Assets/Prefabs/Characters/Player.prefab");
-        PlayerCharacterModelCtrl models = playerPrefab
-            ? playerPrefab.GetComponentInChildren<PlayerCharacterModelCtrl>(true) : null;
+        PlayerCharacterModelCtrl models = LoadPlayerPrefabModels();
         if (!models || models.ModelCount == 0)
         {
             return;
@@ -105,30 +102,102 @@ public sealed class CombatDebugWindow : EditorWindow
 
         GUILayout.Label("下次试玩的默认角色", EditorStyles.boldLabel);
         string[] names = new string[models.ModelCount];
+        string[] ids = new string[models.ModelCount];
+        string saved = CombatDebugDefaultModelStore.Load();
         int currentIndex = 0;
-        SerializedObject serialized = new SerializedObject(models);
-        SerializedProperty initialModel = serialized.FindProperty("_initialModelId");
-        for (int i = 0; i < names.Length; i++)
+        for (int i = 0; i < models.ModelCount; i++)
         {
             names[i] = models.GetModelName(i);
-            if (models.GetModelId(i) == initialModel.stringValue)
+            ids[i] = models.GetModelId(i);
+            if (string.Equals(ids[i], saved, System.StringComparison.Ordinal))
             {
                 currentIndex = i;
             }
         }
+
         using (new EditorGUI.DisabledScope(EditorApplication.isPlaying))
         {
             int selectedIndex = EditorGUILayout.Popup("默认角色", currentIndex, names);
             if (selectedIndex != currentIndex)
             {
-                Undo.RecordObject(models, "更换默认玩家角色");
-                initialModel.stringValue = models.GetModelId(selectedIndex);
-                serialized.ApplyModifiedProperties();
-                EditorUtility.SetDirty(models);
-                AssetDatabase.SaveAssets();
+                CombatDebugDefaultModelStore.Save(ids[selectedIndex]);
             }
         }
-        EditorGUILayout.HelpBox("在非 Play 模式选择，下一次进入 Play 模式生效。", MessageType.None);
+
+        EditorGUILayout.HelpBox(
+            "存在本机编辑器偏好，仅对本地玩家生效，不写入任何 Prefab。",
+            MessageType.None);
+    }
+
+    /// <summary>
+    /// 只读加载 Player.prefab 以取得模型名单（下拉项），不写回任何数据。
+    /// </summary>
+    private static PlayerCharacterModelCtrl LoadPlayerPrefabModels()
+    {
+        GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Prefabs/Characters/Player.prefab");
+        return playerPrefab
+            ? playerPrefab.GetComponentInChildren<PlayerCharacterModelCtrl>(true)
+            : null;
+    }
+
+    [MenuItem("工具/Gun Demo/迁移调试默认角色到编辑器偏好")]
+    private static void MigrateDebugDefaultModel()
+    {
+        const string prefabPath = "Assets/Prefabs/Characters/Player.prefab";
+        // 必须与 PlayerCharacterModelCtrl.DefaultModelId 保持一致。
+        const string defaultId = "character.anbi";
+
+        if (EditorApplication.isPlaying)
+        {
+            Debug.LogError("战斗调试迁移：Play Mode 中禁止执行迁移，请先退出 Play Mode。");
+            return;
+        }
+
+        GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (!playerPrefab)
+        {
+            Debug.LogError($"战斗调试迁移：找不到 {prefabPath}。");
+            return;
+        }
+        PlayerCharacterModelCtrl models = playerPrefab
+            .GetComponentInChildren<PlayerCharacterModelCtrl>(true);
+        if (!models)
+        {
+            Debug.LogError("战斗调试迁移：Player.prefab 缺少 PlayerCharacterModelCtrl。");
+            return;
+        }
+
+        SerializedObject serialized = new SerializedObject(models);
+        SerializedProperty initialModel = serialized.FindProperty("_initialModelId");
+        string before = initialModel.stringValue;
+
+        if (string.IsNullOrEmpty(before) ||
+            string.Equals(before, defaultId, System.StringComparison.Ordinal))
+        {
+            Debug.Log($"战斗调试迁移：基类初始模型已是默认值 {before ?? "<空>"}，无需迁移。");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(CombatDebugDefaultModelStore.Load()))
+        {
+            CombatDebugDefaultModelStore.Save(before);
+            Debug.Log($"战斗调试迁移：用户偏好 {before} 已存入编辑器偏好。");
+        }
+        else
+        {
+            Debug.Log(
+                $"战斗调试迁移：编辑器偏好已存在 {CombatDebugDefaultModelStore.Load()}，不覆盖。");
+        }
+
+        Undo.RecordObject(models, "迁移调试默认角色");
+        initialModel.stringValue = defaultId;
+        serialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(models);
+        AssetDatabase.SaveAssets();
+
+        Debug.Log(
+            $"战斗调试迁移：Player.prefab._initialModelId 写前 {before} → 写后 {defaultId}。");
     }
 
     private static async void SpawnAiInFront()
