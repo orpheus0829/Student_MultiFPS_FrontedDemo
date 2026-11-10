@@ -39,6 +39,7 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
     private Transform _upperArm;
     private Transform _forearm;
     private Transform _hand;
+    private Transform _hips;
     private Quaternion _handFrame;
     private HumanPoseHandler _poseHandler;
     private HumanPose _humanPose = new HumanPose();
@@ -330,6 +331,7 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         _upperArm = null;
         _forearm = null;
         _hand = null;
+        _hips = null;
         _handFrame = Quaternion.identity;
         _leftFingersAvailable = false;
         _rightFingersAvailable = false;
@@ -343,6 +345,7 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         _upperArm = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
         _forearm = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
         _hand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+        _hips = animator.GetBoneTransform(HumanBodyBones.Hips);
         _handFrame = GetHandFrame(_hand,
             animator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal),
             animator.GetBoneTransform(HumanBodyBones.LeftIndexProximal),
@@ -413,7 +416,22 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         }
         if (changed)
         {
+            Vector3 savedHipsLocalPosition = Vector3.zero;
+            Quaternion savedHipsLocalRotation = Quaternion.identity;
+            bool restoreHips = _hips != null;
+            if (restoreHips)
+            {
+                savedHipsLocalPosition = _hips.localPosition;
+                savedHipsLocalRotation = _hips.localRotation;
+            }
+
             _poseHandler.SetHumanPose(ref _humanPose);
+
+            if (restoreHips)
+            {
+                _hips.localPosition = savedHipsLocalPosition;
+                _hips.localRotation = savedHipsLocalRotation;
+            }
         }
     }
 
