@@ -30,6 +30,12 @@ public class PlayerDataSO : ScriptableObject
     [SerializeField, Min(0.1f), InspectorName("死亡后复活间隔（秒）")]
     private float _respawnDelay = 5f;
 
+    [Header("受伤回血")]
+    [SerializeField, Min(0f), InspectorName("受伤后回血冷却（秒）")]
+    private float _healthRecoveryDelay = 5f;
+    [SerializeField, Min(0.1f), InspectorName("从空血回满耗时（秒）")]
+    private float _healthRecoveryDuration = 6f;
+
     public float MoveSpeed
     {
         get
@@ -155,6 +161,22 @@ public class PlayerDataSO : ScriptableObject
         get
         {
             return _respawnDelay;
+        }
+    }
+
+    public float HealthRecoveryDelay
+    {
+        get
+        {
+            return _healthRecoveryDelay;
+        }
+    }
+
+    public float HealthRecoveryDuration
+    {
+        get
+        {
+            return _healthRecoveryDuration;
         }
     }
 }

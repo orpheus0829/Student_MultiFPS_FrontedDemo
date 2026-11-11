@@ -74,7 +74,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6676bf6bcccae54a9d36e92b4f82129, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponThirdPersonGripGizmo
 --- !u!1 &6110629567845559016
 GameObject:
@@ -117,6 +117,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6287984369565721163}
   - component: {fileID: 3799636625998552306}
+  - component: {fileID: 3799636625998552307}
   m_Layer: 0
   m_Name: PDW90
   m_TagString: Untagged
@@ -156,6 +157,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponView
   _weaponDataResourceId: weapon.pdw90.data
   _weaponAnimator: {fileID: 5300041522702728177}
+--- !u!114 &3799636625998552307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7083275468894441344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51d7e0b07cce4e0f9b5eaa39c9d63d92, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Pdw90ScopeView
+  _lensMaterial: {fileID: 2100000, guid: 0fc481f5aaef4b76878b54ac229831b4, type: 2}
+  _magnification: 2.2
+  _renderTextureSize: 512
+  _lensDiameter: 0.027
+  _lensVisibleAimProgress: 0.65
 --- !u!1001 &1794422797339231840
 PrefabInstance:
   m_ObjectHideFlags: 0

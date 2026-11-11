@@ -363,6 +363,7 @@ GameObject:
   - component: {fileID: 6381585546172963672}
   - component: {fileID: 1155667325234846340}
   - component: {fileID: 621218971421670348}
+  - component: {fileID: 7748822158445540971}
   m_Layer: 0
   m_Name: PlayerHUD
   m_TagString: Untagged
@@ -436,6 +437,29 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
+--- !u!114 &7748822158445540971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2671017111796367763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c2ce0fe7aac40f58114b59ad3aa7e82, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatHudUI
+  _healthBackgroundSprite: {fileID: 0}
+  _healthFillSprite: {fileID: 0}
+  _healthFrameSprite: {fileID: 0}
+  _ammoPanelSprite: {fileID: 0}
+  _bloodOverlaySprite: {fileID: 0}
+  _redGlowSprite: {fileID: 0}
+  _maximumBloodAlpha: 0.62
+  _maximumGlowAlpha: 0.72
+  _overlayFollowSpeed: 5
+  _breathingFrequency: 1.15
+  _breathingAmplitude: 0.16
 --- !u!1 &2994858362583257695
 GameObject:
   m_ObjectHideFlags: 0

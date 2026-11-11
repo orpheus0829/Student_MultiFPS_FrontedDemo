@@ -67,6 +67,11 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         get { return _isDead; }
     }
 
+    public PlayerDataSO PlayerData
+    {
+        get { return _playerData; }
+    }
+
     private void Awake()
     {
         _initialPosition = transform.position;
@@ -186,6 +191,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         RestoreCamera();
         SetHitboxesEnabled(true);
         _health.ResetHealth();
+        _combatCtrl?.ResetAllAmmoToFull();
         if (_characterController)
         {
             _characterController.enabled = true;

@@ -30,3 +30,5 @@ MonoBehaviour:
   _minPitch: -85
   _maxPitch: 85
   _respawnDelay: 5
+  _healthRecoveryDelay: 5
+  _healthRecoveryDuration: 6

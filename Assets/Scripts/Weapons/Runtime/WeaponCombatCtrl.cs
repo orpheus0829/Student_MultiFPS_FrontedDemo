@@ -280,6 +280,32 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         return _actionCtrl.TryStartAction(actionType, startedWhileAiming);
     }
 
+    public void ResetAllAmmoToFull()
+    {
+        foreach (KeyValuePair<WeaponDefinitionSO, WeaponAmmoState> entry in _ammoStates)
+        {
+            WeaponDefinitionSO weaponData = entry.Key;
+            if (!weaponData || entry.Value == null)
+            {
+                continue;
+            }
+
+            entry.Value.MagazineAmmo = Mathf.Max(0, weaponData.Ammo.MagazineCapacity);
+            entry.Value.ReserveAmmo = Mathf.Max(0, weaponData.Ammo.MaximumReserveAmmo);
+        }
+
+        if (_weaponData && _ammoState == null)
+        {
+            _ammoState = GetOrCreateAmmoState(_weaponData);
+            _ammoState.MagazineAmmo = Mathf.Max(0, _weaponData.Ammo.MagazineCapacity);
+            _ammoState.ReserveAmmo = Mathf.Max(0, _weaponData.Ammo.MaximumReserveAmmo);
+        }
+
+        _isFireHeld = false;
+        _burstShotsRemaining = 0;
+        NotifyAmmoChanged();
+    }
+
     public bool TrySetFireMode(WeaponFireMode fireMode)
     {
         if (!_weaponData || !_weaponData.Fire.CanSwitchMode ||

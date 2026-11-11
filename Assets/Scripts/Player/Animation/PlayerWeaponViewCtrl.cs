@@ -343,6 +343,7 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
             firstPersonWeapon = null;
             thirdPersonWeapon = null;
             adoptedInstances = true;
+            InitializeFirstPersonOptic(weaponData);
             Animator firstPersonAnimator = GetWeaponAnimator(_firstPersonWeapon);
             Animator thirdPersonAnimator = GetWeaponAnimator(_thirdPersonWeapon);
             InitializeWeaponIdle(firstPersonAnimator);
@@ -388,6 +389,31 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
             ReleaseInstance(ref thirdPersonWeapon);
             ReleasePreparedViews();
         }
+    }
+
+    private void InitializeFirstPersonOptic(WeaponDefinitionSO weaponData)
+    {
+        if (_hideFirstPersonPresentation || !weaponData || !_firstPersonWeapon ||
+            !string.Equals(
+                weaponData.Basic.WeaponId,
+                "pdw90",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Pdw90ScopeView scope = _firstPersonWeapon.GetComponent<Pdw90ScopeView>();
+        Camera worldCamera = Camera.main;
+        if (!scope || !worldCamera)
+        {
+            return;
+        }
+
+        scope.Initialize(
+            _aimCtrl,
+            worldCamera,
+            worldCamera.GetComponent<FirstPersonCameraCtrl>(),
+            weaponData.Ik.AimPointLocalPosition);
     }
 
     private void ReleasePreparedViews()
