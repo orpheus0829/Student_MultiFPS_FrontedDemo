@@ -34,12 +34,6 @@ public sealed class PlayerAnimationView : MonoBehaviour
     [SerializeField, InspectorName("滑铲状态名")] private string _slideStateName = "Slide";
     [SerializeField, InspectorName("滑铲收尾状态名")] private string _slideEndStateName = "SlideEnd";
 
-    [Header("第三人称滑铲")]
-    [SerializeField, Min(0f), InspectorName("模型下沉高度")]
-    private float _slideVisualDrop = 0.4f;
-    [SerializeField, Min(0.01f), InspectorName("模型贴地过渡时间")]
-    private float _slideVisualBlendDuration = 0.12f;
-
     private readonly AnimatorParameterCache _characterParameters = new AnimatorParameterCache();
     private readonly AnimatorParameterCache _weaponParameters = new AnimatorParameterCache();
 
@@ -184,7 +178,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
         _isFullBodyMotion = _viewType == PlayerViewType.ThirdPerson &&
             (isVaulting || !isGrounded);
         UpdateUpperBodyWeaponLayer();
-        UpdateSlideVisual(isSliding);
+        RestoreThirdPersonVisualHeight();
     }
 
     public void SetWeaponAnimator(Animator weaponAnimator)
@@ -804,19 +798,18 @@ public sealed class PlayerAnimationView : MonoBehaviour
             : WeaponActionStateContract.GetStateName(actionType);
     }
 
-    private void UpdateSlideVisual(bool isSliding)
+    private void RestoreThirdPersonVisualHeight()
     {
         if (_viewType != PlayerViewType.ThirdPerson)
         {
             return;
         }
 
-        float targetY = _restLocalPosition.y - (isSliding ? _slideVisualDrop : 0f);
+        // 滑铲的人形动画已经把髋部和四肢压到贴地姿势，CharacterController
+        // 也会保持底面不动地缩短碰撞体。这里不能再把整个模型根节点固定下沉，
+        // 否则不同身高的角色都会在动画低点被二次压进地面。
         Vector3 position = transform.localPosition;
-        position.y = Mathf.MoveTowards(
-            position.y,
-            targetY,
-            _slideVisualDrop / Mathf.Max(0.01f, _slideVisualBlendDuration) * Time.deltaTime);
+        position.y = _restLocalPosition.y;
         transform.localPosition = position;
     }
 

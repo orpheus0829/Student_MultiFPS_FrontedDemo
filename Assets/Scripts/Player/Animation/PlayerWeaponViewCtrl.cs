@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 public sealed class PlayerWeaponViewCtrl : MonoBehaviour
 {
+    private const string StagingRootName = "武器加载暂存";
+
     [Header("唯一枪械来源")]
     [SerializeField, InspectorName("枪械动作")] private WeaponActionCtrl _weaponActionCtrl;
     [SerializeField, InspectorName("玩家瞄准")] private PlayerAimCtrl _aimCtrl;
@@ -38,6 +41,9 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
     private GameObject _preparedThirdPersonWeapon;
     private Quaternion _defaultHandFrame;
     private bool _hasDefaultHandFrame;
+    private PlayerInputCtrl _localInputCtrl;
+    private readonly List<Renderer> _firstPersonRenderers = new List<Renderer>();
+    private bool _hideFirstPersonPresentation;
 
     public event Action<WeaponDefinitionSO, Transform> FirstPersonWeaponReady;
     public event Action<WeaponDefinitionSO, Transform> ThirdPersonWeaponReady;
@@ -84,6 +90,7 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         {
             TryGetComponent(out _aimCtrl);
         }
+        RefreshOwnerVisibilityPolicy();
 
         if (_firstPersonView && _firstPersonView.CharacterAnimator)
         {
@@ -94,12 +101,12 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         }
         if (_firstPersonView && _firstPersonView.WeaponRoot)
         {
-            _firstPersonStagingRoot = CreateStagingRoot(_firstPersonView.WeaponRoot);
+            _firstPersonStagingRoot = GetOrCreateStagingRoot(_firstPersonView.WeaponRoot);
         }
         if (_thirdPersonView && _thirdPersonView.WeaponRoot)
         {
             AttachThirdPersonWeaponRootToHand();
-            _thirdPersonStagingRoot = CreateStagingRoot(_thirdPersonView.WeaponRoot);
+            _thirdPersonStagingRoot = GetOrCreateStagingRoot(_thirdPersonView.WeaponRoot);
         }
 
         if (!_weaponActionCtrl || !_aimCtrl || !_firstPersonView || !_thirdPersonView ||
@@ -108,10 +115,25 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
             Debug.LogError($"{name} 的双视角枪械表现引用未配置完整。", this);
             enabled = false;
         }
+
+        RefreshFirstPersonRendererCache();
     }
 
     private void OnEnable()
     {
+        // Unity 在 Play Mode 脚本热重载后只重新调用 OnEnable，非序列化字段会丢失，
+        // 但旧的暂存根仍在场景中。重新接管它，避免再创建一套根或让加载中的枪直接露出。
+        RefreshOwnerVisibilityPolicy();
+        if (!_firstPersonStagingRoot && _firstPersonView && _firstPersonView.WeaponRoot)
+        {
+            _firstPersonStagingRoot = GetOrCreateStagingRoot(_firstPersonView.WeaponRoot);
+        }
+        if (!_thirdPersonStagingRoot && _thirdPersonView && _thirdPersonView.WeaponRoot)
+        {
+            _thirdPersonStagingRoot = GetOrCreateStagingRoot(_thirdPersonView.WeaponRoot);
+        }
+        RefreshFirstPersonRendererCache();
+
         if (!_weaponActionCtrl)
         {
             return;
@@ -132,6 +154,18 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         _prepareVersion++;
         ReleasePreparedViews();
         ReleaseWeaponViews();
+    }
+
+    private void LateUpdate()
+    {
+        // AI 与其他非本地角色仍需要第一人称 Animator 提供握枪采样，不能停掉骨架；
+        // 但它们的手臂/枪绝不能被本地玩家的第一人称叠加相机（Layer 9）画出来。
+        if (_hideFirstPersonPresentation)
+        {
+            // 枪口火花等 Renderer 会在 WeaponReady 之后继续异步生成；非分配式重扫可确保
+            // 后生成的任何第一人称表现也不会短暂出现在本地玩家的叠加相机里。
+            RefreshFirstPersonRendererCache();
+        }
     }
 
     public void RefreshThirdPersonWeaponGrip()
@@ -257,6 +291,8 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
     {
         int loadVersion = ++_loadVersion;
         ReleaseWeaponViews(false);
+        RemoveUnownedWeaponChildren(_firstPersonView.WeaponRoot, _firstPersonStagingRoot);
+        RemoveUnownedWeaponChildren(_thirdPersonView.WeaponRoot, _thirdPersonStagingRoot);
         if (!weaponData)
         {
             return;
@@ -296,11 +332,11 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
                 return;
             }
 
-            if (usePrepared)
-            {
-                firstPersonWeapon.transform.SetParent(_firstPersonView.WeaponRoot, false);
-                thirdPersonWeapon.transform.SetParent(_thirdPersonView.WeaponRoot, false);
-            }
+            // 实例在所有资源（含手臂 AnimatorController）就绪前始终留在禁用的暂存根下。
+            // 这样异步加载被取消、脚本热重载或连续切枪时，不会先把一把失去所有权的 AK
+            // 暴露到正式挂点，随后再与真正选中的枪重合。
+            firstPersonWeapon.transform.SetParent(_firstPersonView.WeaponRoot, false);
+            thirdPersonWeapon.transform.SetParent(_thirdPersonView.WeaponRoot, false);
 
             _firstPersonWeapon = firstPersonWeapon;
             _thirdPersonWeapon = thirdPersonWeapon;
@@ -313,11 +349,16 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
             InitializeWeaponIdle(thirdPersonAnimator);
             _firstPersonView.SetWeaponAnimator(firstPersonAnimator);
             _thirdPersonView.SetWeaponAnimator(thirdPersonAnimator);
+            RefreshFirstPersonRendererCache();
             _muzzlePoint = ResolveWeaponPoint(_firstPersonWeapon, weaponData.Ik.MuzzlePointPath);
             _thirdPersonMuzzlePoint = ResolveWeaponPoint(
                 _thirdPersonWeapon, weaponData.Ik.MuzzlePointPath);
             FirstPersonWeaponReady?.Invoke(weaponData, _muzzlePoint);
             ThirdPersonWeaponReady?.Invoke(weaponData, _thirdPersonMuzzlePoint);
+            if (_hideFirstPersonPresentation)
+            {
+                SetFirstPersonRenderersHidden(true);
+            }
             _weaponActionCtrl.TryStartAction(WeaponActionType.Equip);
         }
         catch (Exception exception)
@@ -467,7 +508,6 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
                 ? pose.ThirdPersonGripScale
                 : Vector3.one;
             SetLayerRecursively(instanceTransform, usesProceduralPose ? 9 : 8);
-            instanceTransform.SetParent(parent, false);
         }
 
         return instance;
@@ -587,9 +627,28 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         return Quaternion.Inverse(hand.rotation) * Quaternion.LookRotation(forward, up);
     }
 
-    private static Transform CreateStagingRoot(Transform parent)
+    private void RefreshOwnerVisibilityPolicy()
     {
-        GameObject stagingObject = new GameObject("武器加载暂存");
+        if (!_localInputCtrl)
+        {
+            TryGetComponent(out _localInputCtrl);
+        }
+        _hideFirstPersonPresentation = !_localInputCtrl || !_localInputCtrl.enabled;
+    }
+
+    private static Transform GetOrCreateStagingRoot(Transform parent)
+    {
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (child.name == StagingRootName)
+            {
+                child.gameObject.SetActive(false);
+                return child;
+            }
+        }
+
+        GameObject stagingObject = new GameObject(StagingRootName);
         Transform stagingRoot = stagingObject.transform;
         stagingRoot.SetParent(parent, false);
         stagingObject.SetActive(false);
@@ -602,6 +661,54 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         for (int i = 0; i < root.childCount; i++)
         {
             SetLayerRecursively(root.GetChild(i), layer);
+        }
+    }
+
+    private void RefreshFirstPersonRendererCache()
+    {
+        _firstPersonRenderers.Clear();
+        if (_firstPersonView)
+        {
+            _firstPersonView.GetComponentsInChildren(true, _firstPersonRenderers);
+        }
+        if (_hideFirstPersonPresentation)
+        {
+            SetFirstPersonRenderersHidden(true);
+        }
+    }
+
+    private void SetFirstPersonRenderersHidden(bool hidden)
+    {
+        for (int i = 0; i < _firstPersonRenderers.Count; i++)
+        {
+            if (_firstPersonRenderers[i])
+            {
+                _firstPersonRenderers[i].forceRenderingOff = hidden;
+            }
+        }
+    }
+
+    private void RemoveUnownedWeaponChildren(Transform weaponRoot, Transform stagingRoot)
+    {
+        if (!weaponRoot)
+        {
+            return;
+        }
+
+        for (int i = weaponRoot.childCount - 1; i >= 0; i--)
+        {
+            Transform child = weaponRoot.GetChild(i);
+            if (child == stagingRoot)
+            {
+                continue;
+            }
+
+            GameObject orphan = child.gameObject;
+            orphan.SetActive(false);
+            if (!_resourceMgr || !_resourceMgr.ReleaseInstance(orphan))
+            {
+                Destroy(orphan);
+            }
         }
     }
 
@@ -663,9 +770,14 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
             return;
         }
 
-        if (_resourceMgr)
+        // ReleaseInstance 只认识仍登记在 ResourceMgr 内的 Addressables 实例。
+        // 脚本热重载或旧场景遗留对象可能已丢失登记，必须回退到普通销毁；否则引用虽清空，
+        // 模型却会永久留在挂点下，并与下一把枪重合。
+        instance.SetActive(false);
+        bool released = _resourceMgr && _resourceMgr.ReleaseInstance(instance);
+        if (!released)
         {
-            _resourceMgr.ReleaseInstance(instance);
+            Destroy(instance);
         }
         instance = null;
     }

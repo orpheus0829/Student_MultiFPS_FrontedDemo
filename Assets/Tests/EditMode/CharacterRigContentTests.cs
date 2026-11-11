@@ -36,5 +36,26 @@ namespace GunDemo.Tests
                 }
             }
         }
+
+        [Test]
+        public void EllenMapsItsSecondUpperBodyBoneToHumanoidChest()
+        {
+            ModelImporter importer = AssetImporter.GetAtPath(
+                "Assets/Resource/Characters/Ellen/Ellen.fbx") as ModelImporter;
+            Assert.That(importer, Is.Not.Null);
+
+            string chestBone = null;
+            foreach (HumanBone bone in importer.humanDescription.human)
+            {
+                if (bone.humanName == HumanBodyBones.Chest.ToString())
+                {
+                    chestBone = bone.boneName;
+                    break;
+                }
+            }
+
+            Assert.That(chestBone, Is.EqualTo("上半身2"),
+                "艾莲漏掉胸骨映射会让通用待机/移动动画把头和髋部重定向到错误朝向");
+        }
     }
 }

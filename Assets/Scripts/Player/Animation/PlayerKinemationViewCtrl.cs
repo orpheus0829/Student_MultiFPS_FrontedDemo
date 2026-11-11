@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using KINEMATION.FPSAnimationPack.Scripts.Player;
 using KINEMATION.FPSAnimationPack.Scripts.Weapon;
@@ -14,6 +15,10 @@ using UnityEngine.Playables;
 public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 {
     private const float GaitSmoothing = 8f;
+    private const float RightHandUnlockBlendDuration = 0.12f;
+    private const float ReloadIkDisableBlendDuration = 0.05f;
+    private const float ReloadIkRestoreDuration = 0.14f;
+    private const float AkReloadRightArmSmoothingTime = 0.12f;
     private const string DefaultCharacterModelId = "character.anbi";
     private static readonly string[] RightFingerBoneNames =
     {
@@ -25,6 +30,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     };
     private static readonly float[] FingerSwingLimits = { 40f, 50f, 35f };
     private static readonly float[] FingerTwistLimits = { 8f, 5f, 5f };
+    private static readonly float[] FingerMinimumCurl = { 12f, 22f, 18f };
 
     [Header("项目动作状态")]
     [SerializeField, InspectorName("玩家移动")] private PlayerMoveCtrl _moveCtrl;
@@ -90,7 +96,18 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private bool _showWeaponNextFrame;
     private int _showWeaponFrame;
     private bool _isRecoilActive;
+    private bool _rightHandLockRequested;
+    private float _rightHandLockWeight;
+    private float _currentIkWeight;
+    private Vector3[] _rightArmBindPositions;
+    private Vector3[] _rightArmBindScales;
+    private Transform[] _rightArmLengthBones;
+    private Transform[] _akReloadRightArmBones;
+    private bool _akReloadRightArmSmoothingActive;
+    private Vector3[] _akReloadSmoothedRightArmPositions;
+    private Quaternion[] _akReloadSmoothedRightArmRotations;
     private Transform[] _rightFingerBones;
+    private Vector3[] _rightFingerBindPositions;
     private Quaternion[] _rightFingerBindRotations;
     private Vector3[] _rightFingerBindScales;
 
@@ -105,6 +122,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             _restLocalPosition = _animator.transform.localPosition;
             _restLocalRotation = _animator.transform.localRotation;
+            _currentIkWeight = _ikWeight;
         }
     }
 
@@ -169,7 +187,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         RefreshAnimatorState();
         _job.Update();
         _job.adsWeight = _aimCtrl ? _aimCtrl.AimProgress : 0f;
-        _job.ikWeight = _ikWeight;
+        RefreshActionIkWeight();
+        UpdateRightHandGripLock();
         _playable.SetJobData(_job);
         RefreshRecoilPlayback();
     }
@@ -235,6 +254,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             _showWeaponNextFrame = false;
         }
 
+        ApplyAkReloadRightArmBoneLengthSafety(action);
+        ApplyAkReloadRightArmRotationSmoothing(action);
         ApplyFirstPersonFingerSafety();
     }
 
@@ -261,6 +282,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         _weaponLoadVersion++;
+        _akReloadRightArmSmoothingActive = false;
+        ResetRightHandGripLock();
         StopActiveRecoil();
         ReleaseRecoilProfile();
         if (_animator)
@@ -273,6 +296,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _configuredWeaponData = null;
         _showWeaponNextFrame = false;
         _isReady = false;
+        _currentIkWeight = _ikWeight;
         if (_proceduralOutput.IsOutputValid())
         {
             _proceduralGraph.DestroyOutput(_proceduralOutput);
@@ -342,6 +366,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         Transform additiveBone = FindOrCreateChild(skeletonRoot, "ik_hand_gun_additive");
         _rightArm = CreateArm(root, "hand_r", "lowerarm_r", "upperarm_r");
         IKTransforms leftArm = CreateArm(root, "hand_l", "lowerarm_l", "upperarm_l");
+        CacheRightArmBindLengths();
         CacheRightFingerBindPose(root);
 
         if (!skeletonRoot || !_weaponBone || !_cameraPoint ||
@@ -486,6 +511,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private void ClearWeaponPose()
     {
         _weaponLoadVersion++;
+        _akReloadRightArmSmoothingActive = false;
+        ResetRightHandGripLock();
         StopActiveRecoil();
         if (_firstPersonView)
         {
@@ -551,7 +578,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         // 配置有效标记也在显示前更新，首帧不执行资源包的无配置默认旋转。
         _job.Update();
         _job.adsWeight = _aimCtrl ? _aimCtrl.AimProgress : 0f;
-        _job.ikWeight = _ikWeight;
+        _currentIkWeight = _ikWeight;
+        _job.ikWeight = _currentIkWeight;
         _playable.SetJobData(_job);
         _hasWeaponConfigured = true;
         _configuredWeaponData = weaponData;
@@ -622,6 +650,16 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _job.defaultRightHandPose = new KTransform(_rightArm.tip).GetRelativeTransform(
             weaponTransform,
             false);
+        KTransform offsetWeaponTransform = weaponTransform;
+        offsetWeaponTransform.rotation = KAnimationMath.RotateInSpace(
+            offsetWeaponTransform,
+            offsetWeaponTransform,
+            _runtimeWeaponSettings.rotationOffset,
+            1f);
+        _job.lockedWeaponRelativeRightHandPose =
+            offsetWeaponTransform.GetRelativeTransform(
+                new KTransform(_rightArm.tip),
+                false);
         KTransform root = new KTransform(_animator.transform);
         KTransform localWeapon = root.GetRelativeTransform(weaponTransform, false);
         localWeapon.rotation *= _runtimeWeaponSettings.rotationOffset;
@@ -738,18 +776,232 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _isRecoilActive = false;
     }
 
+    private void UpdateRightHandGripLock()
+    {
+        WeaponActionDefinition action = _weaponActionCtrl
+            ? _weaponActionCtrl.CurrentAction
+            : null;
+        bool authoredReloadHands = ShouldUseAuthoredReloadHands(action);
+        bool shouldLock = _weaponCombatCtrl &&
+            _weaponCombatCtrl.IsFireHeld &&
+            _weaponCombatCtrl.MagazineAmmo > 0 &&
+            !authoredReloadHands &&
+            _currentIkWeight >= _ikWeight - 0.0001f;
+        if (shouldLock && !_rightHandLockRequested && _weaponBone && _rightArm.tip)
+        {
+            // Update 读取的是上一帧已经完成程序动画后的骨骼。直接捕获此刻枪骨到右手的
+            // 相对姿势，可以在按火首帧无缝接管，并且与 Job 中应用 rotationOffset 后的
+            // weaponTransform 处于同一个坐标系。
+            _job.lockedWeaponRelativeRightHandPose =
+                new KTransform(_weaponBone).GetRelativeTransform(
+                    new KTransform(_rightArm.tip),
+                    false);
+        }
+
+        _rightHandLockRequested = shouldLock;
+        if (shouldLock)
+        {
+            _rightHandLockWeight = 1f;
+        }
+        else
+        {
+            _rightHandLockWeight = Mathf.MoveTowards(
+                _rightHandLockWeight,
+                0f,
+                Time.deltaTime / RightHandUnlockBlendDuration);
+        }
+        _job.rightHandLockWeight = _rightHandLockWeight;
+    }
+
+    private void ResetRightHandGripLock()
+    {
+        _rightHandLockRequested = false;
+        _rightHandLockWeight = 0f;
+        _job.rightHandLockWeight = 0f;
+    }
+
+    private void RefreshActionIkWeight()
+    {
+        WeaponActionDefinition action = _weaponActionCtrl
+            ? _weaponActionCtrl.CurrentAction
+            : null;
+        if (ShouldUseAuthoredReloadHands(action))
+        {
+            // 换弹片段已经完整动画了枪、手腕和手肘。继续在同一帧用双骨 IK
+            // 把手追到程序枪骨，会在枪离开握把、手臂接近伸展极限时产生解算翻转。
+            // 用户允许换弹时轻微穿模，优先保留作者手部动作，不让两套系统争抢右手。
+            _currentIkWeight = Mathf.MoveTowards(
+                _currentIkWeight,
+                0f,
+                Time.deltaTime / ReloadIkDisableBlendDuration);
+        }
+        else
+        {
+            _currentIkWeight = Mathf.MoveTowards(
+                _currentIkWeight,
+                _ikWeight,
+                Time.deltaTime / ReloadIkRestoreDuration);
+        }
+        _job.ikWeight = _currentIkWeight;
+    }
+
     private void CacheRightFingerBindPose(Transform root)
     {
         _rightFingerBones = new Transform[RightFingerBoneNames.Length];
+        _rightFingerBindPositions = new Vector3[RightFingerBoneNames.Length];
         _rightFingerBindRotations = new Quaternion[RightFingerBoneNames.Length];
         _rightFingerBindScales = new Vector3[RightFingerBoneNames.Length];
         for (int i = 0; i < RightFingerBoneNames.Length; i++)
         {
             Transform bone = FindChild(root, RightFingerBoneNames[i]);
             _rightFingerBones[i] = bone;
+            _rightFingerBindPositions[i] = bone ? bone.localPosition : Vector3.zero;
             _rightFingerBindRotations[i] = bone ? bone.localRotation : Quaternion.identity;
             _rightFingerBindScales[i] = bone ? bone.localScale : Vector3.one;
         }
+    }
+
+    private void CacheRightArmBindLengths()
+    {
+        List<Transform> chain = new List<Transform>();
+        Transform current = _rightArm.tip;
+        while (current && current != _animator.transform)
+        {
+            chain.Add(current);
+            current = current.parent;
+        }
+        _akReloadRightArmBones = chain.ToArray();
+        _rightArmLengthBones = new[]
+        {
+            _rightArm.root,
+            _rightArm.mid,
+            _rightArm.tip
+        };
+        _rightArmBindPositions = new Vector3[_rightArmLengthBones.Length];
+        _rightArmBindScales = new Vector3[_rightArmLengthBones.Length];
+        for (int i = 0; i < _rightArmLengthBones.Length; i++)
+        {
+            Transform bone = _rightArmLengthBones[i];
+            _rightArmBindPositions[i] = bone ? bone.localPosition : Vector3.zero;
+            _rightArmBindScales[i] = bone ? bone.localScale : Vector3.one;
+        }
+    }
+
+    private void ApplyAkReloadRightArmBoneLengthSafety(WeaponActionDefinition action)
+    {
+        if ((!ShouldUseAuthoredReloadHands(action) &&
+                !_akReloadRightArmSmoothingActive) ||
+            _rightArmBindPositions == null ||
+            _rightArmBindScales == null)
+        {
+            return;
+        }
+
+        // The source AK clips key localPosition/localScale on the arm chain. Keep the
+        // authored rotations, but never let reload curves stretch or squash the upper
+        // arm, forearm, or wrist. A slightly looser grip is preferable to a visible
+        // one-frame bone-length jump.
+        Transform[] bones = _rightArmLengthBones ?? Array.Empty<Transform>();
+        for (int i = 0; i < bones.Length; i++)
+        {
+            Transform bone = bones[i];
+            if (!bone)
+            {
+                continue;
+            }
+            bone.localPosition = _rightArmBindPositions[i];
+            bone.localScale = _rightArmBindScales[i];
+        }
+    }
+
+    private void BeginAkReloadRightArmRotationSmoothing()
+    {
+        Transform[] bones = GetAkReloadRightArmBones();
+        _akReloadSmoothedRightArmPositions = new Vector3[bones.Length];
+        _akReloadSmoothedRightArmRotations = new Quaternion[bones.Length];
+        for (int i = 0; i < bones.Length; i++)
+        {
+            _akReloadSmoothedRightArmPositions[i] = bones[i]
+                ? bones[i].localPosition
+                : Vector3.zero;
+            _akReloadSmoothedRightArmRotations[i] = bones[i]
+                ? bones[i].localRotation
+                : Quaternion.identity;
+        }
+        _akReloadRightArmSmoothingActive = true;
+    }
+
+    private void ApplyAkReloadRightArmRotationSmoothing(WeaponActionDefinition action)
+    {
+        bool authoredReload = ShouldUseAuthoredReloadHands(action);
+        if (!_akReloadRightArmSmoothingActive)
+        {
+            if (authoredReload)
+            {
+                BeginAkReloadRightArmRotationSmoothing();
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        Transform[] bones = GetAkReloadRightArmBones();
+        if (_akReloadSmoothedRightArmRotations == null ||
+            _akReloadSmoothedRightArmRotations.Length != bones.Length)
+        {
+            BeginAkReloadRightArmRotationSmoothing();
+        }
+
+        float follow = 1f - Mathf.Exp(
+            -Time.deltaTime / AkReloadRightArmSmoothingTime);
+        float maximumRemainingDistance = 0f;
+        float maximumRemainingAngle = 0f;
+        for (int i = 0; i < bones.Length; i++)
+        {
+            Transform bone = bones[i];
+            if (!bone)
+            {
+                continue;
+            }
+
+            Vector3 authoredPosition = bone.localPosition;
+            Vector3 smoothedPosition = Vector3.Lerp(
+                _akReloadSmoothedRightArmPositions[i],
+                authoredPosition,
+                follow);
+            _akReloadSmoothedRightArmPositions[i] = smoothedPosition;
+            bone.localPosition = smoothedPosition;
+            maximumRemainingDistance = Mathf.Max(
+                maximumRemainingDistance,
+                Vector3.Distance(smoothedPosition, authoredPosition));
+
+            Quaternion authoredRotation = bone.localRotation;
+            Quaternion smoothedRotation = Quaternion.Slerp(
+                _akReloadSmoothedRightArmRotations[i],
+                authoredRotation,
+                follow);
+            _akReloadSmoothedRightArmRotations[i] = smoothedRotation;
+            bone.localRotation = smoothedRotation;
+            maximumRemainingAngle = Mathf.Max(
+                maximumRemainingAngle,
+                Quaternion.Angle(smoothedRotation, authoredRotation));
+        }
+
+        // Animator returns to idle through a 0.14 second cross-fade. Keep filtering that
+        // release until the visible chain has converged so the fix cannot create a new
+        // snap on the first frame after CurrentAction becomes null.
+        if (!authoredReload &&
+            maximumRemainingDistance <= 0.00025f &&
+            maximumRemainingAngle <= 0.25f)
+        {
+            _akReloadRightArmSmoothingActive = false;
+        }
+    }
+
+    private Transform[] GetAkReloadRightArmBones()
+    {
+        return _akReloadRightArmBones ?? Array.Empty<Transform>();
     }
 
     private void ApplyFirstPersonFingerSafety()
@@ -772,11 +1024,33 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             int jointIndex = i % 3;
             Quaternion delta = Quaternion.Inverse(_rightFingerBindRotations[i]) *
                 bone.localRotation;
-            bone.localRotation = _rightFingerBindRotations[i] * ClampSwingTwist(
+            // 不能统一缩小所有动画旋转：那会把原本卷在握把上的指节拉直，视觉上
+            // 反而变成长手指。保留正常卷曲，只严格限制沿指骨 X 轴的扭转和极端 swing。
+            Quaternion safeDelta = ClampSwingTwist(
                 delta,
                 Vector3.right,
                 FingerSwingLimits[jointIndex],
                 FingerTwistLimits[jointIndex]);
+            if (i >= 3)
+            {
+                // 非安比手网格更长；食指到小指至少保持轻微卷曲。用户明确接受
+                // 握松或少量穿模，优先避免换弹/拉栓时指节拉成细长直线。
+                Vector3 euler = safeDelta.eulerAngles;
+                float curl = Mathf.DeltaAngle(0f, euler.z);
+                if (curl > -FingerMinimumCurl[jointIndex])
+                {
+                    euler.x = Mathf.DeltaAngle(0f, euler.x);
+                    euler.y = Mathf.DeltaAngle(0f, euler.y);
+                    euler.z = -FingerMinimumCurl[jointIndex];
+                    safeDelta = ClampSwingTwist(
+                        Quaternion.Euler(euler),
+                        Vector3.right,
+                        FingerSwingLimits[jointIndex],
+                        FingerTwistLimits[jointIndex]);
+                }
+            }
+            bone.localRotation = _rightFingerBindRotations[i] * safeDelta;
+            bone.localPosition = _rightFingerBindPositions[i];
             bone.localScale = _rightFingerBindScales[i];
         }
     }
@@ -827,6 +1101,14 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     {
         _sprintActionOverrides = action != null &&
             (IsReloadAction(action.ActionType) || action.ActionType == WeaponActionType.Inspect);
+        if (ShouldUseAuthoredReloadHands(action))
+        {
+            // 换弹提交弹药时，IsFireHeld 可能仍为 true。先丢弃连射锁定，避免在手已
+            // 离开握把的换弹姿势上重新捕获目标；IK 权重会在 Update 中与 0.05 秒
+            // Reload CrossFade 同步退出，避免首帧硬切造成腕部跳变。
+            ResetRightHandGripLock();
+            BeginAkReloadRightArmRotationSmoothing();
+        }
         if (_sprintActionOverrides)
         {
             _sprintLayerWeight = 0f;
@@ -904,6 +1186,18 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             actionType == WeaponActionType.PerRoundStart ||
             actionType == WeaponActionType.PerRoundInsert ||
             actionType == WeaponActionType.PerRoundEnd;
+    }
+
+    private bool ShouldUseAuthoredReloadHands(WeaponActionDefinition action)
+    {
+        return action != null &&
+            IsReloadAction(action.ActionType) &&
+            _weaponActionCtrl &&
+            _weaponActionCtrl.CurrentWeaponData &&
+            string.Equals(
+                _weaponActionCtrl.CurrentWeaponData.Basic.WeaponId,
+                "ak",
+                StringComparison.Ordinal);
     }
 
     private void PlayEquipImpact()

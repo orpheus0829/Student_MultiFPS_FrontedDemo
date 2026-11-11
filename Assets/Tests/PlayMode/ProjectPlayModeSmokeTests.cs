@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Reflection;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -165,6 +166,120 @@ namespace GunDemo.Tests
         }
 
         [UnityTest]
+        public IEnumerator AkPdw90AndM1911NeverOverlapInEitherWeaponRoot()
+        {
+            SceneManager.LoadScene("example");
+            yield return new WaitForSeconds(1f);
+
+            GameObject player = GameObject.FindWithTag("Player");
+            Assert.That(player, Is.Not.Null);
+            Component actions = player.GetComponent(GetRuntimeType("WeaponActionCtrl"));
+            Component view = player.GetComponent(GetRuntimeType("PlayerWeaponViewCtrl"));
+            Assert.That(actions, Is.Not.Null);
+            Assert.That(view, Is.Not.Null);
+
+            string[] resources =
+            {
+                "weapon.ak.data",
+                "weapon.pdw90.data",
+                "weapon.m1911.data"
+            };
+            string[] weaponIds = { "ak", "pdw90", "m1911" };
+            for (int index = 0; index < resources.Length; index++)
+            {
+                Task<bool> load = Invoke<Task<bool>>(
+                    actions, "LoadWeaponAsync", resources[index]);
+                float deadline = Time.realtimeSinceStartup + 8f;
+                while (!load.IsCompleted && Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+                Assert.That(load.IsCompletedSuccessfully && load.Result, Is.True,
+                    resources[index] + " 数据加载失败");
+
+                GameObject firstPersonWeapon = null;
+                deadline = Time.realtimeSinceStartup + 8f;
+                while (Time.realtimeSinceStartup < deadline)
+                {
+                    firstPersonWeapon = GetProperty<GameObject>(view, "FirstPersonWeapon");
+                    object weaponData = GetProperty<object>(actions, "CurrentWeaponData");
+                    object basic = weaponData != null
+                        ? GetProperty<object>(weaponData, "Basic") : null;
+                    string currentId = basic != null
+                        ? GetProperty<string>(basic, "WeaponId") : string.Empty;
+                    if (firstPersonWeapon && currentId == weaponIds[index])
+                    {
+                        break;
+                    }
+                    yield return null;
+                }
+                yield return null;
+
+                GameObject thirdPersonWeapon =
+                    GetProperty<GameObject>(view, "ThirdPersonWeapon");
+                Assert.That(firstPersonWeapon, Is.Not.Null,
+                    weaponIds[index] + " 缺少第一人称模型");
+                Assert.That(thirdPersonWeapon, Is.Not.Null,
+                    weaponIds[index] + " 缺少第三人称模型");
+                AssertOnlyOwnedWeaponRemains(firstPersonWeapon, weaponIds[index] + " 第一人称");
+                AssertOnlyOwnedWeaponRemains(thirdPersonWeapon, weaponIds[index] + " 第三人称");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator AiFirstPersonHandsAndWeaponsAreNeverRenderable()
+        {
+            SceneManager.LoadScene("example");
+            yield return null;
+
+            Type aiType = GetRuntimeType("AIPlayerCtrl");
+            Type animationType = GetRuntimeType("PlayerAnimationCtrl");
+            Type spawnZoneType = GetRuntimeType("PlayerSpawnZone");
+            UnityEngine.Object[] spawnZones = UnityEngine.Object.FindObjectsByType(
+                spawnZoneType, FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (UnityEngine.Object spawnZoneObject in spawnZones)
+            {
+                Component spawnZone = (Component)spawnZoneObject;
+                object mode = GetProperty<object>(spawnZone, "Mode");
+                if (string.Equals(mode.ToString(), "Ai", StringComparison.Ordinal))
+                {
+                    spawnZone.gameObject.SetActive(true);
+                }
+            }
+            UnityEngine.Object[] aiObjects = Array.Empty<UnityEngine.Object>();
+            float aiDeadline = Time.realtimeSinceStartup + 10f;
+            while (aiObjects.Length == 0 && Time.realtimeSinceStartup < aiDeadline)
+            {
+                yield return null;
+                aiObjects = UnityEngine.Object.FindObjectsByType(
+                    aiType, FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            }
+            Assert.That(aiObjects.Length, Is.GreaterThan(0), "正式场景没有生成 AI");
+            foreach (UnityEngine.Object aiObject in aiObjects)
+            {
+                Behaviour ai = (Behaviour)aiObject;
+                if (!ai.enabled)
+                {
+                    continue;
+                }
+
+                Component animation = ai.GetComponent(animationType);
+                Assert.That(animation, Is.Not.Null, ai.name + " 缺少动画控制器");
+                Component firstPersonView =
+                    (Component)GetProperty<object>(animation, "FirstPersonView");
+                Renderer[] renderers = firstPersonView.GetComponentsInChildren<Renderer>(true);
+                Assert.That(renderers.Length, Is.GreaterThan(0),
+                    ai.name + " 缺少第一人称手臂/武器 Renderer");
+                foreach (Renderer renderer in renderers)
+                {
+                    Assert.That(renderer.forceRenderingOff, Is.True,
+                        ai.name + " 的第一人称模型仍可被本地 Layer 9 相机绘制：" +
+                        renderer.transform.name);
+                }
+            }
+        }
+
+        [UnityTest]
         public IEnumerator SpawnedAiStandsOnGroundInIdlePose()
         {
             SceneManager.LoadScene("example");
@@ -260,6 +375,26 @@ namespace GunDemo.Tests
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null, target.GetType().Name + " 缺少方法 " + methodName);
             return (T)method.Invoke(target, arguments);
+        }
+
+        private static void AssertOnlyOwnedWeaponRemains(GameObject ownedWeapon, string context)
+        {
+            Transform root = ownedWeapon.transform.parent;
+            Assert.That(root, Is.Not.Null, context + " 没有武器挂点");
+            int weaponCount = 0;
+            for (int index = 0; index < root.childCount; index++)
+            {
+                Transform child = root.GetChild(index);
+                if (child.name == "武器加载暂存")
+                {
+                    continue;
+                }
+
+                weaponCount++;
+                Assert.That(child.gameObject, Is.SameAs(ownedWeapon),
+                    context + " 挂点残留了未受控制器拥有的重合模型 " + child.name);
+            }
+            Assert.That(weaponCount, Is.EqualTo(1), context + " 挂点的活动枪械数量不为 1");
         }
     }
 }

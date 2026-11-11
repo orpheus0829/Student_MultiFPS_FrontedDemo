@@ -13,6 +13,295 @@ namespace GunDemo.Tests
     public sealed class PlayerCharacterModelPlayModeTests
     {
         [UnityTest]
+        public IEnumerator AutomaticFireKeepsRightHandStableRelativeToWeapon()
+        {
+            // Keep motion sampling at a deterministic 60 Hz even when the Editor test
+            // runner renders slowly. Raw per-frame pose derivatives are meaningless at
+            // the 8-15 FPS occasionally seen while Addressables stream in the test.
+            Time.captureFramerate = 60;
+            AsyncOperation load = SceneManager.LoadSceneAsync("example", LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null);
+            yield return load;
+            yield return null;
+            DisableSceneAI();
+
+            Type inputType = Type.GetType("PlayerInputCtrl, Assembly-CSharp");
+            Type actionType = Type.GetType("WeaponActionCtrl, Assembly-CSharp");
+            Type combatType = Type.GetType("WeaponCombatCtrl, Assembly-CSharp");
+            Type kinemationType = Type.GetType("PlayerKinemationViewCtrl, Assembly-CSharp");
+            Type phaseType = Type.GetType("PlayerInputPhase, Assembly-CSharp");
+            Type fireModeType = Type.GetType("WeaponFireMode, Assembly-CSharp");
+            Assert.That(inputType, Is.Not.Null);
+            Assert.That(actionType, Is.Not.Null);
+            Assert.That(combatType, Is.Not.Null);
+            Assert.That(kinemationType, Is.Not.Null);
+            Assert.That(phaseType, Is.Not.Null);
+            Assert.That(fireModeType, Is.Not.Null);
+
+            Behaviour input = null;
+            foreach (UnityEngine.Object candidate in UnityEngine.Object.FindObjectsByType(
+                inputType, FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                if (candidate is Behaviour behaviour && behaviour.enabled)
+                {
+                    input = behaviour;
+                    break;
+                }
+            }
+            Assert.That(input, Is.Not.Null, "正式场景缺少本地玩家输入控制器");
+            Component action = input.GetComponent(actionType);
+            Component combat = input.GetComponent(combatType);
+            Component kinemation = input.GetComponent(kinemationType);
+            Assert.That(action, Is.Not.Null);
+            Assert.That(combat, Is.Not.Null);
+            Assert.That(kinemation, Is.Not.Null);
+            input.enabled = false;
+
+            MethodInfo loadWeapon = actionType.GetMethod("LoadWeaponAsync");
+            MethodInfo receiveFire = combatType.GetMethod("ReceiveFireInput");
+            MethodInfo setFireMode = combatType.GetMethod("TrySetFireMode");
+            MethodInfo tryReload = combatType.GetMethod("TryReload");
+            PropertyInfo currentAction = actionType.GetProperty("CurrentAction");
+            PropertyInfo actionProgress = actionType.GetProperty("Progress");
+            PropertyInfo magazineAmmo = combatType.GetProperty("MagazineAmmo");
+            object started = Enum.Parse(phaseType, "Started");
+            object canceled = Enum.Parse(phaseType, "Canceled");
+            object automatic = Enum.Parse(fireModeType, "Automatic");
+            FieldInfo weaponBoneField = kinemationType.GetField(
+                "_weaponBone", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo rightArmField = kinemationType.GetField(
+                "_rightArm", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo lockWeightField = kinemationType.GetField(
+                "_rightHandLockWeight", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo currentIkWeightField = kinemationType.GetField(
+                "_currentIkWeight", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(weaponBoneField, Is.Not.Null);
+            Assert.That(rightArmField, Is.Not.Null);
+            Assert.That(lockWeightField, Is.Not.Null);
+            Assert.That(currentIkWeightField, Is.Not.Null);
+
+            string[] weapons = { "weapon.ak.data", "weapon.pdw90.data" };
+            foreach (string weapon in weapons)
+            {
+                Task<bool> task = loadWeapon.Invoke(action, new object[] { weapon }) as Task<bool>;
+                Assert.That(task, Is.Not.Null);
+                float deadline = Time.realtimeSinceStartup + 12f;
+                while (!task.IsCompleted && Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+                Assert.That(task.IsCompletedSuccessfully && task.Result, Is.True,
+                    weapon + " 加载失败");
+                deadline = Time.realtimeSinceStartup + 6f;
+                while (currentAction.GetValue(action) != null &&
+                    Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+                for (int frame = 0; frame < 45; frame++)
+                {
+                    yield return null;
+                }
+                Assert.That((bool)setFireMode.Invoke(combat, new[] { automatic }), Is.True,
+                    weapon + " 无法切换到全自动");
+
+                Transform weaponBone = weaponBoneField.GetValue(kinemation) as Transform;
+                object rightArm = rightArmField.GetValue(kinemation);
+                Transform hand = rightArm.GetType().GetField("tip").GetValue(rightArm) as Transform;
+                Assert.That(weaponBone && hand, Is.True, weapon + " 缺少右手或枪骨");
+                GetRelativePose(weaponBone, hand, out Vector3 previousPosition,
+                    out Quaternion previousRotation);
+                int ammoBefore = (int)magazineAmmo.GetValue(combat);
+                receiveFire.Invoke(combat, new[] { started });
+
+                float maximumStepPosition = 0f;
+                float maximumStepRotation = 0f;
+                // Editor PlayMode test frame rate can be much lower during asset streaming.
+                // Leave enough wall-clock-equivalent frames to observe at least 12 AK shots.
+                for (int frame = 0; frame < 360; frame++)
+                {
+                    yield return new WaitForEndOfFrame();
+                    GetRelativePose(weaponBone, hand, out Vector3 position,
+                        out Quaternion rotation);
+                    maximumStepPosition = Mathf.Max(maximumStepPosition,
+                        Vector3.Distance(previousPosition, position));
+                    maximumStepRotation = Mathf.Max(maximumStepRotation,
+                        Quaternion.Angle(previousRotation, rotation));
+                    previousPosition = position;
+                    previousRotation = rotation;
+                    if (frame >= 2)
+                    {
+                        Assert.That((float)lockWeightField.GetValue(kinemation),
+                            Is.EqualTo(1f).Within(0.0001f),
+                            weapon + " 连射期间右手锁定权重没有保持为 1");
+                    }
+                    if (ammoBefore - (int)magazineAmmo.GetValue(combat) >= 12)
+                    {
+                        break;
+                    }
+                }
+                int shots = ammoBefore - (int)magazineAmmo.GetValue(combat);
+                Assert.That(shots, Is.GreaterThanOrEqualTo(12),
+                    weapon + " 连射不足 12 发，无法形成有效验收");
+                Assert.That(maximumStepPosition, Is.LessThanOrEqualTo(0.001f),
+                    weapon + " 右手相对枪骨单帧跳变 " +
+                    (maximumStepPosition * 1000f).ToString("F3") + "mm");
+                Assert.That(maximumStepRotation, Is.LessThanOrEqualTo(1f),
+                    weapon + " 右手相对枪骨单帧跳变 " +
+                    maximumStepRotation.ToString("F3") + "°");
+
+                receiveFire.Invoke(combat, new[] { canceled });
+                float previousWeight = (float)lockWeightField.GetValue(kinemation);
+                deadline = Time.realtimeSinceStartup + 3f;
+                while (previousWeight > 0.0001f &&
+                    Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                    float weight = (float)lockWeightField.GetValue(kinemation);
+                    Assert.That(weight, Is.LessThanOrEqualTo(previousWeight + 0.0001f),
+                        weapon + " 停火后右手锁定权重反向增加");
+                    previousWeight = weight;
+                }
+                Assert.That(previousWeight, Is.EqualTo(0f).Within(0.0001f),
+                    weapon + " 停火后仍未退出右手锁定");
+
+                bool akReload = weapon == "weapon.ak.data";
+                Animator handAnimator = hand.GetComponentInParent<Animator>();
+                Assert.That(handAnimator, Is.Not.Null, weapon + " 右手缺少第一人称 Animator");
+                List<Vector3> reloadHandPositions = new List<Vector3>();
+                List<Quaternion> reloadHandRotations = new List<Quaternion>();
+                List<float> reloadSampleProgress = new List<float>();
+                reloadHandPositions.Add(
+                    handAnimator.transform.InverseTransformPoint(hand.position));
+                reloadHandRotations.Add(
+                    Quaternion.Inverse(handAnimator.transform.rotation) * hand.rotation);
+                reloadSampleProgress.Add(-1f);
+
+                Assert.That((bool)tryReload.Invoke(combat, null), Is.True,
+                    weapon + " 有空余弹位却无法开始换弹");
+                object startedReloadAction = currentAction.GetValue(action);
+                Assert.That(startedReloadAction, Is.Not.Null,
+                    weapon + " TryReload 返回成功却没有进入换弹动作");
+                Assert.That(startedReloadAction.GetType().GetProperty("ActionType")
+                        .GetValue(startedReloadAction).ToString(),
+                    Does.Contain("Reload"), weapon + " 没有进入 Reload 动作");
+                float previousReloadIk =
+                    (float)currentIkWeightField.GetValue(kinemation);
+                int reloadFrames = 0;
+                deadline = Time.realtimeSinceStartup + 45f;
+                while (currentAction.GetValue(action) != null &&
+                    Time.realtimeSinceStartup < deadline)
+                {
+                    yield return new WaitForEndOfFrame();
+                    reloadFrames++;
+                    reloadHandPositions.Add(
+                        handAnimator.transform.InverseTransformPoint(hand.position));
+                    reloadHandRotations.Add(
+                        Quaternion.Inverse(handAnimator.transform.rotation) * hand.rotation);
+                    object activeReloadAction = currentAction.GetValue(action);
+                    reloadSampleProgress.Add(activeReloadAction != null
+                        ? (float)actionProgress.GetValue(action)
+                        : -2f);
+                    if (activeReloadAction == null)
+                    {
+                        break;
+                    }
+
+                    float reloadIk =
+                        (float)currentIkWeightField.GetValue(kinemation);
+                    if (akReload)
+                    {
+                        Assert.That(reloadIk,
+                            Is.LessThanOrEqualTo(previousReloadIk + 0.0001f),
+                            weapon + " 换弹进入阶段 IK 权重反向增加");
+                        if (reloadFrames >= 8)
+                        {
+                            Assert.That(reloadIk, Is.EqualTo(0f).Within(0.0001f),
+                                weapon + " 换弹 CrossFade 后程序 IK 仍在抢写手腕");
+                        }
+                        Assert.That((float)lockWeightField.GetValue(kinemation),
+                            Is.EqualTo(0f).Within(0.0001f),
+                            weapon + " 换弹期间错误重启了连射右手锁定");
+                    }
+                    else
+                    {
+                        Assert.That(reloadIk, Is.EqualTo(1f).Within(0.0001f),
+                            weapon + " 正常换弹不应被 AK 专项保护改变");
+                    }
+                    previousReloadIk = reloadIk;
+                }
+                Assert.That(reloadHandPositions.Count, Is.GreaterThan(10),
+                    weapon + " 换弹动作没有形成有效采样");
+                Assert.That(currentAction.GetValue(action), Is.Null,
+                    weapon + " 换弹动作超时");
+                float previousRestoreIk =
+                    (float)currentIkWeightField.GetValue(kinemation);
+                for (int frame = 0; frame < 20; frame++)
+                {
+                    yield return new WaitForEndOfFrame();
+                    reloadHandPositions.Add(
+                        handAnimator.transform.InverseTransformPoint(hand.position));
+                    reloadHandRotations.Add(
+                        Quaternion.Inverse(handAnimator.transform.rotation) * hand.rotation);
+                    reloadSampleProgress.Add(-3f);
+                    float restoreIk =
+                        (float)currentIkWeightField.GetValue(kinemation);
+                    Assert.That(restoreIk,
+                        Is.GreaterThanOrEqualTo(previousRestoreIk - 0.0001f),
+                        weapon + " 换弹结束后 IK 权重没有单调恢复");
+                    previousRestoreIk = restoreIk;
+                }
+                Assert.That(previousRestoreIk, Is.EqualTo(1f).Within(0.0001f),
+                    weapon + " 换弹完成后程序 IK 没有恢复");
+
+                float maximumPositionSecondDifference = 0f;
+                float maximumRotationStepChange = 0f;
+                int maximumPositionFrame = -1;
+                int maximumRotationFrame = -1;
+                for (int frame = 2; frame < reloadHandPositions.Count; frame++)
+                {
+                    Vector3 previousStep = reloadHandPositions[frame - 1] -
+                        reloadHandPositions[frame - 2];
+                    Vector3 currentStep = reloadHandPositions[frame] -
+                        reloadHandPositions[frame - 1];
+                    float positionSecondDifference =
+                        Vector3.Distance(previousStep, currentStep);
+                    if (positionSecondDifference > maximumPositionSecondDifference)
+                    {
+                        maximumPositionSecondDifference = positionSecondDifference;
+                        maximumPositionFrame = frame;
+                    }
+                    Quaternion previousRotationStep = Quaternion.Inverse(
+                        reloadHandRotations[frame - 2]) * reloadHandRotations[frame - 1];
+                    Quaternion currentRotationStep = Quaternion.Inverse(
+                        reloadHandRotations[frame - 1]) * reloadHandRotations[frame];
+                    float rotationStepChange =
+                        Quaternion.Angle(previousRotationStep, currentRotationStep);
+                    if (rotationStepChange > maximumRotationStepChange)
+                    {
+                        maximumRotationStepChange = rotationStepChange;
+                        maximumRotationFrame = frame;
+                    }
+                }
+                Assert.That(maximumPositionSecondDifference, Is.LessThanOrEqualTo(0.01f),
+                    weapon + " 换弹右手出现高频位置抽动：" +
+                    (maximumPositionSecondDifference * 1000f).ToString("F2") +
+                    "mm/frame²，样本帧=" + maximumPositionFrame +
+                    "，动作进度=" + reloadSampleProgress[maximumPositionFrame].ToString("F3") +
+                    "，换弹采样帧=" + reloadFrames +
+                    "，总采样帧=" + reloadHandPositions.Count +
+                    "，P-2=" + reloadHandPositions[maximumPositionFrame - 2].ToString("F4") +
+                    "，P-1=" + reloadHandPositions[maximumPositionFrame - 1].ToString("F4") +
+                    "，P=" + reloadHandPositions[maximumPositionFrame].ToString("F4"));
+                Assert.That(maximumRotationStepChange, Is.LessThanOrEqualTo(10f),
+                    weapon + " 换弹右手出现高频旋转抽动：" +
+                    maximumRotationStepChange.ToString("F2") +
+                    "°/frame²，样本帧=" + maximumRotationFrame);
+            }
+            Time.captureFramerate = 0;
+        }
+
+        [UnityTest]
         public IEnumerator LocalPlayerCanSwitchEveryCharacterAndReturnToAnbi()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync("example", LoadSceneMode.Single);
@@ -259,6 +548,16 @@ namespace GunDemo.Tests
                 .GetValue(component);
         }
 
+        private static void GetRelativePose(
+            Transform parent,
+            Transform child,
+            out Vector3 position,
+            out Quaternion rotation)
+        {
+            position = parent.InverseTransformPoint(child.position);
+            rotation = Quaternion.Inverse(parent.rotation) * child.rotation;
+        }
+
         private static void DisableSceneAI()
         {
             Type aiType = Type.GetType("AIPlayerCtrl, Assembly-CSharp");
@@ -282,6 +581,8 @@ namespace GunDemo.Tests
             Transform[] bones = GetField(kinemation, "_rightFingerBones") as Transform[];
             Quaternion[] bindRotations =
                 GetField(kinemation, "_rightFingerBindRotations") as Quaternion[];
+            Vector3[] bindPositions =
+                GetField(kinemation, "_rightFingerBindPositions") as Vector3[];
             Vector3[] bindScales = GetField(kinemation, "_rightFingerBindScales") as Vector3[];
             Assert.That(bones, Is.Not.Null, context + " 缺少第一人称右指约束");
             Assert.That(bones.Length, Is.EqualTo(15), context + " 右指骨数量错误");
@@ -291,6 +592,9 @@ namespace GunDemo.Tests
             for (int i = 0; i < bones.Length; i++)
             {
                 Assert.That(bones[i], Is.Not.Null, context + " 缺少右指骨索引 " + i);
+                Assert.That(Vector3.Distance(bones[i].localPosition, bindPositions[i]),
+                    Is.LessThanOrEqualTo(0.0001f),
+                    context + " " + bones[i].name + " 骨长被动画拉伸");
                 Assert.That(Vector3.Distance(bones[i].localScale, bindScales[i]),
                     Is.LessThanOrEqualTo(0.0001f),
                     context + " " + bones[i].name + " 被缩放拉伸");

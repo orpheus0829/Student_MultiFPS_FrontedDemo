@@ -216,8 +216,6 @@ MonoBehaviour:
   _weaponIdleStateName: Idle
   _vaultStateName: Vault
   _slideStateName: Slide
-  _slideVisualDrop: 0.4
-  _slideVisualBlendDuration: 0.12
 --- !u!1 &2459163446039943550
 GameObject:
   m_ObjectHideFlags: 0
@@ -346,8 +344,6 @@ MonoBehaviour:
   _weaponIdleStateName: Idle
   _vaultStateName: Vault
   _slideStateName: Slide
-  _slideVisualDrop: 0.4
-  _slideVisualBlendDuration: 0.12
 --- !u!1 &2961619210494935359
 GameObject:
   m_ObjectHideFlags: 0

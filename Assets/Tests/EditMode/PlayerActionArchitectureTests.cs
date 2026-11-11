@@ -140,6 +140,39 @@ public sealed class PlayerActionArchitectureTests
     }
 
     [Test]
+    public void ThirdPersonSlideDoesNotApplyASecondModelRootDrop()
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+        Assert.That(prefab, Is.Not.Null);
+
+        MonoBehaviour[] components = prefab.GetComponentsInChildren<MonoBehaviour>(true);
+        for (int index = 0; index < components.Length; index++)
+        {
+            MonoBehaviour component = components[index];
+            if (!component || component.GetType().Name != "PlayerAnimationView")
+            {
+                continue;
+            }
+
+            SerializedObject view = new SerializedObject(component);
+            if (view.FindProperty("_viewType").enumValueIndex != 1)
+            {
+                continue;
+            }
+
+            Assert.That(view.FindProperty("_slideVisualDrop"), Is.Null,
+                "滑铲动画已经贴地，第三人称根节点不得再配置固定下沉");
+            Assert.That(component.GetType().GetMethod(
+                "RestoreThirdPersonVisualHeight",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance), Is.Not.Null);
+            return;
+        }
+
+        Assert.Fail("玩家 Prefab 缺少第三人称动画表现组件");
+    }
+
+    [Test]
     public void ThirdPersonLateralSprintUsesRunClips()
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(

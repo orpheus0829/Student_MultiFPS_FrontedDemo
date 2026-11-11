@@ -16,9 +16,9 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
 
     [Header("第三人称待机俯仰")]
     [SerializeField, Range(0f, 60f), InspectorName("最大抬头角度")]
-    private float _maximumLookUpAngle = 35f;
+    private float _maximumLookUpAngle = 42f;
     [SerializeField, Range(0f, 60f), InspectorName("最大低头角度")]
-    private float _maximumLookDownAngle = 25f;
+    private float _maximumLookDownAngle = 32f;
     [SerializeField, Min(0f), InspectorName("俯仰跟随速度")]
     private float _upperBodyPitchSpeed = 10f;
     [SerializeField, Min(0f), InspectorName("待机融合速度")]

@@ -24,6 +24,8 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
         public Transform cameraSocket;
 
         public KTransform defaultRightHandPose;
+        public KTransform lockedWeaponRelativeRightHandPose;
+        public float rightHandLockWeight;
         public FPSWeaponSettings gunSettings;
         public RecoilAnimation recoilAnimation;
         public Animator animator;
@@ -140,6 +142,11 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
 
         private void SolveTwoBoneIK(AnimationStream stream, IKTransforms ikTransforms, KTransform target)
         {
+            // AK authored reload deliberately disables procedural arm IK. Do not run the
+            // solver at zero weight: near-collinear limbs can still produce unstable
+            // intermediate rotations before the weighted result is written back.
+            if (ikWeight <= 0.0001f) return;
+
             KTwoBoneIkData data = new KTwoBoneIkData()
             {
                 target = target,
@@ -250,8 +257,12 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
             weaponTransform.rotation = KAnimationMath.RotateInSpace(weaponTransform, weaponTransform,
                 _hasValidSettingsAsset ? gunSettings.rotationOffset : AnimatedOffset, 1f);
 
-            KTransform rightHandTarget = KAnimationMath.GetTransform(stream, rightArm.tipHandle);
-            rightHandTarget = weaponTransform.GetRelativeTransform(rightHandTarget, false);
+            KTransform animatedRightHandTarget = weaponTransform.GetRelativeTransform(
+                KAnimationMath.GetTransform(stream, rightArm.tipHandle), false);
+            KTransform rightHandTarget = KTransform.Lerp(
+                animatedRightHandTarget,
+                lockedWeaponRelativeRightHandPose,
+                Mathf.Clamp01(rightHandLockWeight));
             
             KTransform leftHandTarget = KAnimationMath.GetTransform(stream, leftArm.tipHandle);
             leftHandTarget = weaponTransform.GetRelativeTransform(leftHandTarget, false);
