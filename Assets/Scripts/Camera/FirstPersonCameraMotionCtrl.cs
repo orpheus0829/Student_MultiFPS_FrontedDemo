@@ -126,6 +126,22 @@ public sealed class FirstPersonCameraMotionCtrl : MonoBehaviour
         }
     }
 
+    public Vector3 CurrentMovementPositionOffset
+    {
+        get
+        {
+            return _bobPositionOffset;
+        }
+    }
+
+    public Vector3 CurrentMovementRotationOffset
+    {
+        get
+        {
+            return _bobRotationOffset;
+        }
+    }
+
     private void Awake()
     {
         TryGetComponent(out _cameraCtrl);

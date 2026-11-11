@@ -692,6 +692,11 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
 
     private void ResetMotion()
     {
+        if (_isSliding && _characterController)
+        {
+            _characterController.height = _standingHeight;
+            _characterController.center = _standingCenter;
+        }
         ResetInput();
         _queuedDisplacement = Vector3.zero;
         _localVelocity = Vector3.zero;

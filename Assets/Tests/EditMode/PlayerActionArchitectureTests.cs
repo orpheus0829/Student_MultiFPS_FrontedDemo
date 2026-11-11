@@ -11,8 +11,8 @@ public sealed class PlayerActionArchitectureTests
         "Assets/Resource/Animations/ThirdPerson/UpperBodyWeapon.mask";
     private const string ThirdPersonControllerPath =
         "Assets/Resource/Animations/ThirdPerson/PlayerThirdPerson.controller";
-    private const string SlideAnimationPath =
-        "Assets/Resource/Animations/ThirdPerson/Slide/ParkourHookSlide.fbx";
+    private const string SlideAnimationRoot =
+        "Assets/Resource/Animations/ThirdPerson/Movement/Slide/";
 
     [Test]
     public void ThirdPersonWeaponMaskKeepsLegsOnLocomotionLayer()
@@ -77,20 +77,39 @@ public sealed class PlayerActionArchitectureTests
         Assert.That(controller, Is.Not.Null);
 
         AnimationClip slide = null;
+        AnimationClip slideKeep = null;
+        AnimationClip slideEnd = null;
         ChildAnimatorState[] states = controller.layers[0].stateMachine.states;
         for (int index = 0; index < states.Length; index++)
         {
             if (states[index].state && states[index].state.name == "Slide")
             {
                 slide = states[index].state.motion as AnimationClip;
-                Assert.That(states[index].state.speed, Is.EqualTo(2.166667f).Within(0.01f));
-                break;
+                Assert.That(states[index].state.speed, Is.EqualTo(1f).Within(0.01f));
+            }
+            else if (states[index].state && states[index].state.name == "SlideKeep")
+            {
+                slideKeep = states[index].state.motion as AnimationClip;
+                Assert.That(states[index].state.speed, Is.EqualTo(1.7f).Within(0.01f));
+            }
+            else if (states[index].state && states[index].state.name == "SlideEnd")
+            {
+                slideEnd = states[index].state.motion as AnimationClip;
             }
         }
 
         Assert.That(slide, Is.Not.Null);
-        Assert.That(AssetDatabase.GetAssetPath(slide), Is.EqualTo(SlideAnimationPath));
+        Assert.That(slideKeep, Is.Not.Null);
+        Assert.That(slideEnd, Is.Not.Null);
+        Assert.That(AssetDatabase.GetAssetPath(slide),
+            Is.EqualTo(SlideAnimationRoot + "CLazy@Esc_Slide_Start.FBX"));
+        Assert.That(AssetDatabase.GetAssetPath(slideKeep),
+            Is.EqualTo(SlideAnimationRoot + "CLazy@Esc_Slide_Keep.FBX"));
+        Assert.That(AssetDatabase.GetAssetPath(slideEnd),
+            Is.EqualTo(SlideAnimationRoot + "CLazy@Esc_Slide_End.FBX"));
         Assert.That(slide.isHumanMotion, Is.True);
+        Assert.That(slideKeep.isHumanMotion, Is.True);
+        Assert.That(slideEnd.isHumanMotion, Is.True);
 
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
         Assert.That(prefab, Is.Not.Null);

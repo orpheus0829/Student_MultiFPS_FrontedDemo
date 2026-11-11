@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 179128884122794462}
   - component: {fileID: 1942660574578620649}
+  - component: {fileID: 4408059968898527225}
+  - component: {fileID: 6849705266519164909}
   m_Layer: 0
   m_Name: PlayerSpawnZone
   m_TagString: Untagged
@@ -52,4 +54,56 @@ MonoBehaviour:
   _groundOffset: 0.15
   _aiPrefabResourceId: character.ai_player.prefab
   _aiCount: 4
-  _corpseLifetime: 8
+  _aiDefinitions:
+  - _model: 0
+    _difficulty: 1
+  - _model: 0
+    _difficulty: 1
+  - _model: 0
+    _difficulty: 1
+  - _model: 0
+    _difficulty: 1
+--- !u!114 &4408059968898527225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1381832048761027371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshSurface
+  m_SerializedVersion: 0
+  m_AgentTypeID: 0
+  m_CollectObjects: 0
+  m_Size: {x: 10, y: 10, z: 10}
+  m_Center: {x: 0, y: 2, z: 0}
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_UseGeometry: 1
+  m_DefaultArea: 0
+  m_GenerateLinks: 0
+  m_IgnoreNavMeshAgent: 1
+  m_IgnoreNavMeshObstacle: 1
+  m_OverrideTileSize: 0
+  m_TileSize: 256
+  m_OverrideVoxelSize: 0
+  m_VoxelSize: 0.16666667
+  m_MinRegionArea: 2
+  m_NavMeshData: {fileID: 0}
+  m_BuildHeightMesh: 0
+--- !u!114 &6849705266519164909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1381832048761027371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db5d24c1a713c83479cd33eda14a423a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AINavigationSurfaceCtrl

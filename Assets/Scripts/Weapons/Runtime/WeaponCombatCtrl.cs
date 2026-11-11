@@ -80,6 +80,14 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         }
     }
 
+    public bool IsFireHeld
+    {
+        get
+        {
+            return _isFireHeld;
+        }
+    }
+
     public float CurrentSpreadDegrees
     {
         get

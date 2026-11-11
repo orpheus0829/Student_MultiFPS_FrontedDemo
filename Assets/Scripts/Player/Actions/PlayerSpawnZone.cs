@@ -8,6 +8,25 @@ public enum PlayerSpawnZoneMode
     [InspectorName("玩家复活区（预留绑定）")] Player = 1
 }
 
+public enum AICharacterModel
+{
+    [InspectorName("随机模型")] Random = 0,
+    [InspectorName("安比")] Anbi = 1,
+    [InspectorName("艾莲")] Ellen = 2,
+    [InspectorName("朱鸢")] ZhuYuan = 3,
+    [InspectorName("女主")] Belle = 4
+}
+
+[Serializable]
+public sealed class AISpawnDefinition
+{
+    [SerializeField, InspectorName("角色模型")] private AICharacterModel _model;
+    [SerializeField, InspectorName("AI 难度")] private AIDifficulty _difficulty = AIDifficulty.Normal;
+
+    public AICharacterModel Model { get { return _model; } }
+    public AIDifficulty Difficulty { get { return _difficulty; } }
+}
+
 [DisallowMultipleComponent]
 public sealed class PlayerSpawnZone : MonoBehaviour
 {
@@ -21,11 +40,13 @@ public sealed class PlayerSpawnZone : MonoBehaviour
     [SerializeField, InspectorName("AI 玩家预制体资源 ID")]
     private string _aiPrefabResourceId = "character.ai_player.prefab";
     [SerializeField, Min(0), InspectorName("同时存活的 AI 数量")] private int _aiCount = 4;
-    [SerializeField, Min(0f), InspectorName("尸体保留秒数")] private float _corpseLifetime = 8f;
-
+    [SerializeField, InspectorName("逐个人机配置")]
+    private List<AISpawnDefinition> _aiDefinitions = new List<AISpawnDefinition>();
     private readonly HashSet<GameObject> _instances = new HashSet<GameObject>();
     private readonly Dictionary<CharacterHealth, GameObject> _living =
         new Dictionary<CharacterHealth, GameObject>();
+    private readonly HashSet<CharacterHealth> _respawning =
+        new HashSet<CharacterHealth>();
     private ResourceMgr _resources;
     private bool _isClosing;
     private int _nextNameIndex;
@@ -45,7 +66,7 @@ public sealed class PlayerSpawnZone : MonoBehaviour
         _resources = ResourceMgr.instance;
         for (int i = 0; i < _aiCount; i++)
         {
-            SpawnAi();
+            SpawnAi(i);
         }
     }
 
@@ -67,6 +88,7 @@ public sealed class PlayerSpawnZone : MonoBehaviour
             }
         }
         _living.Clear();
+        _respawning.Clear();
         _instances.Clear();
     }
 
@@ -108,7 +130,7 @@ public sealed class PlayerSpawnZone : MonoBehaviour
         return false;
     }
 
-    private async void SpawnAi()
+    private async void SpawnAi(int slotIndex)
     {
         if (_isClosing || _mode != PlayerSpawnZoneMode.Ai ||
             string.IsNullOrWhiteSpace(_aiPrefabResourceId))
@@ -142,10 +164,28 @@ public sealed class PlayerSpawnZone : MonoBehaviour
 
         CharacterHealth health = instance.GetComponent<CharacterHealth>();
         PlayerLifeCtrl life = instance.GetComponent<PlayerLifeCtrl>();
-        if (!health || !life)
+        AIPlayerCtrl aiCtrl = instance.GetComponent<AIPlayerCtrl>();
+        PlayerCharacterModelCtrl models = instance.GetComponent<PlayerCharacterModelCtrl>();
+        if (!health || !life || !aiCtrl || !models)
         {
-            Debug.LogError($"{name} 的 AI 玩家预制体缺少生命或死亡组件。", instance);
+            Debug.LogError($"{name} 的 AI 玩家预制体缺少生命、模型或 AI 马夫。", instance);
             _resources.ReleaseInstance(instance);
+            return;
+        }
+
+        AISpawnDefinition definition = GetDefinition(slotIndex);
+        aiCtrl.SetDifficulty(definition.Difficulty);
+        string modelId = ResolveModelId(models, definition);
+        if (!string.IsNullOrWhiteSpace(modelId))
+        {
+            await models.SwitchModelAsync(modelId);
+        }
+        if (_isClosing || !instance)
+        {
+            if (instance)
+            {
+                _resources.ReleaseInstance(instance);
+            }
             return;
         }
 
@@ -166,7 +206,7 @@ public sealed class PlayerSpawnZone : MonoBehaviour
         GameObject deadObject = null;
         foreach (KeyValuePair<CharacterHealth, GameObject> entry in _living)
         {
-            if (entry.Key && entry.Key.IsDead)
+            if (entry.Key && entry.Key.IsDead && !_respawning.Contains(entry.Key))
             {
                 deadHealth = entry.Key;
                 deadObject = entry.Value;
@@ -178,23 +218,78 @@ public sealed class PlayerSpawnZone : MonoBehaviour
             return;
         }
 
-        deadHealth.Died -= HandleAiDied;
-        _living.Remove(deadHealth);
+        _respawning.Add(deadHealth);
         PlayerLifeCtrl life = deadObject.GetComponent<PlayerLifeCtrl>();
         float delay = life ? life.RespawnDelay : 5f;
-        SmartTimer.instance.SetTimer(this, delay, SpawnAi);
-        SmartTimer.instance.SetTimer(this, Mathf.Max(delay, _corpseLifetime),
-            () => ReleaseCorpse(deadObject));
+        SmartTimer.instance.SetTimer(this, delay, () => RespawnAi(deadHealth));
     }
 
-    private void ReleaseCorpse(GameObject corpse)
+    private AISpawnDefinition GetDefinition(int slotIndex)
     {
-        if (!corpse)
+        if (slotIndex >= 0 && slotIndex < _aiDefinitions.Count &&
+            _aiDefinitions[slotIndex] != null)
         {
+            return _aiDefinitions[slotIndex];
+        }
+
+        return new AISpawnDefinition();
+    }
+
+    private static string ResolveModelId(
+        PlayerCharacterModelCtrl models,
+        AISpawnDefinition definition)
+    {
+        switch (definition.Model)
+        {
+            case AICharacterModel.Anbi:
+                return "character.anbi";
+            case AICharacterModel.Ellen:
+                return "character.ellen";
+            case AICharacterModel.ZhuYuan:
+                return "character.zhuyuan";
+            case AICharacterModel.Belle:
+                return "character.belle";
+        }
+        if (!models || models.ModelCount <= 0)
+        {
+            return string.Empty;
+        }
+
+        return models.GetModelId(UnityEngine.Random.Range(0, models.ModelCount));
+    }
+
+    private void OnValidate()
+    {
+        _aiCount = Mathf.Max(0, _aiCount);
+        if (_aiDefinitions == null)
+        {
+            _aiDefinitions = new List<AISpawnDefinition>();
+        }
+
+        while (_aiDefinitions.Count < _aiCount)
+        {
+            _aiDefinitions.Add(new AISpawnDefinition());
+        }
+        while (_aiDefinitions.Count > _aiCount)
+        {
+            _aiDefinitions.RemoveAt(_aiDefinitions.Count - 1);
+        }
+    }
+
+    private void RespawnAi(CharacterHealth health)
+    {
+        if (_isClosing || !health || !_living.TryGetValue(health, out GameObject instance))
+        {
+            _respawning.Remove(health);
             return;
         }
-        _instances.Remove(corpse);
-        _resources?.ReleaseInstance(corpse);
+
+        PlayerLifeCtrl life = instance.GetComponent<PlayerLifeCtrl>();
+        if (!life || !life.TryRespawn())
+        {
+            Debug.LogError($"{name} 无法复活 AI 玩家 {instance.name}。", instance);
+        }
+        _respawning.Remove(health);
     }
 
     private void OnDrawGizmosSelected()

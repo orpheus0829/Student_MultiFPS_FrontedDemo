@@ -14,6 +14,17 @@ using UnityEngine.Playables;
 public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 {
     private const float GaitSmoothing = 8f;
+    private const string DefaultCharacterModelId = "character.anbi";
+    private static readonly string[] RightFingerBoneNames =
+    {
+        "thumb_01_r", "thumb_02_r", "thumb_03_r",
+        "index_01_r", "index_02_r", "index_03_r",
+        "middle_01_r", "middle_02_r", "middle_03_r",
+        "ring_01_r", "ring_02_r", "ring_03_r",
+        "pinky_01_r", "pinky_02_r", "pinky_03_r"
+    };
+    private static readonly float[] FingerSwingLimits = { 40f, 50f, 35f };
+    private static readonly float[] FingerTwistLimits = { 8f, 5f, 5f };
 
     [Header("项目动作状态")]
     [SerializeField, InspectorName("玩家移动")] private PlayerMoveCtrl _moveCtrl;
@@ -45,6 +56,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
 
     private ResourceMgr _resourceMgr;
     private FirstPersonCameraCtrl _cameraCtrl;
+    private PlayerCharacterModelCtrl _characterModelCtrl;
     private PlayerThirdPersonGripCtrl _thirdPersonGripCtrl;
     private Animator _animator;
     private RecoilAnimation _recoilAnimation;
@@ -77,6 +89,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private bool _equipImpactPlayed;
     private bool _showWeaponNextFrame;
     private int _showWeaponFrame;
+    private bool _isRecoilActive;
+    private Transform[] _rightFingerBones;
+    private Quaternion[] _rightFingerBindRotations;
+    private Vector3[] _rightFingerBindScales;
 
     private void Awake()
     {
@@ -155,6 +171,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _job.adsWeight = _aimCtrl ? _aimCtrl.AimProgress : 0f;
         _job.ikWeight = _ikWeight;
         _playable.SetJobData(_job);
+        RefreshRecoilPlayback();
     }
 
     private void LateUpdate()
@@ -185,10 +202,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         Vector3 motionPosition = _cameraMotionCtrl
-            ? _cameraMotionCtrl.CurrentPositionOffset
+            ? _cameraMotionCtrl.CurrentMovementPositionOffset
             : Vector3.zero;
         Vector3 motionRotation = _cameraMotionCtrl
-            ? _cameraMotionCtrl.CurrentRotationOffset
+            ? _cameraMotionCtrl.CurrentMovementRotationOffset
             : Vector3.zero;
         float follow = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.001f, _cameraMotionLag));
         _laggedCameraPosition = Vector3.Lerp(_laggedCameraPosition, motionPosition, follow);
@@ -217,6 +234,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             SetFirstPersonRenderersHidden(false);
             _showWeaponNextFrame = false;
         }
+
+        ApplyFirstPersonFingerSafety();
     }
 
     private void OnDisable()
@@ -242,6 +261,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         _weaponLoadVersion++;
+        StopActiveRecoil();
         ReleaseRecoilProfile();
         if (_animator)
         {
@@ -272,6 +292,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     {
         _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
         TryGetComponent(out _thirdPersonGripCtrl);
+        TryGetComponent(out _characterModelCtrl);
         if (!_moveCtrl)
         {
             TryGetComponent(out _moveCtrl);
@@ -321,6 +342,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         Transform additiveBone = FindOrCreateChild(skeletonRoot, "ik_hand_gun_additive");
         _rightArm = CreateArm(root, "hand_r", "lowerarm_r", "upperarm_r");
         IKTransforms leftArm = CreateArm(root, "hand_l", "lowerarm_l", "upperarm_l");
+        CacheRightFingerBindPose(root);
 
         if (!skeletonRoot || !_weaponBone || !_cameraPoint ||
             !_rightArm.tip || !_rightArm.mid || !_rightArm.root ||
@@ -464,6 +486,11 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private void ClearWeaponPose()
     {
         _weaponLoadVersion++;
+        StopActiveRecoil();
+        if (_firstPersonView)
+        {
+            _firstPersonView.SetProceduralAutomaticFirePose(false);
+        }
         if (_recoilAnimation)
         {
             _recoilAnimation.Init(null, 1f, FireMode.Semi);
@@ -472,10 +499,10 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         _configuredWeaponData = null;
         _showWeaponNextFrame = false;
         _laggedCameraPosition = _cameraMotionCtrl
-            ? _cameraMotionCtrl.CurrentPositionOffset
+            ? _cameraMotionCtrl.CurrentMovementPositionOffset
             : Vector3.zero;
         _laggedCameraRotation = _cameraMotionCtrl
-            ? _cameraMotionCtrl.CurrentRotationOffset
+            ? _cameraMotionCtrl.CurrentMovementRotationOffset
             : Vector3.zero;
         SetFirstPersonRenderersHidden(true);
         if (!_isReady)
@@ -506,6 +533,8 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         int loadVersion = ++_weaponLoadVersion;
+        _firstPersonView.SetProceduralAutomaticFirePose(
+            weaponData.Fire.DefaultMode == WeaponFireMode.Automatic);
         ReleaseRecoilProfile();
         if (_runtimeWeaponSettings)
         {
@@ -665,10 +694,11 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         float roundsPerMinute = Mathf.Max(1f, weaponData.Fire.AutomaticRpm);
-        FireMode fireMode = weaponData.Fire.DefaultMode == WeaponFireMode.Automatic
-            ? FireMode.Auto
-            : FireMode.Semi;
-        _recoilAnimation.Init(recoilData, roundsPerMinute, fireMode);
+        // 只让每颗真实 ShotFired 驱动一次后坐。插件的 Auto 模式会在第二发后启动
+        // 与战斗/弹药状态脱钩的内部循环，造成枪和右手在停火、卡动作或空仓后继续抖。
+        // Semi 脉冲会从当前平滑输出衔接，因此高射速下仍连续，但不会生成虚假后坐帧。
+        _recoilAnimation.Init(recoilData, roundsPerMinute, FireMode.Semi);
+        _isRecoilActive = false;
     }
 
     private void HandleShotFired(WeaponDefinitionSO weaponData)
@@ -677,7 +707,118 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             _recoilAnimation.isAiming = _aimCtrl && _aimCtrl.IsAiming;
             _recoilAnimation.Play();
+            _isRecoilActive = _recoilAnimation.RecoilData;
         }
+    }
+
+    private void RefreshRecoilPlayback()
+    {
+        if (!_isRecoilActive || !_recoilAnimation)
+        {
+            return;
+        }
+
+        bool keepAutomaticRecoilRunning =
+            _recoilAnimation.fireMode == FireMode.Auto &&
+            _weaponCombatCtrl &&
+            _weaponCombatCtrl.IsFireHeld &&
+            _weaponCombatCtrl.MagazineAmmo > 0;
+        if (!keepAutomaticRecoilRunning)
+        {
+            StopActiveRecoil();
+        }
+    }
+
+    private void StopActiveRecoil()
+    {
+        if (_recoilAnimation && _recoilAnimation.RecoilData)
+        {
+            _recoilAnimation.Stop();
+        }
+        _isRecoilActive = false;
+    }
+
+    private void CacheRightFingerBindPose(Transform root)
+    {
+        _rightFingerBones = new Transform[RightFingerBoneNames.Length];
+        _rightFingerBindRotations = new Quaternion[RightFingerBoneNames.Length];
+        _rightFingerBindScales = new Vector3[RightFingerBoneNames.Length];
+        for (int i = 0; i < RightFingerBoneNames.Length; i++)
+        {
+            Transform bone = FindChild(root, RightFingerBoneNames[i]);
+            _rightFingerBones[i] = bone;
+            _rightFingerBindRotations[i] = bone ? bone.localRotation : Quaternion.identity;
+            _rightFingerBindScales[i] = bone ? bone.localScale : Vector3.one;
+        }
+    }
+
+    private void ApplyFirstPersonFingerSafety()
+    {
+        if (!_hasWeaponConfigured || !_characterModelCtrl ||
+            string.Equals(_characterModelCtrl.CurrentModelId, DefaultCharacterModelId,
+                StringComparison.Ordinal) || _rightFingerBones == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _rightFingerBones.Length; i++)
+        {
+            Transform bone = _rightFingerBones[i];
+            if (!bone)
+            {
+                continue;
+            }
+
+            int jointIndex = i % 3;
+            Quaternion delta = Quaternion.Inverse(_rightFingerBindRotations[i]) *
+                bone.localRotation;
+            bone.localRotation = _rightFingerBindRotations[i] * ClampSwingTwist(
+                delta,
+                Vector3.right,
+                FingerSwingLimits[jointIndex],
+                FingerTwistLimits[jointIndex]);
+            bone.localScale = _rightFingerBindScales[i];
+        }
+    }
+
+    private static Quaternion ClampSwingTwist(
+        Quaternion rotation,
+        Vector3 twistAxis,
+        float swingLimit,
+        float twistLimit)
+    {
+        Vector3 rotationVector = new Vector3(rotation.x, rotation.y, rotation.z);
+        Vector3 projected = Vector3.Project(rotationVector, twistAxis);
+        Quaternion twist = new Quaternion(projected.x, projected.y, projected.z, rotation.w);
+        float twistMagnitude = Mathf.Sqrt(
+            twist.x * twist.x + twist.y * twist.y + twist.z * twist.z + twist.w * twist.w);
+        twist = twistMagnitude > 0.00001f
+            ? new Quaternion(
+                twist.x / twistMagnitude,
+                twist.y / twistMagnitude,
+                twist.z / twistMagnitude,
+                twist.w / twistMagnitude)
+            : Quaternion.identity;
+
+        Quaternion swing = rotation * Quaternion.Inverse(twist);
+        swing.ToAngleAxis(out float swingAngle, out Vector3 swingAxis);
+        if (swingAngle > 180f)
+        {
+            swingAngle = 360f - swingAngle;
+            swingAxis = -swingAxis;
+        }
+        Quaternion clampedSwing = swingAngle > swingLimit && swingAxis.sqrMagnitude > 0.00001f
+            ? Quaternion.AngleAxis(swingLimit, swingAxis.normalized)
+            : swing;
+
+        float signedTwist = 2f * Mathf.Atan2(
+            Vector3.Dot(new Vector3(twist.x, twist.y, twist.z), twistAxis),
+            twist.w) * Mathf.Rad2Deg;
+        signedTwist = Mathf.DeltaAngle(0f, signedTwist);
+        Quaternion clampedTwist = Quaternion.AngleAxis(
+            Mathf.Clamp(signedTwist, -twistLimit, twistLimit),
+            twistAxis);
+        return clampedSwing * clampedTwist;
     }
 
     private void HandleActionStarted(

@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 111100001, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 111100002, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 111100004, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 111100005, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Enabled
@@ -102,7 +102,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5949354933009440359, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7123913061470047642, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: m_Enabled
@@ -111,5 +111,34 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 373516595380792085, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7474590438766351252}
   m_SourcePrefab: {fileID: 100100000, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
+--- !u!1 &2046665990404099383 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 373516595380792085, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
+  m_PrefabInstance: {fileID: 1822207987914794530}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7474590438766351252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2046665990404099383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f0bd50510dd20d4cb4043341be2fb5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AIPlayerCtrl
+  _difficulty: 1
+  _patrolRadius: 18
+  _coverSearchRadius: 14
+  _coverMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _sightMask:
+    serializedVersion: 2
+    m_Bits: 4294967295

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using KINEMATION.KAnimationCore.Runtime.Core;
 using UnityEngine;
 
@@ -23,6 +24,27 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
 
     private static int[] _fingerMuscleIndices;
 
+    private static readonly HumanBodyBones[] FingerBones =
+    {
+        HumanBodyBones.LeftThumbProximal, HumanBodyBones.LeftThumbIntermediate,
+        HumanBodyBones.LeftThumbDistal, HumanBodyBones.LeftIndexProximal,
+        HumanBodyBones.LeftIndexIntermediate, HumanBodyBones.LeftIndexDistal,
+        HumanBodyBones.LeftMiddleProximal, HumanBodyBones.LeftMiddleIntermediate,
+        HumanBodyBones.LeftMiddleDistal, HumanBodyBones.LeftRingProximal,
+        HumanBodyBones.LeftRingIntermediate, HumanBodyBones.LeftRingDistal,
+        HumanBodyBones.LeftLittleProximal, HumanBodyBones.LeftLittleIntermediate,
+        HumanBodyBones.LeftLittleDistal, HumanBodyBones.RightThumbProximal,
+        HumanBodyBones.RightThumbIntermediate, HumanBodyBones.RightThumbDistal,
+        HumanBodyBones.RightIndexProximal, HumanBodyBones.RightIndexIntermediate,
+        HumanBodyBones.RightIndexDistal, HumanBodyBones.RightMiddleProximal,
+        HumanBodyBones.RightMiddleIntermediate, HumanBodyBones.RightMiddleDistal,
+        HumanBodyBones.RightRingProximal, HumanBodyBones.RightRingIntermediate,
+        HumanBodyBones.RightRingDistal, HumanBodyBones.RightLittleProximal,
+        HumanBodyBones.RightLittleIntermediate, HumanBodyBones.RightLittleDistal
+    };
+
+    private static readonly float[] MaxFingerJointAngles = { 45f, 55f, 40f };
+
     [Header("第三人称握持")]
     [SerializeField, Range(0f, 1f), InspectorName("支撑手贴合程度")]
     private float _gripWeight = 1f;
@@ -39,14 +61,30 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
     private Transform _upperArm;
     private Transform _forearm;
     private Transform _hand;
-    private Transform _hips;
+    private Transform _rightHand;
     private Quaternion _handFrame;
     private HumanPoseHandler _poseHandler;
     private HumanPose _humanPose = new HumanPose();
+    private readonly Transform[] _fingerBones = new Transform[30];
+    private readonly Transform[] _poseFingerBones = new Transform[30];
+    private readonly Quaternion[] _fingerNeutralLocalRotations = new Quaternion[30];
+    private readonly Quaternion[] _fingerLocalRotations = new Quaternion[30];
+    private readonly Quaternion[] _fingerFireLocalRotations = new Quaternion[30];
+    private readonly float[] _savedFingerMuscles = new float[FingerMusclePerHand * 2];
+    private readonly List<Transform> _rightGripChain = new List<Transform>();
+    private readonly List<Quaternion> _rightGripNeutralLocalRotations =
+        new List<Quaternion>();
+    private GameObject _poseSamplerRoot;
+    private ThirdPersonFingerPoseData _cachedFingerPoseData;
+    private bool _hasCachedFingerRotations;
     private bool _leftFingersAvailable;
     private bool _rightFingersAvailable;
     private bool _leftFingerErrorLogged;
     private bool _rightFingerErrorLogged;
+    private bool _resumeFromAnimationTakeover;
+    private bool _needsNeutralGripCalibration;
+    private bool _hasRightHandNeutralRotation;
+    private int _firePoseThroughFrame = -1;
     private Transform _resolvedWeapon;
     private WeaponIkData _resolvedIkData;
     private ThirdPersonGripTarget _gripTarget;
@@ -86,8 +124,23 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        if (_action)
+        {
+            _action.ActionStarted += HandleActionStarted;
+            _action.ActionCanceled += HandleActionCanceled;
+        }
+    }
+
     private void OnDisable()
     {
+        if (_action)
+        {
+            _action.ActionStarted -= HandleActionStarted;
+            _action.ActionCanceled -= HandleActionCanceled;
+        }
+        _firePoseThroughFrame = -1;
         ReleasePoseHandler();
         _resolvedWeapon = null;
         _resolvedIkData = null;
@@ -126,6 +179,7 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         if (targetGun != _resolvedWeapon || ikData != _resolvedIkData)
         {
             ResolveGripTarget(targetGun, ikData);
+            _needsNeutralGripCalibration = true;
         }
         if (!_hasGripTarget)
         {
@@ -136,8 +190,21 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         if (_action.CurrentAction != null &&
             _action.CurrentAction.ActionType != WeaponActionType.Fire)
         {
+            _resumeFromAnimationTakeover = true;
             return;
         }
+
+        if (_resumeFromAnimationTakeover || _needsNeutralGripCalibration)
+        {
+            // 装弹、收枪、检视等动作会完全接管左臂，动作结束时先清掉残留的
+            // Humanoid 求值并回到 Idle 第 0 帧，再恢复程序握持。开火不会走这里。
+            _animationCtrl.ThirdPersonView.RestoreNeutralGripPose();
+            CacheRightHandNeutralRotation();
+            _resumeFromAnimationTakeover = false;
+            _needsNeutralGripCalibration = false;
+        }
+
+        StabilizeRightHandGrip();
 
         // 锚点挂在随枪运动的节点下，武器每帧都在动，因此由缓存的武器局部值
         // 重新算出本帧世界目标；这里不重新 Find，查找只在切枪/换锚点数据时发生。
@@ -148,10 +215,32 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
             usesExplicitAnchor,
             _gripSource);
 
-        bool isFiring = _action.CurrentAction != null;
-        // 顺序固定：Animator 已求值 → 写入本帧指骨 muscle → 解左臂 IK。
+        bool isFiring = (_action.CurrentAction != null &&
+            _action.CurrentAction.ActionType == WeaponActionType.Fire) ||
+            Time.frameCount <= _firePoseThroughFrame;
+        // 顺序固定：Animator 已求值 → 应用缓存的指骨局部旋转 → 解左臂 IK。
         ApplyFingerPose(ikData, isFiring);
         SolveLeftArm(usesExplicitAnchor);
+    }
+
+    private void HandleActionStarted(
+        WeaponActionDefinition action, bool startedWhileAiming)
+    {
+        if (action != null && action.ActionType == WeaponActionType.Fire)
+        {
+            // 极短 Fire 可能在下一次 Update 就完成；至少把开火指姿保留到下一
+            // 渲染帧，保证动画首帧和枪口事件使用的是扣扳机姿势。
+            _firePoseThroughFrame = Mathf.Max(_firePoseThroughFrame, Time.frameCount + 1);
+        }
+    }
+
+    private void HandleActionCanceled(
+        WeaponActionType actionType, WeaponActionCancelReason reason)
+    {
+        if (actionType == WeaponActionType.Fire)
+        {
+            _firePoseThroughFrame = -1;
+        }
     }
 
     /// <summary>
@@ -331,12 +420,19 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         _upperArm = null;
         _forearm = null;
         _hand = null;
-        _hips = null;
+        _rightHand = null;
         _handFrame = Quaternion.identity;
+        _hasRightHandNeutralRotation = false;
+        _rightGripChain.Clear();
+        _rightGripNeutralLocalRotations.Clear();
         _leftFingersAvailable = false;
         _rightFingersAvailable = false;
         _leftFingerErrorLogged = false;
         _rightFingerErrorLogged = false;
+        _cachedFingerPoseData = null;
+        _hasCachedFingerRotations = false;
+        _resumeFromAnimationTakeover = false;
+        _needsNeutralGripCalibration = true;
         if (!animator || !animator.isHuman || !animator.avatar)
         {
             return;
@@ -345,26 +441,56 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         _upperArm = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
         _forearm = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
         _hand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
-        _hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+        _rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+        Transform rightGripStop = animator.GetBoneTransform(HumanBodyBones.UpperChest);
+        if (!rightGripStop)
+        {
+            rightGripStop = animator.GetBoneTransform(HumanBodyBones.Chest);
+        }
+        Transform rightGripBone = _rightHand;
+        while (rightGripBone && rightGripBone != rightGripStop)
+        {
+            _rightGripChain.Add(rightGripBone);
+            rightGripBone = rightGripBone.parent;
+        }
         _handFrame = GetHandFrame(_hand,
             animator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal),
             animator.GetBoneTransform(HumanBodyBones.LeftIndexProximal),
             animator.GetBoneTransform(HumanBodyBones.LeftLittleProximal));
 
+        EnsureFingerMuscleIndices();
+        _leftFingersAvailable = AreFingerMusclesValid(0);
+        _rightFingersAvailable = AreFingerMusclesValid(FingerMusclePerHand);
+        for (int i = 0; i < FingerBones.Length; i++)
+        {
+            _fingerBones[i] = animator.GetBoneTransform(FingerBones[i]);
+        }
+
         try
         {
-            _poseHandler = new HumanPoseHandler(animator.avatar, animator.transform);
+            Dictionary<Transform, Transform> poseBoneMap =
+                CreatePoseSampler(animator, out _poseSamplerRoot);
+            _poseHandler = new HumanPoseHandler(
+                animator.avatar, _poseSamplerRoot.transform);
+            for (int i = 0; i < _poseFingerBones.Length; i++)
+            {
+                Transform sourceBone = _fingerBones[i];
+                _poseFingerBones[i] = sourceBone && poseBoneMap.TryGetValue(
+                    sourceBone, out Transform poseBone) ? poseBone : null;
+            }
+            CacheNeutralFingerRotations();
         }
         catch (System.Exception exception)
         {
             _poseHandler = null;
+            if (_poseSamplerRoot)
+            {
+                Destroy(_poseSamplerRoot);
+                _poseSamplerRoot = null;
+            }
             Debug.LogError($"{name} 无法建立 HumanPoseHandler：{exception.Message}", this);
             return;
         }
-
-        EnsureFingerMuscleIndices();
-        _leftFingersAvailable = AreFingerMusclesValid(0);
-        _rightFingersAvailable = AreFingerMusclesValid(FingerMusclePerHand);
         if (!_leftFingersAvailable)
         {
             _leftFingerErrorLogged = true;
@@ -386,6 +512,11 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
             _poseHandler.Dispose();
             _poseHandler = null;
         }
+        if (_poseSamplerRoot)
+        {
+            Destroy(_poseSamplerRoot);
+            _poseSamplerRoot = null;
+        }
     }
 
     private void ApplyFingerPose(WeaponIkData ikData, bool isFiring)
@@ -402,37 +533,246 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
             return;
         }
 
-        _poseHandler.GetHumanPose(ref _humanPose);
-        bool changed = false;
-        if (fingers.UseLeftGripPose && _leftFingersAvailable)
+        bool rebuildRotations = !_hasCachedFingerRotations ||
+            _cachedFingerPoseData != fingers;
+        if (rebuildRotations)
         {
-            changed |= WriteHandPose(fingers.LeftGripPose, 0);
-        }
-        if (fingers.UseRightGripPose && _rightFingersAvailable)
-        {
-            changed |= WriteHandPose(
-                isFiring ? fingers.RightFirePose : fingers.RightIdlePose,
-                FingerMusclePerHand);
-        }
-        if (changed)
-        {
-            Vector3 savedHipsLocalPosition = Vector3.zero;
-            Quaternion savedHipsLocalRotation = Quaternion.identity;
-            bool restoreHips = _hips != null;
-            if (restoreHips)
+            _poseHandler.GetHumanPose(ref _humanPose);
+            for (int i = 0; i < _savedFingerMuscles.Length; i++)
             {
-                savedHipsLocalPosition = _hips.localPosition;
-                savedHipsLocalRotation = _hips.localRotation;
+                int muscleIndex = _fingerMuscleIndices[i];
+                if (muscleIndex >= 0)
+                {
+                    _savedFingerMuscles[i] = _humanPose.muscles[muscleIndex];
+                }
+            }
+            bool changed = false;
+            if (fingers.UseLeftGripPose && _leftFingersAvailable)
+            {
+                changed |= WriteHandPose(fingers.LeftGripPose, 0);
+            }
+            if (fingers.UseRightGripPose && _rightFingersAvailable)
+            {
+                changed |= WriteHandPose(fingers.RightIdlePose, FingerMusclePerHand);
+            }
+            if (!changed)
+            {
+                return;
             }
 
             _poseHandler.SetHumanPose(ref _humanPose);
-
-            if (restoreHips)
+            for (int i = 0; i < _poseFingerBones.Length; i++)
             {
-                _hips.localPosition = savedHipsLocalPosition;
-                _hips.localRotation = savedHipsLocalRotation;
+                if (_poseFingerBones[i])
+                {
+                    _fingerLocalRotations[i] = _poseFingerBones[i].localRotation;
+                }
+            }
+
+            for (int i = 0; i < _savedFingerMuscles.Length; i++)
+            {
+                int muscleIndex = _fingerMuscleIndices[i];
+                if (muscleIndex >= 0)
+                {
+                    _humanPose.muscles[muscleIndex] = _savedFingerMuscles[i];
+                }
+            }
+            _poseHandler.SetHumanPose(ref _humanPose);
+
+            if (fingers.UseLeftGripPose && _leftFingersAvailable)
+            {
+                WriteHandPose(fingers.LeftGripPose, 0);
+            }
+            if (fingers.UseRightGripPose && _rightFingersAvailable)
+            {
+                WriteHandPose(fingers.RightFirePose, FingerMusclePerHand);
+            }
+            _poseHandler.SetHumanPose(ref _humanPose);
+            for (int i = 0; i < _poseFingerBones.Length; i++)
+            {
+                if (_poseFingerBones[i])
+                {
+                    _fingerFireLocalRotations[i] = _poseFingerBones[i].localRotation;
+                }
+            }
+
+            ConstrainFingerRotations(_fingerLocalRotations);
+            ConstrainFingerRotations(_fingerFireLocalRotations);
+
+            // HumanPoseHandler 只操作隐藏的人形采样骨架，真实角色 Animator 从不
+            // 接收 SetHumanPose，因此不会把临时求指姿的完整人体姿势带进下一帧。
+            _cachedFingerPoseData = fingers;
+            _hasCachedFingerRotations = true;
+        }
+
+        // 第三人称连续射击时不再让右手每发在 Idle/Fire 间硬切。扣扳机的
+        // 微小精确度不值得后握把附近出现高频指骨残影；保持自然待机握姿。
+        Quaternion[] rotations = _fingerLocalRotations;
+        int firstBone = fingers.UseLeftGripPose ? 0 : 15;
+        int lastBone = fingers.UseRightGripPose ? _fingerBones.Length : 15;
+        for (int i = firstBone; i < lastBone; i++)
+        {
+            if (_fingerBones[i])
+            {
+                _fingerBones[i].localRotation = rotations[i];
             }
         }
+    }
+
+    private void CacheRightHandNeutralRotation()
+    {
+        if (_rightGripChain.Count == 0)
+        {
+            _hasRightHandNeutralRotation = false;
+            return;
+        }
+
+        // RestoreNeutralGripPose 已把 Animator 放到 Idle 第 0 帧；缓存整条持枪臂
+        // 的自然局部角度，不改骨长、缩放或关节位置。
+        _rightGripNeutralLocalRotations.Clear();
+        for (int i = 0; i < _rightGripChain.Count; i++)
+        {
+            _rightGripNeutralLocalRotations.Add(_rightGripChain[i].localRotation);
+        }
+        _hasRightHandNeutralRotation = true;
+    }
+
+    private void StabilizeRightHandGrip()
+    {
+        if (!_hasRightHandNeutralRotation ||
+            _rightGripChain.Count != _rightGripNeutralLocalRotations.Count)
+        {
+            return;
+        }
+
+        // 商店 Idle 动画的持枪臂循环接缝可单帧跳十几度，而枪根正挂在右腕下。
+        // 普通持枪/开火期间锁定整条右臂局部角；装弹、切枪、检视会在上方提前
+        // return，因而仍由动作动画完整接管，结束后再从 Idle 首帧重新校准。
+        for (int i = 0; i < _rightGripChain.Count; i++)
+        {
+            if (_rightGripChain[i])
+            {
+                _rightGripChain[i].localRotation = _rightGripNeutralLocalRotations[i];
+            }
+        }
+    }
+
+    private void CacheNeutralFingerRotations()
+    {
+        _poseHandler.GetHumanPose(ref _humanPose);
+        for (int i = 0; i < _savedFingerMuscles.Length; i++)
+        {
+            int muscleIndex = _fingerMuscleIndices[i];
+            if (muscleIndex >= 0)
+            {
+                _humanPose.muscles[muscleIndex] = 0f;
+            }
+        }
+        _poseHandler.SetHumanPose(ref _humanPose);
+        for (int i = 0; i < _poseFingerBones.Length; i++)
+        {
+            if (_poseFingerBones[i])
+            {
+                _fingerNeutralLocalRotations[i] = _poseFingerBones[i].localRotation;
+            }
+        }
+    }
+
+    private void ConstrainFingerRotations(Quaternion[] rotations)
+    {
+        for (int i = 0; i < rotations.Length; i++)
+        {
+            if (!_poseFingerBones[i])
+            {
+                continue;
+            }
+            int jointIndex = (i % 15) % 3;
+            rotations[i] = Quaternion.RotateTowards(
+                _fingerNeutralLocalRotations[i],
+                rotations[i],
+                MaxFingerJointAngles[jointIndex]);
+        }
+    }
+
+    private static Dictionary<Transform, Transform> CreatePoseSampler(
+        Animator animator, out GameObject samplerRoot)
+    {
+        HashSet<Transform> required = new HashSet<Transform>();
+        required.Add(animator.transform);
+        HashSet<string> avatarBoneNames = new HashSet<string>();
+        SkeletonBone[] avatarSkeleton = animator.avatar.humanDescription.skeleton;
+        for (int i = 0; i < avatarSkeleton.Length; i++)
+        {
+            avatarBoneNames.Add(avatarSkeleton[i].name);
+        }
+        Transform[] hierarchy = animator.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < hierarchy.Length; i++)
+        {
+            if (!avatarBoneNames.Contains(hierarchy[i].name))
+            {
+                continue;
+            }
+            Transform bone = hierarchy[i];
+            while (bone && !required.Contains(bone))
+            {
+                required.Add(bone);
+                if (bone == animator.transform)
+                {
+                    break;
+                }
+                bone = bone.parent;
+            }
+        }
+        for (int i = 0; i < (int)HumanBodyBones.LastBone; i++)
+        {
+            Transform bone = animator.GetBoneTransform((HumanBodyBones)i);
+            while (bone && !required.Contains(bone))
+            {
+                required.Add(bone);
+                if (bone == animator.transform)
+                {
+                    break;
+                }
+                bone = bone.parent;
+            }
+        }
+
+        Dictionary<Transform, Transform> map =
+            new Dictionary<Transform, Transform>(required.Count);
+        Transform root = ClonePoseHierarchy(animator.transform, null, required, map);
+        samplerRoot = root.gameObject;
+        samplerRoot.name = animator.name + "_FingerPoseSampler";
+        samplerRoot.SetActive(false);
+        return map;
+    }
+
+    private static Transform ClonePoseHierarchy(
+        Transform source,
+        Transform parent,
+        HashSet<Transform> required,
+        Dictionary<Transform, Transform> map)
+    {
+        GameObject cloneObject = new GameObject(source.name);
+        cloneObject.hideFlags = HideFlags.HideAndDontSave;
+        Transform clone = cloneObject.transform;
+        if (parent)
+        {
+            clone.SetParent(parent, false);
+        }
+        clone.localPosition = source.localPosition;
+        clone.localRotation = source.localRotation;
+        clone.localScale = source.localScale;
+        map.Add(source, clone);
+
+        for (int i = 0; i < source.childCount; i++)
+        {
+            Transform child = source.GetChild(i);
+            if (required.Contains(child))
+            {
+                ClonePoseHierarchy(child, clone, required, map);
+            }
+        }
+        return clone;
     }
 
     private bool WriteHandPose(HumanoidFingerPoseData pose, int handOffset)

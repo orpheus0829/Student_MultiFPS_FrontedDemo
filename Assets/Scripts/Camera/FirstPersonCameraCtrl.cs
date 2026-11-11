@@ -229,6 +229,19 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         return new Ray(_pitchPivot.position, _pitchPivot.forward);
     }
 
+    public void SetAimDirection(Vector3 worldDirection)
+    {
+        if (!_yawRoot || !_pitchPivot || worldDirection.sqrMagnitude < 0.000001f)
+        {
+            return;
+        }
+
+        Vector3 direction = worldDirection.normalized;
+        _yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+        _pitch = -Mathf.Asin(Mathf.Clamp(direction.y, -1f, 1f)) * Mathf.Rad2Deg;
+        FaceAimDirection();
+    }
+
     public void ApplyRecoilAngles(Vector2 angles)
     {
         _yaw += angles.x;

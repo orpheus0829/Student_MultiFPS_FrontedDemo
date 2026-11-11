@@ -32,6 +32,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
     [SerializeField, InspectorName("武器待机状态名")] private string _weaponIdleStateName = "Idle";
     [SerializeField, InspectorName("翻越状态名")] private string _vaultStateName = "Vault";
     [SerializeField, InspectorName("滑铲状态名")] private string _slideStateName = "Slide";
+    [SerializeField, InspectorName("滑铲收尾状态名")] private string _slideEndStateName = "SlideEnd";
 
     [Header("第三人称滑铲")]
     [SerializeField, Min(0f), InspectorName("模型下沉高度")]
@@ -51,6 +52,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
     private float _upperBodyWeaponWeight;
     private bool _isUpperBodyWeaponActionActive;
     private bool _isFullBodyMotion;
+    private bool _usesProceduralAutomaticFirePose;
     private WeaponActionType _upperBodyActionType;
     private Vector3 _restLocalPosition;
 
@@ -89,6 +91,11 @@ public sealed class PlayerAnimationView : MonoBehaviour
         {
             return _weaponRoot;
         }
+    }
+
+    public void SetProceduralAutomaticFirePose(bool enabled)
+    {
+        _usesProceduralAutomaticFirePose = enabled;
     }
 
     private void OnEnable()
@@ -175,7 +182,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
             PlayerAnimatorContract.AimProgress,
             frame.AimProgress);
         _isFullBodyMotion = _viewType == PlayerViewType.ThirdPerson &&
-            (isVaulting || isSliding || !isGrounded);
+            (isVaulting || !isGrounded);
         UpdateUpperBodyWeaponLayer();
         UpdateSlideVisual(isSliding);
     }
@@ -225,6 +232,28 @@ public sealed class PlayerAnimationView : MonoBehaviour
         _characterAnimator.Update(0f);
     }
 
+    /// <summary>
+    /// 非开火武器动作结束或新枪挂接完成后，为程序握持恢复一个干净的待机基准。
+    /// 动作层的运行时权重必须与 Animator 同时清零，否则下一帧会把旧动作姿势写回。
+    /// </summary>
+    public void RestoreNeutralGripPose()
+    {
+        if (_viewType != PlayerViewType.ThirdPerson || !_characterAnimator)
+        {
+            return;
+        }
+
+        EnsureAnimatorBindings();
+        _isUpperBodyWeaponActionActive = false;
+        _upperBodyWeaponWeight = 0f;
+        _upperBodyActionType = WeaponActionType.None;
+        _characterAnimator.Rebind();
+        SetLayerWeight(_upperBodyWeaponLayerIndex, 0f);
+        PlayStateImmediately(_characterAnimator, _characterIdleStateName);
+        _characterAnimator.Update(0f);
+        SetLayerWeight(_upperBodyWeaponLayerIndex, 0f);
+    }
+
     public void StartVault()
     {
         if (_viewType != PlayerViewType.ThirdPerson)
@@ -233,7 +262,6 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
 
         EnsureAnimatorBindings();
-        SuppressUpperBodyWeaponLayer();
         ApplyTrigger(
             _characterAnimator,
             _characterParameters,
@@ -264,7 +292,6 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
 
         EnsureAnimatorBindings();
-        SuppressUpperBodyWeaponLayer();
         ApplyTrigger(
             _characterAnimator,
             _characterParameters,
@@ -284,7 +311,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
             _characterAnimator,
             _characterParameters,
             PlayerAnimatorContract.Slide);
-        PlayState(_characterAnimator, _characterIdleStateName);
+        PlayState(_characterAnimator, _slideEndStateName);
     }
 
     public void StartWeaponAction(
@@ -303,6 +330,33 @@ public sealed class PlayerAnimationView : MonoBehaviour
              action.ActionType == WeaponActionType.Holster))
         {
             // 第一人称切枪统一由手臂根节点升降，避免资源包的通用步枪动作扭动手腕。
+            return;
+        }
+
+        if (_viewType == PlayerViewType.FirstPerson &&
+            _usesProceduralAutomaticFirePose &&
+            action.ActionType == WeaponActionType.Fire)
+        {
+            // 第一人称枪械已经由 KINEMATION 的 RecoilAnimation 驱动整套手臂与
+            // 枪骨后坐。自动射击时若每发再把手臂 Animator 强切到 Fire，并在
+            // 约 0.07~0.10 秒后切回 Idle，两套姿势会争抢右手和枪骨；下一发又在
+            // 上一发尚未稳定时重启，最终表现为右手与整枪抽搐。枪械 Animator
+            // 仍播放 Fire，以保留枪机、套筒等机械零件动作。
+            string weaponStateName = action.GetFirstPersonStateName(startedWhileAiming);
+            PlayState(_weaponAnimator, weaponStateName);
+            return;
+        }
+
+        if (_viewType == PlayerViewType.ThirdPerson &&
+            action.ActionType == WeaponActionType.Fire)
+        {
+            // 第三人称枪根挂在右手腕下。全自动每发向人物与枪 Animator 重发
+            // Fire，会让右手、后握把和整把枪作为一个整体反复进入/退出状态，
+            // 在运动模糊下表现为后握把抽搐残影。第三人称射击只保留枪口焰、
+            // 弹道和相机反馈，持枪骨架与枪模型维持同一待机姿势。
+            _isUpperBodyWeaponActionActive = false;
+            _upperBodyActionType = WeaponActionType.Fire;
+            SuppressUpperBodyWeaponLayer();
             return;
         }
 
@@ -339,6 +393,21 @@ public sealed class PlayerAnimationView : MonoBehaviour
     public void CompleteWeaponAction(WeaponActionType actionType)
     {
         EnsureAnimatorBindings();
+        if (_viewType == PlayerViewType.ThirdPerson &&
+            actionType == WeaponActionType.Fire)
+        {
+            _isUpperBodyWeaponActionActive = false;
+            SuppressUpperBodyWeaponLayer();
+            return;
+        }
+        if (_viewType == PlayerViewType.FirstPerson &&
+            _usesProceduralAutomaticFirePose &&
+            actionType == WeaponActionType.Fire)
+        {
+            // 手臂始终留在连续的待机基准上，只收尾枪械内部零件动画。
+            PlayState(_weaponAnimator, _weaponIdleStateName, _actionTransitionDuration);
+            return;
+        }
         ApplyWeaponActionSignal(
             PlayerAnimatorContract.WeaponActionCompleted,
             (int)actionType);
@@ -358,6 +427,20 @@ public sealed class PlayerAnimationView : MonoBehaviour
     public void CancelWeaponAction(WeaponActionType actionType)
     {
         EnsureAnimatorBindings();
+        if (_viewType == PlayerViewType.ThirdPerson &&
+            actionType == WeaponActionType.Fire)
+        {
+            _isUpperBodyWeaponActionActive = false;
+            SuppressUpperBodyWeaponLayer();
+            return;
+        }
+        if (_viewType == PlayerViewType.FirstPerson &&
+            _usesProceduralAutomaticFirePose &&
+            actionType == WeaponActionType.Fire)
+        {
+            PlayState(_weaponAnimator, _weaponIdleStateName);
+            return;
+        }
         if (actionType == WeaponActionType.Inspect || IsPerRoundAction(actionType))
         {
             ResetTrigger(

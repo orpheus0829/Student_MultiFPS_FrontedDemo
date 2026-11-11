@@ -78,6 +78,12 @@ public sealed class PlayerCharacterModelCtrl : MonoBehaviour
             return;
         }
 
+        // 默认安比不会经过 SwitchModelAsync 的完整切换分支，也必须与切换后的
+        // 角色使用同一套 Animator 约束。否则第一人称隐藏第三人称渲染器时，
+        // Animator 可能被裁剪而留下未求值的手臂骨骼，握持 IK 会基于随机旧姿势运行。
+        _defaultBodyAnimator.applyRootMotion = false;
+        _defaultBodyAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
         _currentModelId = DefaultModelId;
         GameObject stagingObject = new GameObject("角色模型加载暂存");
         _stagingRoot = stagingObject.transform;
@@ -189,6 +195,7 @@ public sealed class PlayerCharacterModelCtrl : MonoBehaviour
 
         _isSwitching = true;
         _resources = ResourceMgr.instance;
+        string ownerName = name;
         bool isDefault = string.Equals(modelId, DefaultModelId, StringComparison.Ordinal);
         GameObject newArmsAsset = null;
         GameObject newBody = null;
@@ -310,7 +317,7 @@ public sealed class PlayerCharacterModelCtrl : MonoBehaviour
         }
         catch (Exception exception)
         {
-            Debug.LogWarning($"{name} 切换角色 {modelId} 失败：{exception}", this);
+            Debug.LogWarning($"{ownerName} 切换角色 {modelId} 失败：{exception}", this);
             return false;
         }
         finally

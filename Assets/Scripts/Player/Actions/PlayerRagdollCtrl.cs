@@ -182,10 +182,10 @@ public sealed class PlayerRagdollCtrl : MonoBehaviour
 
         for (int i = 0; i < _bodies.Count; i++)
         {
-            _bodies[i].isKinematic = true;
-            _bodies[i].useGravity = false;
             _bodies[i].linearVelocity = Vector3.zero;
             _bodies[i].angularVelocity = Vector3.zero;
+            _bodies[i].isKinematic = true;
+            _bodies[i].useGravity = false;
             _colliders[i].enabled = false;
         }
         _bodyAnimator.enabled = true;

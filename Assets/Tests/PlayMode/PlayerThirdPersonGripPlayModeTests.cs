@@ -27,6 +27,12 @@ namespace GunDemo.Tests
         private const float MaxCorrectionAppliedError = 0.5f;
         private const float SpecMaxWristSwing = 35f;
         private const float SpecMaxWristTwist = 25f;
+        private const float MaxAutomaticRelativePositionStep = 0.004f;
+        private const float MaxAutomaticRelativeRotationStep = 4f;
+        private const float MaxFingerScaleDelta = 0.0001f;
+        private const float MaxAutomaticRightHandStep = 0.01f;
+        private const float MaxAutomaticRightHandRotationStep = 3f;
+        private const float MaxAutomaticFingerRotationStep = 0.5f;
 
         private static readonly string[] CharacterIds =
         {
@@ -73,6 +79,27 @@ namespace GunDemo.Tests
             "1", "2", "3", "Spread"
         };
 
+        private static readonly HumanBodyBones[] FingerBones =
+        {
+            HumanBodyBones.LeftThumbProximal, HumanBodyBones.LeftThumbIntermediate,
+            HumanBodyBones.LeftThumbDistal, HumanBodyBones.LeftIndexProximal,
+            HumanBodyBones.LeftIndexIntermediate, HumanBodyBones.LeftIndexDistal,
+            HumanBodyBones.LeftMiddleProximal, HumanBodyBones.LeftMiddleIntermediate,
+            HumanBodyBones.LeftMiddleDistal, HumanBodyBones.LeftRingProximal,
+            HumanBodyBones.LeftRingIntermediate, HumanBodyBones.LeftRingDistal,
+            HumanBodyBones.LeftLittleProximal, HumanBodyBones.LeftLittleIntermediate,
+            HumanBodyBones.LeftLittleDistal, HumanBodyBones.RightThumbProximal,
+            HumanBodyBones.RightThumbIntermediate, HumanBodyBones.RightThumbDistal,
+            HumanBodyBones.RightIndexProximal, HumanBodyBones.RightIndexIntermediate,
+            HumanBodyBones.RightIndexDistal, HumanBodyBones.RightMiddleProximal,
+            HumanBodyBones.RightMiddleIntermediate, HumanBodyBones.RightMiddleDistal,
+            HumanBodyBones.RightRingProximal, HumanBodyBones.RightRingIntermediate,
+            HumanBodyBones.RightRingDistal, HumanBodyBones.RightLittleProximal,
+            HumanBodyBones.RightLittleIntermediate, HumanBodyBones.RightLittleDistal
+        };
+
+        private static readonly float[] MaxNaturalFingerAngles = { 45f, 55f, 40f };
+
         private static int[] _fingerMuscleIndices;
         private static string[] _fingerMuscleLabels;
 
@@ -83,6 +110,8 @@ namespace GunDemo.Tests
             Assert.That(load, Is.Not.Null);
             yield return load;
             yield return null;
+
+            DisableSceneAI();
 
             Type inputType = RequireType("PlayerInputCtrl");
             Type modelType = RequireType("PlayerCharacterModelCtrl");
@@ -242,6 +271,337 @@ namespace GunDemo.Tests
 
                     previousWeapon = thirdWeapon;
                 }
+            }
+        }
+
+        /// <summary>
+        /// 走 PlayerActionCtrl -> WeaponCombatCtrl 的真实按住开火链，覆盖 AK 与 PDW90
+        /// 连续至少五发。每发都不得重启人物 UpperBodyWeapon 层；手腕相对枪锚点不得
+        /// 逐帧跳变；指骨只能在自然姿势附近旋转，且绝不允许改缩放来强行贴枪。
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AutomaticFireKeepsBodyAndFingersStable()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("example", LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null);
+            yield return load;
+            yield return null;
+
+            DisableSceneAI();
+
+            Type inputType = RequireType("PlayerInputCtrl");
+            Type modelType = RequireType("PlayerCharacterModelCtrl");
+            Type weaponViewType = RequireType("PlayerWeaponViewCtrl");
+            Type actionType = RequireType("WeaponActionCtrl");
+            Type inventoryType = RequireType("PlayerWeaponInventoryCtrl");
+            Type playerActionType = RequireType("PlayerActionCtrl");
+            Type combatType = RequireType("WeaponCombatCtrl");
+            Type gripType = RequireType("PlayerThirdPersonGripCtrl");
+            Type kinemationType = RequireType("PlayerKinemationViewCtrl");
+
+            Component player = FindEnabledPlayer(inputType);
+            Assert.That(player, Is.Not.Null, "example 场景缺少启用的玩家");
+            Component model = player.GetComponent(modelType);
+            Component weaponView = player.GetComponent(weaponViewType);
+            Component action = player.GetComponent(actionType);
+            Component inventory = player.GetComponent(inventoryType);
+            Component playerAction = player.GetComponent(playerActionType);
+            Component combat = player.GetComponent(combatType);
+            Component grip = player.GetComponent(gripType);
+            Component kinemation = player.GetComponent(kinemationType);
+            Assert.That(playerAction && combat && grip && kinemation, Is.True,
+                "真实开火链组件不完整");
+
+            PropertyInfo firstGunProperty = weaponViewType.GetProperty("FirstPersonWeapon");
+            PropertyInfo thirdGunProperty = weaponViewType.GetProperty("ThirdPersonWeapon");
+            PropertyInfo currentActionProperty = actionType.GetProperty("CurrentAction");
+            PropertyInfo currentWeaponProperty = actionType.GetProperty("CurrentWeaponData");
+            PropertyInfo isSwitchingProperty = inventoryType.GetProperty("IsSwitching");
+            MethodInfo tryCycle = inventoryType.GetMethod("TryCycle");
+            yield return WaitForFirstWeapon(weaponView, firstGunProperty, 30f);
+            yield return WaitForActionIdle(action, currentActionProperty, "AK 连发前");
+            yield return WaitForProjectile(combat, 10f);
+
+            Component thirdView = GetField(model, "_thirdPersonView") as Component;
+            Component firstView = GetField(model, "_firstPersonView") as Component;
+            Animator body = thirdView.GetType().GetProperty("CharacterAnimator")
+                .GetValue(thirdView) as Animator;
+            Animator firstPersonBody = firstView.GetType().GetProperty("CharacterAnimator")
+                .GetValue(firstView) as Animator;
+            Assert.That(body, Is.Not.Null, "缺少第三人称 Animator");
+            Assert.That(firstPersonBody, Is.Not.Null, "缺少第一人称 Animator");
+
+            yield return VerifyAutomaticFireStability(
+                playerAction, combat, grip, body, firstPersonBody, thirdView,
+                thirdGunProperty.GetValue(weaponView) as GameObject,
+                firstGunProperty.GetValue(weaponView) as GameObject,
+                kinemation, "AK");
+
+            Assert.That((bool)tryCycle.Invoke(inventory, new object[] { -1 }), Is.True,
+                "无法从 AK 切换到 PDW90");
+            yield return WaitForSwitch(inventory, isSwitchingProperty, action,
+                currentActionProperty, 30f);
+            yield return WaitForProjectile(combat, 10f);
+            Assert.That(GetWeaponName(currentWeaponProperty.GetValue(action)), Is.EqualTo("PDW90"),
+                "向前回绕一次后应为 PDW90");
+
+            yield return VerifyAutomaticFireStability(
+                playerAction, combat, grip, body, firstPersonBody, thirdView,
+                thirdGunProperty.GetValue(weaponView) as GameObject,
+                firstGunProperty.GetValue(weaponView) as GameObject,
+                kinemation, "PDW90");
+        }
+
+        private static IEnumerator VerifyAutomaticFireStability(
+            Component playerAction,
+            Component combat,
+            Component grip,
+            Animator body,
+            Animator firstPersonBody,
+            Component thirdView,
+            GameObject thirdWeapon,
+            GameObject firstWeapon,
+            Component kinemation,
+            string context)
+        {
+            object fireMode = combat.GetType().GetProperty("FireMode").GetValue(combat);
+            Assert.That(fireMode.ToString(), Is.EqualTo("Automatic"),
+                context + " 必须以全自动模式测试");
+            Assert.That(thirdWeapon, Is.Not.Null, context + " 缺少第三人称枪");
+            Assert.That(firstWeapon, Is.Not.Null, context + " 缺少第一人称枪");
+            Transform firstPersonWeaponBone = FindChild(firstPersonBody.transform, "ik_hand_gun");
+            Transform firstPersonRightHand = FindChild(firstPersonBody.transform, "hand_r");
+            Assert.That(firstPersonWeaponBone && firstPersonRightHand, Is.True,
+                context + " 缺少第一人称枪骨或右手");
+            Transform anchor = thirdWeapon.transform.Find(LeftAnchorPath);
+            Transform hand = body.GetBoneTransform(HumanBodyBones.LeftHand);
+            Transform rightHand = body.GetBoneTransform(HumanBodyBones.RightHand);
+            Transform bodyReference = body.GetBoneTransform(HumanBodyBones.UpperChest);
+            if (!bodyReference)
+            {
+                bodyReference = body.GetBoneTransform(HumanBodyBones.Chest);
+            }
+            Assert.That(anchor && hand && rightHand && bodyReference, Is.True,
+                context + " 缺少手腕、胸骨或锚点");
+
+            // 先让待机握姿完整写入一帧；后续以它作为右手和指骨的稳定基准。
+            yield return new WaitForEndOfFrame();
+            float firstPersonSettleDeadline = Time.realtimeSinceStartup + 1f;
+            while (firstPersonBody.IsInTransition(0) &&
+                Time.realtimeSinceStartup < firstPersonSettleDeadline)
+            {
+                yield return new WaitForEndOfFrame();
+            }
+            int firstPersonIdleState = firstPersonBody.GetCurrentAnimatorStateInfo(0).fullPathHash;
+            Assert.That(firstPersonBody.IsInTransition(0), Is.False,
+                context + " 连发前第一人称手臂仍在过渡");
+
+            int layerIndex = (int)GetField(thirdView, "_upperBodyWeaponLayerIndex");
+            Assert.That(layerIndex, Is.GreaterThanOrEqualTo(0),
+                context + " 缺少 UpperBodyWeapon 层");
+            Quaternion[] neutralRotations =
+                (Quaternion[])GetField(grip, "_fingerNeutralLocalRotations");
+            Transform[] fingerTransforms = new Transform[FingerBones.Length];
+            Vector3[] initialScales = new Vector3[FingerBones.Length];
+            Quaternion[] initialFingerRotations = new Quaternion[FingerBones.Length];
+            for (int i = 0; i < FingerBones.Length; i++)
+            {
+                fingerTransforms[i] = body.GetBoneTransform(FingerBones[i]);
+                Assert.That(fingerTransforms[i], Is.Not.Null,
+                    context + " 缺少指骨 " + FingerBones[i]);
+                initialScales[i] = fingerTransforms[i].localScale;
+                initialFingerRotations[i] = fingerTransforms[i].localRotation;
+            }
+
+            PropertyInfo magazineAmmoProperty = combat.GetType().GetProperty("MagazineAmmo");
+            int ammoBefore = (int)magazineAmmoProperty.GetValue(combat);
+            float idleMaxRightHandRotationStep = 0f;
+            Vector3 idlePreviousPosition =
+                bodyReference.InverseTransformPoint(rightHand.position);
+            Quaternion idlePreviousRotation =
+                Quaternion.Inverse(bodyReference.rotation) * rightHand.rotation;
+            float idleDeadline = Time.realtimeSinceStartup + 1.2f;
+            while (Time.realtimeSinceStartup < idleDeadline)
+            {
+                yield return new WaitForEndOfFrame();
+                Vector3 idlePosition =
+                    bodyReference.InverseTransformPoint(rightHand.position);
+                Quaternion idleRotation =
+                    Quaternion.Inverse(bodyReference.rotation) * rightHand.rotation;
+                idleMaxRightHandRotationStep = Mathf.Max(
+                    idleMaxRightHandRotationStep,
+                    Quaternion.Angle(idlePreviousRotation, idleRotation));
+                idlePreviousPosition = idlePosition;
+                idlePreviousRotation = idleRotation;
+            }
+            Assert.That(idleMaxRightHandRotationStep,
+                Is.LessThanOrEqualTo(MaxAutomaticRightHandRotationStep),
+                context + " 不开火时右手腕已有待机循环跳变 " +
+                idleMaxRightHandRotationStep.ToString("F2") + "°");
+            Vector3 previousRelativePosition = Vector3.zero;
+            Quaternion previousRelativeRotation = Quaternion.identity;
+            bool hasPreviousPose = false;
+            Vector3 previousRightHandPosition = Vector3.zero;
+            Quaternion previousRightHandRotation = Quaternion.identity;
+            Vector3 previousWeaponPosition = Vector3.zero;
+            Quaternion previousWeaponRotation = Quaternion.identity;
+            Vector3 previousFirstPersonHandRelativePosition = Vector3.zero;
+            Quaternion previousFirstPersonHandRelativeRotation = Quaternion.identity;
+            bool hasPreviousFirstPersonPose = false;
+            float deadline = Time.realtimeSinceStartup + 6f;
+            SendFireInput(playerAction, true);
+            try
+            {
+                while (ammoBefore - (int)magazineAmmoProperty.GetValue(combat) < 12 &&
+                    Time.realtimeSinceStartup < deadline)
+                {
+                    yield return new WaitForEndOfFrame();
+
+                    Assert.That(firstPersonBody.IsInTransition(0), Is.False,
+                        context + " 连发时第一人称手臂被反复切换状态");
+                    Assert.That(
+                        firstPersonBody.GetCurrentAnimatorStateInfo(0).fullPathHash,
+                        Is.EqualTo(firstPersonIdleState),
+                        context + " 连发时第一人称手臂离开待机基准；应只由程序后坐驱动");
+                    Assert.That(body.GetLayerWeight(layerIndex), Is.LessThanOrEqualTo(0.001f),
+                        context + " 连发时人物 UpperBodyWeapon 层被反复抬起");
+                    Vector3 relativePosition = anchor.InverseTransformPoint(hand.position);
+                    Quaternion relativeRotation =
+                        Quaternion.Inverse(anchor.rotation) * hand.rotation;
+                    Vector3 rightHandPosition =
+                        bodyReference.InverseTransformPoint(rightHand.position);
+                    Quaternion rightHandRotation =
+                        Quaternion.Inverse(bodyReference.rotation) * rightHand.rotation;
+                    Vector3 weaponPosition =
+                        bodyReference.InverseTransformPoint(thirdWeapon.transform.position);
+                    Quaternion weaponRotation = Quaternion.Inverse(bodyReference.rotation) *
+                        thirdWeapon.transform.rotation;
+                    if (hasPreviousPose)
+                    {
+                        Assert.That(Vector3.Distance(previousRelativePosition, relativePosition),
+                            Is.LessThanOrEqualTo(MaxAutomaticRelativePositionStep),
+                            context + " 连发时手腕相对枪发生位置跳变");
+                        Assert.That(Quaternion.Angle(previousRelativeRotation, relativeRotation),
+                            Is.LessThanOrEqualTo(MaxAutomaticRelativeRotationStep),
+                            context + " 连发时手腕相对枪发生旋转跳变");
+                        Assert.That(Vector3.Distance(
+                                previousRightHandPosition, rightHandPosition),
+                            Is.LessThanOrEqualTo(MaxAutomaticRightHandStep),
+                            context + " 连发时右手腕相对身体抽动");
+                        Assert.That(Quaternion.Angle(
+                                previousRightHandRotation, rightHandRotation),
+                            Is.LessThanOrEqualTo(MaxAutomaticRightHandRotationStep),
+                            context + " 连发时右手腕相对身体旋转抽动；不开火对照最大单帧=" +
+                            idleMaxRightHandRotationStep.ToString("F2") + "°；已射击=" +
+                            (ammoBefore - (int)magazineAmmoProperty.GetValue(combat)));
+                        Assert.That(Vector3.Distance(previousWeaponPosition, weaponPosition),
+                            Is.LessThanOrEqualTo(MaxAutomaticRightHandStep),
+                            context + " 连发时枪身相对身体抽动");
+                        Assert.That(Quaternion.Angle(previousWeaponRotation, weaponRotation),
+                            Is.LessThanOrEqualTo(MaxAutomaticRightHandRotationStep),
+                            context + " 连发时枪身相对身体旋转抽动");
+                    }
+                    previousRelativePosition = relativePosition;
+                    previousRelativeRotation = relativeRotation;
+                    hasPreviousPose = true;
+                    previousRightHandPosition = rightHandPosition;
+                    previousRightHandRotation = rightHandRotation;
+                    previousWeaponPosition = weaponPosition;
+                    previousWeaponRotation = weaponRotation;
+
+                    Vector3 firstPersonHandRelativePosition =
+                        firstPersonWeaponBone.InverseTransformPoint(firstPersonRightHand.position);
+                    Quaternion firstPersonHandRelativeRotation =
+                        Quaternion.Inverse(firstPersonWeaponBone.rotation) *
+                        firstPersonRightHand.rotation;
+                    if (hasPreviousFirstPersonPose)
+                    {
+                        Assert.That(Vector3.Distance(
+                                previousFirstPersonHandRelativePosition,
+                                firstPersonHandRelativePosition),
+                            Is.LessThanOrEqualTo(0.001f),
+                            context + " 连发时第一人称右手相对枪骨抽动");
+                        Assert.That(Quaternion.Angle(
+                                previousFirstPersonHandRelativeRotation,
+                                firstPersonHandRelativeRotation),
+                            Is.LessThanOrEqualTo(1f),
+                            context + " 连发时第一人称右手相对枪骨旋转抽动");
+                    }
+                    previousFirstPersonHandRelativePosition = firstPersonHandRelativePosition;
+                    previousFirstPersonHandRelativeRotation = firstPersonHandRelativeRotation;
+                    hasPreviousFirstPersonPose = true;
+
+                    for (int i = 0; i < fingerTransforms.Length; i++)
+                    {
+                        float naturalAngle = Quaternion.Angle(
+                            neutralRotations[i], fingerTransforms[i].localRotation);
+                        Assert.That(naturalAngle,
+                            Is.LessThanOrEqualTo(MaxNaturalFingerAngles[i % 3] + 0.5f),
+                            context + " " + FingerBones[i] + " 偏离自然姿势 " +
+                            naturalAngle.ToString("F2") + "°");
+                        Assert.That(Vector3.Distance(
+                                initialScales[i], fingerTransforms[i].localScale),
+                            Is.LessThanOrEqualTo(MaxFingerScaleDelta),
+                            context + " " + FingerBones[i] + " 被拉伸或压缩");
+                        Assert.That(Quaternion.Angle(
+                                initialFingerRotations[i],
+                                fingerTransforms[i].localRotation),
+                            Is.LessThanOrEqualTo(MaxAutomaticFingerRotationStep),
+                            context + " " + FingerBones[i] + " 连发时发生指姿硬切");
+                    }
+                }
+            }
+            finally
+            {
+                SendFireInput(playerAction, false);
+            }
+
+            Assert.That(ammoBefore - (int)magazineAmmoProperty.GetValue(combat),
+                Is.GreaterThanOrEqualTo(12),
+                context + " 未完成至少十二发真实连续射击");
+
+            yield return new WaitForEndOfFrame();
+            object recoil = GetField(kinemation, "_recoilAnimation");
+            Assert.That(recoil, Is.Not.Null, context + " 缺少第一人称程序后坐");
+            Assert.That((bool)GetField(recoil, "_isFiring"), Is.False,
+                context + " 松开扳机后程序后坐仍标记为开火");
+            Assert.That((bool)GetField(recoil, "_isLooping"), Is.False,
+                context + " 松开扳机后全自动后坐仍在自循环");
+
+            float recoilDeadline = Time.realtimeSinceStartup + 1.75f;
+            while ((bool)GetField(recoil, "_isPlaying") &&
+                Time.realtimeSinceStartup < recoilDeadline)
+            {
+                yield return new WaitForEndOfFrame();
+            }
+            Assert.That((bool)GetField(recoil, "_isPlaying"), Is.False,
+                context + " 后坐尾段未在 1.75 秒内结束");
+            Vector3 outLoc = (Vector3)recoil.GetType().GetProperty("OutLoc").GetValue(recoil);
+            Quaternion outRot = (Quaternion)recoil.GetType().GetProperty("OutRot").GetValue(recoil);
+            Assert.That(outLoc.magnitude, Is.LessThanOrEqualTo(0.001f),
+                context + " 后坐结束后仍有位置输出");
+            Assert.That(Quaternion.Angle(Quaternion.identity, outRot),
+                Is.LessThanOrEqualTo(0.5f), context + " 后坐结束后仍有旋转输出");
+
+            Vector3 previousGunPosition = firstPersonBody.transform.InverseTransformPoint(
+                firstPersonWeaponBone.position);
+            Quaternion previousGunRotation = Quaternion.Inverse(firstPersonBody.transform.rotation) *
+                firstPersonWeaponBone.rotation;
+            for (int frame = 0; frame < 30; frame++)
+            {
+                yield return new WaitForEndOfFrame();
+                Vector3 gunPosition = firstPersonBody.transform.InverseTransformPoint(
+                    firstPersonWeaponBone.position);
+                Quaternion gunRotation = Quaternion.Inverse(firstPersonBody.transform.rotation) *
+                    firstPersonWeaponBone.rotation;
+                Assert.That(Vector3.Distance(previousGunPosition, gunPosition),
+                    Is.LessThanOrEqualTo(0.00025f),
+                    context + " 停火回正后第一人称枪骨仍在位置抖动");
+                Assert.That(Quaternion.Angle(previousGunRotation, gunRotation),
+                    Is.LessThanOrEqualTo(0.15f),
+                    context + " 停火回正后第一人称枪骨仍在旋转抖动");
+                previousGunPosition = gunPosition;
+                previousGunRotation = gunRotation;
             }
         }
 
@@ -470,6 +830,34 @@ namespace GunDemo.Tests
                 "等待第一人称武器加载超时");
         }
 
+        private static IEnumerator WaitForProjectile(Component combat, float timeout)
+        {
+            float deadline = Time.realtimeSinceStartup + timeout;
+            while (GetField(combat, "_projectilePrefab") == null &&
+                Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+            Assert.That(GetField(combat, "_projectilePrefab"), Is.Not.Null,
+                "等待射击弹丸资源加载超时");
+        }
+
+        private static void SendFireInput(Component playerAction, bool started)
+        {
+            Type commandType = RequireType("PlayerInputCommand");
+            Type inputActionType = RequireType("GJInputAction");
+            Type phaseType = RequireType("PlayerInputPhase");
+            object command = Activator.CreateInstance(commandType, new object[]
+            {
+                Enum.Parse(inputActionType, "Fire"),
+                Enum.Parse(phaseType, started ? "Started" : "Canceled"),
+                Vector2.zero
+            });
+            MethodInfo receive = playerAction.GetType().GetMethod("Receive");
+            Assert.That(receive, Is.Not.Null, "PlayerActionCtrl 缺少 Receive");
+            receive.Invoke(playerAction, new object[] { command });
+        }
+
         private static IEnumerator WaitForTask(Task task, float timeout, string message)
         {
             float deadline = Time.realtimeSinceStartup + timeout;
@@ -544,15 +932,26 @@ namespace GunDemo.Tests
             Vector3 actualUp = Vector3.Cross(
                 actualForward, index.position - little.position).normalized;
             float forwardError = Vector3.Angle(actualForward, anchor.forward);
+            Quaternion cachedGripLocalRotation =
+                (Quaternion)GetField(grip, "_gripLocalRotation");
             Assert.That(forwardError, Is.LessThanOrEqualTo(MaxPalmForwardError),
-                context + " 掌框前向误差 " + forwardError.ToString("F2") + "°");
+                context + " 掌框前向误差 " + forwardError.ToString("F2") + "°" +
+                "; 握持前误差=" + Vector3.Angle(animatedForward, anchor.forward).ToString("F2") +
+                "; anchorLocal=" + FormatQuaternion(anchor.localRotation) +
+                "; cachedGripLocal=" + FormatQuaternion(cachedGripLocalRotation));
 
             float twistAngle = Mathf.Abs(Vector3.SignedAngle(
                 Vector3.ProjectOnPlane(actualUp, anchor.forward),
                 anchor.up,
                 anchor.forward));
+            float animatedTwistAngle = Mathf.Abs(Vector3.SignedAngle(
+                Vector3.ProjectOnPlane(animatedUp, anchor.forward),
+                anchor.up,
+                anchor.forward));
             Assert.That(twistAngle, Is.LessThanOrEqualTo(MaxWristTwist),
-                context + " 腕扭转 " + twistAngle.ToString("F2") + "°");
+                context + " 腕扭转 " + twistAngle.ToString("F2") + "°" +
+                "; 握持前扭转=" + animatedTwistAngle.ToString("F2") +
+                "; anchorLocal=" + FormatQuaternion(anchor.localRotation));
             Assert.That(Vector3.Dot(actualUp, anchor.up), Is.GreaterThanOrEqualTo(MinPalmUpDot),
                 context + " 翻掌保护 Dot(up)=" + Vector3.Dot(actualUp, anchor.up).ToString("F3"));
 
@@ -592,8 +991,9 @@ namespace GunDemo.Tests
             object poseData = ikData.GetType().GetProperty("ThirdPersonFingerPose")
                 .GetValue(ikData);
             object leftPose = poseData.GetType().GetProperty("LeftGripPose").GetValue(poseData);
+            // 第三人称开火也保持自然待机握姿，避免后握把附近每发硬切指骨。
             object rightPose = poseData.GetType()
-                .GetProperty(isFiring ? "RightFirePose" : "RightIdlePose")
+                .GetProperty("RightIdlePose")
                 .GetValue(poseData);
 
             EnsureFingerMuscleIndices();
@@ -624,10 +1024,13 @@ namespace GunDemo.Tests
                         context + " " + side + " " + FingerNames[finger] + " " +
                         FingerComponents[component] + " 缺少 muscle 映射");
                     float actual = muscles[muscleIndex];
-                    Assert.That(Mathf.Abs(actual - expected), Is.LessThanOrEqualTo(MaxMuscleError),
+                    Assert.That(Mathf.Abs(actual - expected),
+                        Is.LessThanOrEqualTo(MaxMuscleError + 0.000001f),
                         context + " " + side + " " + FingerNames[finger] + " " +
                         FingerComponents[component] + " muscle 误差 " +
-                        Mathf.Abs(actual - expected).ToString("F3"));
+                        Mathf.Abs(actual - expected).ToString("F3") +
+                        "; expected=" + expected.ToString("F6") +
+                        "; actual=" + actual.ToString("F6"));
                 }
                 muscleCursor += 4;
             }
@@ -992,6 +1395,12 @@ namespace GunDemo.Tests
             return ReadWeaponBasicString(weaponData, "WeaponId");
         }
 
+        private static string FormatQuaternion(Quaternion value)
+        {
+            return "(" + value.x.ToString("F6") + "," + value.y.ToString("F6") + "," +
+                value.z.ToString("F6") + "," + value.w.ToString("F6") + ")";
+        }
+
         private static string ReadWeaponBasicString(object weaponData, string propertyName)
         {
             if (weaponData == null)
@@ -1028,7 +1437,37 @@ namespace GunDemo.Tests
             return type;
         }
 
-        private static object GetField(Component component, string fieldName)
+        private static Transform FindChild(Transform root, string childName)
+        {
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == childName)
+                {
+                    return child;
+                }
+            }
+            return null;
+        }
+
+        private static void DisableSceneAI()
+        {
+            Type aiType = Type.GetType("AIPlayerCtrl, Assembly-CSharp");
+            if (aiType == null)
+            {
+                return;
+            }
+            UnityEngine.Object[] agents = UnityEngine.Object.FindObjectsByType(
+                aiType, FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < agents.Length; i++)
+            {
+                if (agents[i] is Behaviour behaviour)
+                {
+                    behaviour.enabled = false;
+                }
+            }
+        }
+
+        private static object GetField(object component, string fieldName)
         {
             FieldInfo field = component.GetType().GetField(
                 fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

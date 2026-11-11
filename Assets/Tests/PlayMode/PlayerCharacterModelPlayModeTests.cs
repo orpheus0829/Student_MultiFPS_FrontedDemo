@@ -20,6 +20,8 @@ namespace GunDemo.Tests
             yield return load;
             yield return null;
 
+            DisableSceneAI();
+
             Type inputType = Type.GetType("PlayerInputCtrl, Assembly-CSharp");
             Type modelType = Type.GetType("PlayerCharacterModelCtrl, Assembly-CSharp");
             Assert.That(inputType, Is.Not.Null);
@@ -36,6 +38,11 @@ namespace GunDemo.Tests
                 }
             }
             Assert.That(model, Is.Not.Null);
+
+            Type kinemationType = Type.GetType("PlayerKinemationViewCtrl, Assembly-CSharp");
+            Assert.That(kinemationType, Is.Not.Null);
+            Component kinemation = model.GetComponent(kinemationType);
+            Assert.That(kinemation, Is.Not.Null);
 
             Type weaponType = Type.GetType("PlayerWeaponViewCtrl, Assembly-CSharp");
             Assert.That(weaponType, Is.Not.Null);
@@ -188,6 +195,10 @@ namespace GunDemo.Tests
                     id + " 等待基础持枪姿势超时");
                 // 支撑手在 LateUpdate 中贴合；Update 阶段读到的是 Animator 的原始姿势。
                 yield return new WaitForEndOfFrame();
+                if (id != "character.anbi")
+                {
+                    AssertFirstPersonFingerSafety(kinemation, id);
+                }
                 Transform sourceHand = GetField(grip, "_sourceHand") as Transform;
                 Transform supportHand = body.GetBoneTransform(HumanBodyBones.LeftHand);
                 Assert.That(sourceHand && supportHand, Is.True);
@@ -246,6 +257,78 @@ namespace GunDemo.Tests
         {
             return component.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
                 .GetValue(component);
+        }
+
+        private static void DisableSceneAI()
+        {
+            Type aiType = Type.GetType("AIPlayerCtrl, Assembly-CSharp");
+            if (aiType == null)
+            {
+                return;
+            }
+            UnityEngine.Object[] agents = UnityEngine.Object.FindObjectsByType(
+                aiType, FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < agents.Length; i++)
+            {
+                if (agents[i] is Behaviour behaviour)
+                {
+                    behaviour.enabled = false;
+                }
+            }
+        }
+
+        private static void AssertFirstPersonFingerSafety(Component kinemation, string context)
+        {
+            Transform[] bones = GetField(kinemation, "_rightFingerBones") as Transform[];
+            Quaternion[] bindRotations =
+                GetField(kinemation, "_rightFingerBindRotations") as Quaternion[];
+            Vector3[] bindScales = GetField(kinemation, "_rightFingerBindScales") as Vector3[];
+            Assert.That(bones, Is.Not.Null, context + " 缺少第一人称右指约束");
+            Assert.That(bones.Length, Is.EqualTo(15), context + " 右指骨数量错误");
+
+            float[] swingLimits = { 40f, 50f, 35f };
+            float[] twistLimits = { 8f, 5f, 5f };
+            for (int i = 0; i < bones.Length; i++)
+            {
+                Assert.That(bones[i], Is.Not.Null, context + " 缺少右指骨索引 " + i);
+                Assert.That(Vector3.Distance(bones[i].localScale, bindScales[i]),
+                    Is.LessThanOrEqualTo(0.0001f),
+                    context + " " + bones[i].name + " 被缩放拉伸");
+
+                Quaternion delta = Quaternion.Inverse(bindRotations[i]) * bones[i].localRotation;
+                GetSwingTwist(delta, Vector3.right, out float swing, out float twist);
+                int joint = i % 3;
+                Assert.That(swing, Is.LessThanOrEqualTo(swingLimits[joint] + 0.5f),
+                    context + " " + bones[i].name + " 过度弯曲 " + swing.ToString("F2") + "°");
+                Assert.That(Mathf.Abs(twist), Is.LessThanOrEqualTo(twistLimits[joint] + 0.5f),
+                    context + " " + bones[i].name + " 轴向扭转 " + twist.ToString("F2") + "°");
+            }
+        }
+
+        private static void GetSwingTwist(
+            Quaternion rotation,
+            Vector3 twistAxis,
+            out float swingAngle,
+            out float signedTwist)
+        {
+            Vector3 vector = new Vector3(rotation.x, rotation.y, rotation.z);
+            Vector3 projected = Vector3.Project(vector, twistAxis);
+            Quaternion twist = new Quaternion(projected.x, projected.y, projected.z, rotation.w);
+            float magnitude = Mathf.Sqrt(
+                twist.x * twist.x + twist.y * twist.y + twist.z * twist.z + twist.w * twist.w);
+            twist = magnitude > 0.00001f
+                ? new Quaternion(
+                    twist.x / magnitude,
+                    twist.y / magnitude,
+                    twist.z / magnitude,
+                    twist.w / magnitude)
+                : Quaternion.identity;
+            Quaternion swing = rotation * Quaternion.Inverse(twist);
+            swingAngle = Quaternion.Angle(Quaternion.identity, swing);
+            signedTwist = 2f * Mathf.Atan2(
+                Vector3.Dot(new Vector3(twist.x, twist.y, twist.z), twistAxis),
+                twist.w) * Mathf.Rad2Deg;
+            signedTwist = Mathf.DeltaAngle(0f, signedTwist);
         }
 
         private static string GetLeftHandIkPointPath(Component action)

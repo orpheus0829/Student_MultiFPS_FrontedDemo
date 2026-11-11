@@ -37,6 +37,16 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     private int _cameraMask;
     private bool _hasCameraPose;
     private bool _isDead;
+    private bool _inputCtrlWasEnabled;
+    private bool _actionCtrlWasEnabled;
+    private bool _moveCtrlWasEnabled;
+    private bool _aimCtrlWasEnabled;
+    private bool _combatCtrlWasEnabled;
+    private bool _weaponActionCtrlWasEnabled;
+    private bool _weaponViewCtrlWasEnabled;
+    private bool _animationCtrlWasEnabled;
+    private bool _cameraCtrlWasEnabled;
+    private bool _cameraMotionCtrlWasEnabled;
     private Vector3 _initialPosition;
     private Quaternion _initialRotation;
     private GameObject _droppedWeapon;
@@ -50,6 +60,11 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     public float RespawnDelay
     {
         get { return _playerData ? _playerData.RespawnDelay : 5f; }
+    }
+
+    public bool IsDead
+    {
+        get { return _isDead; }
     }
 
     private void Awake()
@@ -137,9 +152,14 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
 
     public void Respawn()
     {
+        TryRespawn();
+    }
+
+    public bool TryRespawn()
+    {
         if (_isClosing || !_isDead || !_health)
         {
-            return;
+            return false;
         }
 
         if (_characterController)
@@ -170,13 +190,14 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         {
             _characterController.enabled = true;
         }
-        SetControlsEnabled(true);
+        RestoreControls();
         if (_animationCtrl && _animationCtrl.FirstPersonView)
         {
             _animationCtrl.FirstPersonView.gameObject.SetActive(true);
         }
         _isDead = false;
         Respawned?.Invoke();
+        return true;
     }
 
     private void HandleDamageResolved(DamageResult result)
@@ -189,7 +210,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         _isDead = true;
         DropWeapon();
         PrepareDeathCamera();
-        SetControlsEnabled(false);
+        CaptureAndDisableControls();
         if (_hasCameraPose && _camera)
         {
             _camera.cullingMask = (_camera.cullingMask | (1 << 8)) & ~(1 << 9);
@@ -210,18 +231,43 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         }
     }
 
-    private void SetControlsEnabled(bool isEnabled)
+    private void CaptureAndDisableControls()
     {
-        if (_inputCtrl) _inputCtrl.enabled = isEnabled;
-        if (_actionCtrl) _actionCtrl.enabled = isEnabled;
-        if (_moveCtrl) _moveCtrl.enabled = isEnabled;
-        if (_aimCtrl) _aimCtrl.enabled = isEnabled;
-        if (_combatCtrl) _combatCtrl.enabled = isEnabled;
-        if (_weaponActionCtrl) _weaponActionCtrl.enabled = isEnabled;
-        if (_weaponViewCtrl) _weaponViewCtrl.enabled = isEnabled;
-        if (_animationCtrl) _animationCtrl.enabled = isEnabled;
-        if (_cameraCtrl) _cameraCtrl.enabled = isEnabled;
-        if (_cameraMotionCtrl) _cameraMotionCtrl.enabled = isEnabled;
+        _inputCtrlWasEnabled = _inputCtrl && _inputCtrl.enabled;
+        _actionCtrlWasEnabled = _actionCtrl && _actionCtrl.enabled;
+        _moveCtrlWasEnabled = _moveCtrl && _moveCtrl.enabled;
+        _aimCtrlWasEnabled = _aimCtrl && _aimCtrl.enabled;
+        _combatCtrlWasEnabled = _combatCtrl && _combatCtrl.enabled;
+        _weaponActionCtrlWasEnabled = _weaponActionCtrl && _weaponActionCtrl.enabled;
+        _weaponViewCtrlWasEnabled = _weaponViewCtrl && _weaponViewCtrl.enabled;
+        _animationCtrlWasEnabled = _animationCtrl && _animationCtrl.enabled;
+        _cameraCtrlWasEnabled = _cameraCtrl && _cameraCtrl.enabled;
+        _cameraMotionCtrlWasEnabled = _cameraMotionCtrl && _cameraMotionCtrl.enabled;
+
+        if (_inputCtrl) _inputCtrl.enabled = false;
+        if (_actionCtrl) _actionCtrl.enabled = false;
+        if (_moveCtrl) _moveCtrl.enabled = false;
+        if (_aimCtrl) _aimCtrl.enabled = false;
+        if (_combatCtrl) _combatCtrl.enabled = false;
+        if (_weaponActionCtrl) _weaponActionCtrl.enabled = false;
+        if (_weaponViewCtrl) _weaponViewCtrl.enabled = false;
+        if (_animationCtrl) _animationCtrl.enabled = false;
+        if (_cameraCtrl) _cameraCtrl.enabled = false;
+        if (_cameraMotionCtrl) _cameraMotionCtrl.enabled = false;
+    }
+
+    private void RestoreControls()
+    {
+        if (_inputCtrl) _inputCtrl.enabled = _inputCtrlWasEnabled;
+        if (_actionCtrl) _actionCtrl.enabled = _actionCtrlWasEnabled;
+        if (_moveCtrl) _moveCtrl.enabled = _moveCtrlWasEnabled;
+        if (_aimCtrl) _aimCtrl.enabled = _aimCtrlWasEnabled;
+        if (_combatCtrl) _combatCtrl.enabled = _combatCtrlWasEnabled;
+        if (_weaponActionCtrl) _weaponActionCtrl.enabled = _weaponActionCtrlWasEnabled;
+        if (_weaponViewCtrl) _weaponViewCtrl.enabled = _weaponViewCtrlWasEnabled;
+        if (_animationCtrl) _animationCtrl.enabled = _animationCtrlWasEnabled;
+        if (_cameraCtrl) _cameraCtrl.enabled = _cameraCtrlWasEnabled;
+        if (_cameraMotionCtrl) _cameraMotionCtrl.enabled = _cameraMotionCtrlWasEnabled;
     }
 
     private void SetHitboxesEnabled(bool isEnabled)
