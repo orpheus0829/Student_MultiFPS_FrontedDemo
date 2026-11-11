@@ -166,6 +166,50 @@ namespace GunDemo.Tests
                     weapon + " 停火后仍未退出右手锁定");
 
                 bool akReload = weapon == "weapon.ak.data";
+                if (akReload)
+                {
+                    Type moveType = Type.GetType("PlayerMoveCtrl, Assembly-CSharp");
+                    Behaviour move = input.GetComponent(moveType) as Behaviour;
+                    FieldInfo sprintField = moveType.GetField(
+                        "_isSprinting", BindingFlags.Instance | BindingFlags.NonPublic);
+                    Assert.That(move, Is.Not.Null);
+                    Assert.That(sprintField, Is.Not.Null);
+                    bool moveWasEnabled = move.enabled;
+                    bool wasSprinting = (bool)sprintField.GetValue(move);
+                    GetRelativePose(weaponBone, hand, out Vector3 sprintGripPosition,
+                        out Quaternion sprintGripRotation);
+                    move.enabled = false;
+                    sprintField.SetValue(move, true);
+                    float maximumSprintGripPositionError = 0f;
+                    float maximumSprintGripRotationError = 0f;
+                    for (int frame = 0; frame < 30; frame++)
+                    {
+                        yield return new WaitForEndOfFrame();
+                        GetRelativePose(weaponBone, hand, out Vector3 position,
+                            out Quaternion rotation);
+                        maximumSprintGripPositionError = Mathf.Max(
+                            maximumSprintGripPositionError,
+                            Vector3.Distance(sprintGripPosition, position));
+                        maximumSprintGripRotationError = Mathf.Max(
+                            maximumSprintGripRotationError,
+                            Quaternion.Angle(sprintGripRotation, rotation));
+                        Assert.That((float)lockWeightField.GetValue(kinemation),
+                            Is.EqualTo(1f).Within(0.0001f),
+                            weapon + " 疾跑期间右手没有保持后握把锁定");
+                    }
+                    sprintField.SetValue(move, wasSprinting);
+                    move.enabled = moveWasEnabled;
+                    Assert.That(maximumSprintGripPositionError, Is.LessThanOrEqualTo(0.001f),
+                        weapon + " 疾跑时右手离开后握把 " +
+                        (maximumSprintGripPositionError * 1000f).ToString("F3") + "mm");
+                    Assert.That(maximumSprintGripRotationError, Is.LessThanOrEqualTo(1f),
+                        weapon + " 疾跑时右手相对后握把旋转 " +
+                        maximumSprintGripRotationError.ToString("F3") + "°");
+                    for (int frame = 0; frame < 12; frame++)
+                    {
+                        yield return null;
+                    }
+                }
                 Animator handAnimator = hand.GetComponentInParent<Animator>();
                 Assert.That(handAnimator, Is.Not.Null, weapon + " 右手缺少第一人称 Animator");
                 List<Vector3> reloadHandPositions = new List<Vector3>();
@@ -176,6 +220,10 @@ namespace GunDemo.Tests
                 reloadHandRotations.Add(
                     Quaternion.Inverse(handAnimator.transform.rotation) * hand.rotation);
                 reloadSampleProgress.Add(-1f);
+                GetRelativePose(weaponBone, hand, out Vector3 reloadGripPosition,
+                    out Quaternion reloadGripRotation);
+                float maximumReloadGripPositionError = 0f;
+                float maximumReloadGripRotationError = 0f;
 
                 Assert.That((bool)tryReload.Invoke(combat, null), Is.True,
                     weapon + " 有空余弹位却无法开始换弹");
@@ -220,8 +268,16 @@ namespace GunDemo.Tests
                                 weapon + " 换弹 CrossFade 后程序 IK 仍在抢写手腕");
                         }
                         Assert.That((float)lockWeightField.GetValue(kinemation),
-                            Is.EqualTo(0f).Within(0.0001f),
-                            weapon + " 换弹期间错误重启了连射右手锁定");
+                            Is.EqualTo(1f).Within(0.0001f),
+                            weapon + " 换弹期间右手没有保持后握把锁定");
+                        GetRelativePose(weaponBone, hand, out Vector3 gripPosition,
+                            out Quaternion gripRotation);
+                        maximumReloadGripPositionError = Mathf.Max(
+                            maximumReloadGripPositionError,
+                            Vector3.Distance(reloadGripPosition, gripPosition));
+                        maximumReloadGripRotationError = Mathf.Max(
+                            maximumReloadGripRotationError,
+                            Quaternion.Angle(reloadGripRotation, gripRotation));
                     }
                     else
                     {
@@ -253,6 +309,15 @@ namespace GunDemo.Tests
                 }
                 Assert.That(previousRestoreIk, Is.EqualTo(1f).Within(0.0001f),
                     weapon + " 换弹完成后程序 IK 没有恢复");
+                if (akReload)
+                {
+                    Assert.That(maximumReloadGripPositionError, Is.LessThanOrEqualTo(0.001f),
+                        weapon + " 换弹时右手离开后握把 " +
+                        (maximumReloadGripPositionError * 1000f).ToString("F3") + "mm");
+                    Assert.That(maximumReloadGripRotationError, Is.LessThanOrEqualTo(1f),
+                        weapon + " 换弹时右手相对后握把旋转 " +
+                        maximumReloadGripRotationError.ToString("F3") + "°");
+                }
 
                 float maximumPositionSecondDifference = 0f;
                 float maximumRotationStepChange = 0f;

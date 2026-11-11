@@ -98,6 +98,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
     private bool _isRecoilActive;
     private bool _rightHandLockRequested;
     private float _rightHandLockWeight;
+    private KTransform _neutralWeaponRelativeRightHandPose;
     private float _currentIkWeight;
     private Vector3[] _rightArmBindPositions;
     private Vector3[] _rightArmBindScales;
@@ -255,7 +256,14 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         }
 
         ApplyAkReloadRightArmBoneLengthSafety(action);
-        ApplyAkReloadRightArmRotationSmoothing(action);
+        if (!ShouldPreserveAkRightHandGrip(action))
+        {
+            ApplyAkReloadRightArmRotationSmoothing(action);
+        }
+        else
+        {
+            _akReloadRightArmSmoothingActive = false;
+        }
         ApplyFirstPersonFingerSafety();
     }
 
@@ -656,10 +664,11 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             offsetWeaponTransform,
             _runtimeWeaponSettings.rotationOffset,
             1f);
-        _job.lockedWeaponRelativeRightHandPose =
+        _neutralWeaponRelativeRightHandPose =
             offsetWeaponTransform.GetRelativeTransform(
                 new KTransform(_rightArm.tip),
                 false);
+        _job.lockedWeaponRelativeRightHandPose = _neutralWeaponRelativeRightHandPose;
         KTransform root = new KTransform(_animator.transform);
         KTransform localWeapon = root.GetRelativeTransform(weaponTransform, false);
         localWeapon.rotation *= _runtimeWeaponSettings.rotationOffset;
@@ -781,13 +790,20 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         WeaponActionDefinition action = _weaponActionCtrl
             ? _weaponActionCtrl.CurrentAction
             : null;
-        bool authoredReloadHands = ShouldUseAuthoredReloadHands(action);
-        bool shouldLock = _weaponCombatCtrl &&
+        bool preserveGrip = ShouldPreserveAkRightHandGrip(action);
+        bool fireLock = _weaponCombatCtrl &&
             _weaponCombatCtrl.IsFireHeld &&
             _weaponCombatCtrl.MagazineAmmo > 0 &&
-            !authoredReloadHands &&
+            !ShouldUseAuthoredReloadHands(action) &&
             _currentIkWeight >= _ikWeight - 0.0001f;
-        if (shouldLock && !_rightHandLockRequested && _weaponBone && _rightArm.tip)
+        bool shouldLock = preserveGrip || fireLock;
+        if (preserveGrip)
+        {
+            // AK 的待机握位本来就是正确的。换弹和疾跑只允许枪械/左手播放动作，
+            // 右手始终使用进入动作前缓存的后握把相对姿势。
+            _job.lockedWeaponRelativeRightHandPose = _neutralWeaponRelativeRightHandPose;
+        }
+        else if (fireLock && !_rightHandLockRequested && _weaponBone && _rightArm.tip)
         {
             // Update 读取的是上一帧已经完成程序动画后的骨骼。直接捕获此刻枪骨到右手的
             // 相对姿势，可以在按火首帧无缝接管，并且与 Job 中应用 rotationOffset 后的
@@ -843,6 +859,9 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
                 Time.deltaTime / ReloadIkRestoreDuration);
         }
         _job.ikWeight = _currentIkWeight;
+        _job.rightArmIkWeight = ShouldPreserveAkRightHandGrip(action)
+            ? _ikWeight
+            : _currentIkWeight;
     }
 
     private void CacheRightFingerBindPose(Transform root)
@@ -1103,11 +1122,9 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             (IsReloadAction(action.ActionType) || action.ActionType == WeaponActionType.Inspect);
         if (ShouldUseAuthoredReloadHands(action))
         {
-            // 换弹提交弹药时，IsFireHeld 可能仍为 true。先丢弃连射锁定，避免在手已
-            // 离开握把的换弹姿势上重新捕获目标；IK 权重会在 Update 中与 0.05 秒
-            // Reload CrossFade 同步退出，避免首帧硬切造成腕部跳变。
-            ResetRightHandGripLock();
-            BeginAkReloadRightArmRotationSmoothing();
+            // 左手继续使用作者换弹动作；右手由程序保持在正确的后握把位置。
+            // 不再启动旧的右臂动作平滑，否则它会把已经锁住的手重新拉向枪前方。
+            _akReloadRightArmSmoothingActive = false;
         }
         if (_sprintActionOverrides)
         {
@@ -1198,6 +1215,21 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
                 _weaponActionCtrl.CurrentWeaponData.Basic.WeaponId,
                 "ak",
                 StringComparison.Ordinal);
+    }
+
+    private bool ShouldPreserveAkRightHandGrip(WeaponActionDefinition action)
+    {
+        if (!_weaponActionCtrl || !_weaponActionCtrl.CurrentWeaponData ||
+            !string.Equals(
+                _weaponActionCtrl.CurrentWeaponData.Basic.WeaponId,
+                "ak",
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return (action != null && IsReloadAction(action.ActionType)) ||
+            (_moveCtrl && _moveCtrl.IsSprinting);
     }
 
     private void PlayEquipImpact()

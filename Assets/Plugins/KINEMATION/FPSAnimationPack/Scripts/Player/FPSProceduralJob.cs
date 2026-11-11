@@ -9,6 +9,7 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
     public struct FPSProceduralJob : IAnimationJob
     {
         public float ikWeight;
+        public float rightArmIkWeight;
         public float adsWeight;
         
         // Bone references.
@@ -73,6 +74,7 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
             
             _recoil = _ikMotion = _cachedIkMotion = KTransform.Identity;
             ikWeight = 1f;
+            rightArmIkWeight = 1f;
         }
 
         public void Update()
@@ -140,12 +142,12 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
             }
         }
 
-        private void SolveTwoBoneIK(AnimationStream stream, IKTransforms ikTransforms, KTransform target)
+        private void SolveTwoBoneIK(AnimationStream stream, IKTransforms ikTransforms,
+            KTransform target, float weight)
         {
-            // AK authored reload deliberately disables procedural arm IK. Do not run the
-            // solver at zero weight: near-collinear limbs can still produce unstable
-            // intermediate rotations before the weighted result is written back.
-            if (ikWeight <= 0.0001f) return;
+            // Do not run a solver at zero weight: near-collinear limbs can still produce
+            // unstable intermediate rotations before the weighted result is written back.
+            if (weight <= 0.0001f) return;
 
             KTwoBoneIkData data = new KTwoBoneIkData()
             {
@@ -153,8 +155,8 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
                 tip = KAnimationMath.GetTransform(stream, ikTransforms.tipHandle),
                 mid = KAnimationMath.GetTransform(stream, ikTransforms.midHandle),
                 root = KAnimationMath.GetTransform(stream, ikTransforms.rootHandle),
-                posWeight = ikWeight,
-                rotWeight = ikWeight
+                posWeight = weight,
+                rotWeight = weight
             };
             
             KTwoBoneIK.Solve(ref data);
@@ -279,8 +281,8 @@ namespace KINEMATION.FPSAnimationPack.Scripts.Player
             rightHandTarget = weaponTransform.GetWorldTransform(rightHandTarget, false);
             leftHandTarget = weaponTransform.GetWorldTransform(leftHandTarget, false);
 
-            SolveTwoBoneIK(stream, rightArm, rightHandTarget);
-            SolveTwoBoneIK(stream, leftArm, leftHandTarget);
+            SolveTwoBoneIK(stream, rightArm, rightHandTarget, rightArmIkWeight);
+            SolveTwoBoneIK(stream, leftArm, leftHandTarget, ikWeight);
         }
 
         public void ProcessRootMotion(AnimationStream stream)
