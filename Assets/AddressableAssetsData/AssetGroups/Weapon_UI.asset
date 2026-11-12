@@ -34,6 +34,14 @@ MonoBehaviour:
     - type.ui
     - weapon.svd
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 47d208a32fd143449ce2292e3585e12a
+    m_Address: weapon.melee-fist.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.sprite
+    - type.weapon_ui
+    - weapon.melee-fist
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5ddab4d074760c64f96b0a711bb47806
     m_Address: weapon.striker-v.silhouette
     m_ReadOnly: 0
@@ -116,6 +124,13 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.ui
     - weapon.kar98k
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ae159c17fa727454abda3819af91bdad
+    m_Address: ui.killfeed.melee-fist.sprite_asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.ui
+    - weapon.melee-fist
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b06fecff00215814780e542df947f3a4
     m_Address: weapon.dgl-50.silhouette

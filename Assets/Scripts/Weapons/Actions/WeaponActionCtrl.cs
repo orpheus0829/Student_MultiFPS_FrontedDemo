@@ -6,6 +6,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class WeaponActionCtrl : MonoBehaviour
 {
+    private const float MinimumInspectDuration = 1f;
     [Header("初始枪械")]
     [SerializeField, ResourceId(typeof(WeaponDefinitionSO)), InspectorName("初始枪械数据 ID")]
     private string _startingWeaponResourceId = "weapon.ak.data";
@@ -356,7 +357,12 @@ public sealed class WeaponActionCtrl : MonoBehaviour
 
         float previousProgress = _progress;
         _elapsed += Mathf.Max(0f, deltaTime);
-        _progress = Mathf.Clamp01(_elapsed / _currentAction.Duration);
+        // 默认检视动画为 1 秒；旧动作资源仍配置成 0.75 秒时，最后四分之一秒
+        // 会提前放行疾跑层，表现为检视后半段被疾跑打断。
+        float duration = _currentAction.ActionType == WeaponActionType.Inspect
+            ? Mathf.Max(MinimumInspectDuration, _currentAction.Duration)
+            : _currentAction.Duration;
+        _progress = Mathf.Clamp01(_elapsed / Mathf.Max(0.01f, duration));
         TriggerMarkers(previousProgress, _progress);
 
         if (_progress < 1f)

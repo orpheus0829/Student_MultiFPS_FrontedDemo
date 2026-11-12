@@ -9,6 +9,7 @@ public sealed class CombatDebugWindow : EditorWindow
     private static readonly List<GameObject> SpawnedAi = new List<GameObject>();
     private int _selectedModelIndex;
     private string _switchMessage;
+    private float _selfDamagePercent = 30f;
 
     [MenuItem("工具/Gun Demo/战斗调试")]
     private static void OpenWindow()
@@ -31,6 +32,21 @@ public sealed class CombatDebugWindow : EditorWindow
 
             GUILayout.Space(8f);
             GUILayout.Label("生命", EditorStyles.boldLabel);
+            _selfDamagePercent = EditorGUILayout.Slider(
+                "对自己造成伤害（最大生命百分比）", _selfDamagePercent, 1f, 100f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button(
+                    $"给自己扣血 {_selfDamagePercent:0}%", GUILayout.ExpandWidth(false)))
+                {
+                    DamageLocalPlayer(_selfDamagePercent);
+                }
+                if (GUILayout.Button("快速测试 30%", GUILayout.ExpandWidth(false)))
+                {
+                    _selfDamagePercent = 30f;
+                    DamageLocalPlayer(_selfDamagePercent);
+                }
+            }
             if (GUILayout.Button("自杀", GUILayout.ExpandWidth(false)))
             {
                 KillLocalPlayer();
@@ -251,6 +267,20 @@ public sealed class CombatDebugWindow : EditorWindow
         {
             CombatDamage.Kill(health);
         }
+    }
+
+    private static void DamageLocalPlayer(float maximumHealthPercent)
+    {
+        PlayerInputCtrl player = FindLocalPlayer();
+        CharacterHealth health = player ? player.GetComponent<CharacterHealth>() : null;
+        if (!health || health.IsDead)
+        {
+            Debug.LogWarning("战斗调试：本地玩家不存在或已经死亡，无法扣血。");
+            return;
+        }
+
+        float damage = health.MaxHealth * Mathf.Clamp(maximumHealthPercent, 1f, 100f) / 100f;
+        CombatDamage.Apply(health, damage);
     }
 
     private static void KillNearestAi()

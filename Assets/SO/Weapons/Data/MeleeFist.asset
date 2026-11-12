@@ -1,0 +1,684 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1111111111111111111111111111111, type: 3}
+  m_Name: MeleeFist
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponDefinitionSO
+  _basic:
+    _weaponId: melee-fist
+    _weaponName: "\u62F3\u51FB"
+    _category: 9
+    _tags: 1
+    _iconResourceId: weapon.melee-fist.silhouette
+    _silhouetteResourceId: weapon.melee-fist.silhouette
+  _fire:
+    _allowedModes: 1
+    _defaultMode: 0
+    _canSwitchMode: 0
+    _semiAutomaticRpm: 75
+    _automaticRpm: 75
+    _burstRpm: 75
+    _burstCount: 1
+    _burstCooldown: 0
+    _pelletsPerShot: 1
+    _fireDelay: 0
+    _dryFireEnabled: 0
+  _damage:
+    _closeDamage: 40
+    _farDamage: 40
+    _closeDamageRange: 1.65
+    _farDamageRange: 1.65
+    _maximumHitRange: 1.65
+    _projectileSpeed: 1
+    _projectileRadius: 0.55
+    _headMultiplier: 1
+    _upperBodyMultiplier: 1
+    _lowerBodyMultiplier: 1
+    _baseHitScore: 10
+    _damageScorePerHealth: 1
+    _weaponScoreFactor: 1
+    _closeDistanceScoreFactor: 1
+    _farDistanceScoreFactor: 1
+    _killBonus: 100
+  _melee:
+    _enabled: 1
+    _range: 1.65
+    _radius: 0.55
+    _impactDelay: 0.3666
+    _actionDuration: 1.3334
+  _ammo:
+    _magazineCapacity: 1
+    _startingReserveAmmo: 0
+    _maximumReserveAmmo: 0
+    _reloadStyle: 0
+    _autoReloadWhenEmpty: 0
+    _originalAmmoResetTimeScale: 1
+  _accuracy:
+    _hipSpread: 2.5
+    _aimSpread: 0.15
+    _maximumSpread: 7
+    _spreadPerShot: 0.35
+    _spreadRecoveryDelay: 0.08
+    _spreadRecoverySpeed: 8
+    _movingSpreadMultiplier: 1.35
+    _sprintingSpreadMultiplier: 2
+    _airborneSpreadMultiplier: 2.4
+    _crouchingSpreadMultiplier: 0.8
+    _firstShotAccurate: 1
+    _pelletSpread: 4
+  _gameplayRecoil:
+    _verticalRecoil: {x: 1, y: 1.4}
+    _horizontalRecoil: {x: -0.4, y: 0.4}
+    _randomness: 0.35
+    _firstShotMultiplier: 1.15
+    _aimMultiplier: 0.8
+    _crouchMultiplier: 0.85
+    _recoveryDelay: 0.08
+    _recoverySpeed: 12
+    _pattern: []
+    _patternResetTime: 0.25
+    _kickSpeed: 45
+  _handling:
+    _canAim: 0
+    _aimFov: 60
+    _aimInDuration: 0
+    _aimOutDuration: 0
+    _aimSensitivityMultiplier: 1
+    _aimMovementSpeedMultiplier: 1
+    _movementSpeedMultiplier: 1
+    _sprintToFireDuration: 0
+    _aimToFireDuration: 0
+    _canFireWhileSprinting: 1
+    _canFireWhileAirborne: 1
+  _actionSetResourceId: weapon.melee-fist.actions
+  _resources:
+    _firstPersonPrefabResourceId: 
+    _worldModelPrefabResourceId: 
+  _animation:
+    _characterAnimatorControllerResourceId: 
+    _weaponAnimatorControllerResourceId: 
+    _thirdPersonAnimatorControllerResourceId: 
+    _thirdPersonWeaponAnimatorControllerResourceId: 
+    _holdStyle: 0
+    _canInspect: 0
+    _hasLastRoundFireAnimation: 0
+    _hasFireModeSwitchAnimation: 0
+    _hasManualCycleAnimation: 0
+    _usesSprintTriggerDiscipline: 1
+    _kinemationRecoilResourceId: 
+  _ik:
+    _weaponRotationOffset: {x: 0.70710677, y: 0, z: 0, w: 0.70710677}
+    _weaponPositionOffset: {x: 0, y: 0, z: 0}
+    _useThirdPersonGrip: 0
+    _thirdPersonGripPosition: {x: 0, y: 0, z: 0}
+    _thirdPersonGripRotation: {x: 0, y: 0, z: 0, w: 1}
+    _thirdPersonGripScale: {x: 1, y: 1, z: 1}
+    _leftClavicleOffset: {x: 0, y: 0, z: 0}
+    _rightClavicleOffset: {x: 0, y: 0, z: 0}
+    _aimPointOffset: {x: 0, y: 0, z: 0}
+    _aimPointLocalPosition: {x: 0, y: 0, z: 0}
+    _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
+    _adsBlend: 0
+    _aimPointPath: 
+    _muzzlePointPath: 
+    _shellEjectionPointPath: 
+    _magazinePointPath: 
+    _leftHandIkPointPath: 
+    _thirdPersonFingerPose:
+      _useLeftGripPose: 0
+      _leftGripPose:
+        _thumb:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _index:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _middle:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _ring:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _little:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+      _useRightGripPose: 0
+      _rightIdlePose:
+        _thumb:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _index:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _middle:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _ring:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _little:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+      _rightFirePose:
+        _thumb:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _index:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _middle:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _ring:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _little:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+  _audio:
+    _fireSoundResourceIds: []
+    _firePitchRange: {x: 1, y: 1}
+    _fireVolumeRange: {x: 1, y: 1}
+    _weaponEventSoundResourceIds: []
+    _dryFireSoundResourceId: 
+    _equipSoundResourceId: 
+    _unequipSoundResourceId: 
+    _reloadSoundResourceIds: []
+    _mechanicalSoundResourceIds: []
+  _effects:
+    _muzzleFlashResourceId: 
+    _muzzleSmokeResourceId: 
+    _shellResourceId: 
+    _tracerResourceId: 
+    _impactEffectResourceId: 
+  _cameraFeedback:
+    _sourceCurve:
+      _x:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _y:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _z:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    _sourcePitch: {x: 0, y: 0}
+    _sourceYaw: {x: 0, y: 0}
+    _sourceRoll: {x: 0, y: 0}
+    _sourceSmoothSpeed: 0
+    _sourcePlayRate: 1
+    _cameraKickRotation: {x: 0, y: 0, z: 0}
+    _cameraKickPosition: {x: 0, y: 0, z: 0}
+    _cameraKickDuration: 0.05
+    _cameraReturnDuration: 0.12
+    _aimCameraKickMultiplier: 0.75
+  _originalRecoil:
+    _pitch: {x: 0, y: 0}
+    _roll: {x: 0, y: 0, z: 0, w: 0}
+    _yaw: {x: 0, y: 0, z: 0, w: 0}
+    _kickback: {x: 0, y: 0}
+    _kickUp: {x: 0, y: 0}
+    _kickRight: {x: 0, y: 0}
+    _aimRotationMultiplier: {x: 0, y: 0, z: 0}
+    _aimPositionMultiplier: {x: 0, y: 0, z: 0}
+    _smoothRotation: {x: 0, y: 0, z: 0}
+    _smoothPosition: {x: 0, y: 0, z: 0}
+    _extraRotation: {x: 0, y: 0, z: 0}
+    _extraPosition: {x: 0, y: 0, z: 0}
+    _noiseX: {x: 0, y: 0}
+    _noiseY: {x: 0, y: 0}
+    _noiseAcceleration: {x: 0, y: 0}
+    _noiseDamping: {x: 0, y: 0}
+    _noiseScale: 1
+    _pushAmount: 0
+    _pushAcceleration: 0
+    _pushDamping: 0
+    _sway:
+      _pitch: {x: 0, y: 0}
+      _yaw: {x: 0, y: 0}
+      _rollMultiplier: 0
+      _damping: 0
+      _acceleration: 0
+      _aimScale: 0
+      _pivotOffset: {x: 0, y: 0, z: 0}
+    _pitchProgression:
+      _acceleration: 0
+      _damping: 0
+      _amount: 0
+    _upProgression:
+      _acceleration: 0
+      _damping: 0
+      _amount: 0
+    _aimProgressAlpha: 1
+    _horizontalControllerRecoil: {x: 0, y: 0}
+    _verticalControllerRecoil: {x: 0, y: 0}
+    _horizontalSmoothing: 0
+    _verticalSmoothing: 0
+    _controllerDamping: 0
+    _hipPivotOffset: {x: 0, y: 0, z: 0}
+    _aimPivotOffset: {x: 0, y: 0, z: 0}
+    _smoothRoll: 0
+    _playRate: 0
+    _semiRotationCurve:
+      _x:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _y:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _z:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    _semiPositionCurve:
+      _x:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _y:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _z:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    _automaticRotationCurve:
+      _x:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _y:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _z:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    _automaticPositionCurve:
+      _x:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _y:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      _z:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  _special:
+    _specialType: 0
+    _beltRoundCount: 0
+    _beltResetTime: 0
+    _beltNodePaths: []
+    _specialAnimationResourceId: 
+    _specialCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4

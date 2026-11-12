@@ -49,6 +49,20 @@ public sealed class FirstPersonCameraMotionCtrl : MonoBehaviour
     [SerializeField, Range(0f, 1f), InspectorName("水平随机程度")]
     private float _fireHorizontalRandomness = 0.65f;
 
+    [Header("受伤屏幕震动")]
+    [SerializeField, Min(0f), InspectorName("整体强度")]
+    private float _damageShakeStrength = 1f;
+    [SerializeField, InspectorName("位置冲击")]
+    private Vector3 _damagePositionKick = new Vector3(0.012f, -0.008f, -0.025f);
+    [SerializeField, InspectorName("旋转冲击")]
+    private Vector3 _damageRotationKick = new Vector3(-1.1f, 0.45f, 0.55f);
+    [SerializeField, Min(0f), InspectorName("冲击时间")]
+    private float _damageKickDuration = 0.045f;
+    [SerializeField, Min(0f), InspectorName("回正时间")]
+    private float _damageReturnDuration = 0.14f;
+    [SerializeField, Range(0f, 1f), InspectorName("最低伤害强度比例")]
+    private float _minimumDamageShakeScale = 0.45f;
+
     [Header("动作反馈")]
     [SerializeField, InspectorName("落地位置冲击")]
     private Vector3 _landingPositionKick = new Vector3(0f, -0.055f, 0.012f);
@@ -261,6 +275,25 @@ public sealed class FirstPersonCameraMotionCtrl : MonoBehaviour
             _landingRotationKick * safeStrength,
             _actionKickDuration,
             _actionReturnDuration);
+    }
+
+    public void PlayDamageFeedback(float normalizedDamage)
+    {
+        float damageScale = Mathf.Lerp(
+            _minimumDamageShakeScale, 1f, Mathf.Clamp01(normalizedDamage));
+        float strength = Mathf.Max(0f, _damageShakeStrength) * damageScale;
+        Vector3 position = _damagePositionKick;
+        Vector3 rotation = _damageRotationKick;
+        position.x *= Random.value < 0.5f ? -1f : 1f;
+        rotation.y *= Random.value < 0.5f ? -1f : 1f;
+        rotation.z *= Random.value < 0.5f ? -1f : 1f;
+
+        // 受伤反馈在第一、第三人称都允许播放；AI 没有活动视角时不会被看见。
+        StartImpulse(
+            position * strength,
+            rotation * strength,
+            _damageKickDuration,
+            _damageReturnDuration);
     }
 
     public void PlayVaultFeedback(float strength = 1f)

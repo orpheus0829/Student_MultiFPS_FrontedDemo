@@ -6,12 +6,9 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class PlayerCombatHudUI : MonoBehaviour
 {
-    private const float LowHealthThreshold = 0.7f;
+    private const float LowHealthThreshold = 0.85f;
 
     [Header("可替换美术素材")]
-    [SerializeField, InspectorName("生命条背景")] private Sprite _healthBackgroundSprite;
-    [SerializeField, InspectorName("生命条填充")] private Sprite _healthFillSprite;
-    [SerializeField, InspectorName("生命条异形框")] private Sprite _healthFrameSprite;
     [SerializeField, InspectorName("弹药底板")] private Sprite _ammoPanelSprite;
     [SerializeField, InspectorName("屏幕血污")] private Sprite _bloodOverlaySprite;
     [SerializeField, InspectorName("濒死红色辉光")] private Sprite _redGlowSprite;
@@ -135,9 +132,7 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         Sprite bloodOverlay,
         Sprite redGlow)
     {
-        _healthBackgroundSprite = healthBackground;
-        _healthFillSprite = healthFill;
-        _healthFrameSprite = healthFrame;
+        // 生命条固定使用程序化黑框白填充；保留旧参数以兼容现有调用方。
         _ammoPanelSprite = ammoPanel;
         _bloodOverlaySprite = bloodOverlay;
         _redGlowSprite = redGlow;
@@ -193,9 +188,12 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
             _healthSlider.SetValueWithoutNotify(normalized);
         }
 
-        _targetDamageSeverity = normalized < LowHealthThreshold && normalized > 0f
+        // 85% 开始显现，并让 50% 血量时已经达到强烈、猩红的表现。
+        float linearSeverity = normalized < LowHealthThreshold && normalized > 0f
             ? Mathf.InverseLerp(LowHealthThreshold, 0f, normalized)
             : 0f;
+        float fullSeverityPoint = Mathf.InverseLerp(LowHealthThreshold, 0f, 0.5f);
+        _targetDamageSeverity = Mathf.Clamp01(linearSeverity / fullSeverityPoint);
         if (_health && _health.IsDead)
         {
             SetAlive(false);
@@ -273,11 +271,13 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
     {
         if (_magazineText)
         {
-            _magazineText.text = Mathf.Max(0, magazine).ToString("00");
+            _magazineText.text = Mathf.Max(0, magazine).ToString("00") + "/" +
+                Mathf.Max(0, reserve).ToString("000");
         }
         if (_reserveText)
         {
-            _reserveText.text = "/ " + Mathf.Max(0, reserve).ToString("000");
+            // 保留独立数据节点供现有测试/调试读取；画面只显示上方组合文本。
+            _reserveText.text = Mathf.Max(0, reserve).ToString("000");
         }
     }
 
@@ -332,31 +332,34 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         GameObject healthRoot = CreateUiObject("左下角生命", root);
         RectTransform rect = healthRoot.GetComponent<RectTransform>();
         Anchor(rect, new Vector2(0f, 0f), new Vector2(0f, 0f),
-            new Vector2(250f, 66f), new Vector2(42f, 42f), new Vector2(0f, 0f));
+            new Vector2(520f, 34f), new Vector2(42f, 42f), new Vector2(0f, 0f));
 
         _healthSlider = healthRoot.AddComponent<Slider>();
         _healthSlider.minValue = 0f;
         _healthSlider.maxValue = 1f;
         _healthSlider.value = 1f;
+        _healthSlider.direction = Slider.Direction.LeftToRight;
+        _healthSlider.transition = Selectable.Transition.None;
         _healthSlider.interactable = false;
 
         _healthBackground = CreateImage("生命背景", healthRoot.transform,
-            new Color(0.025f, 0.028f, 0.025f, 0.86f));
+            Color.black);
         Stretch(_healthBackground.rectTransform);
 
         GameObject fillArea = CreateUiObject("生命填充区域", healthRoot.transform);
         RectTransform fillAreaRect = fillArea.GetComponent<RectTransform>();
-        Stretch(fillAreaRect, new Vector2(10f, 11f), new Vector2(-10f, -11f));
+        Stretch(fillAreaRect, new Vector2(4f, 4f), new Vector2(-4f, -4f));
         _healthFill = CreateImage("生命填充", fillArea.transform,
-            new Color(0.78f, 0.88f, 0.72f, 1f));
+            Color.white);
         Stretch(_healthFill.rectTransform);
-        _healthFill.type = Image.Type.Filled;
-        _healthFill.fillMethod = Image.FillMethod.Horizontal;
+        // Slider 通过改变 Rect 宽度表现血量；不要再叠加 Image.fillAmount，
+        // 否则动态创建的层级在部分分辨率下会看起来始终填满。
+        _healthFill.type = Image.Type.Simple;
         _healthSlider.fillRect = _healthFill.rectTransform;
         _healthSlider.targetGraphic = _healthFill;
 
         _healthFrame = CreateImage("生命异形框", healthRoot.transform,
-            new Color(0.78f, 0.76f, 0.65f, 0.9f));
+            Color.clear);
         Stretch(_healthFrame.rectTransform);
         _healthFrame.raycastTarget = false;
     }
@@ -366,37 +369,35 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         GameObject ammoRoot = CreateUiObject("右下角枪械弹药", root);
         RectTransform rect = ammoRoot.GetComponent<RectTransform>();
         Anchor(rect, new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(330f, 150f), new Vector2(-42f, 38f), new Vector2(1f, 0f));
+            new Vector2(360f, 128f), new Vector2(-54f, 58f), new Vector2(1f, 0f));
 
         _ammoPanel = CreateImage("弹药半透明底板", ammoRoot.transform,
             new Color(0.018f, 0.02f, 0.018f, 0.72f));
         Stretch(_ammoPanel.rectTransform);
 
         _weaponSilhouette = CreateImage("当前枪械剪影", ammoRoot.transform, Color.white);
-        Anchor(_weaponSilhouette.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(-28f, 72f), new Vector2(0f, -12f), new Vector2(0.5f, 1f));
+        Anchor(_weaponSilhouette.rectTransform, new Vector2(0f, 0f), new Vector2(0.62f, 1f),
+            new Vector2(-44f, -30f), new Vector2(8f, 1f), new Vector2(0f, 0.5f));
         _weaponSilhouette.preserveAspect = true;
         _weaponSilhouette.enabled = false;
 
-        _magazineText = CreateText("弹匣子弹", ammoRoot.transform, 40f, FontStyles.Bold);
-        Anchor(_magazineText.rectTransform, new Vector2(0f, 0f), new Vector2(0.68f, 0f),
-            new Vector2(-4f, 58f), new Vector2(14f, 10f), new Vector2(0f, 0f));
-        _magazineText.alignment = TextAlignmentOptions.BottomRight;
-        _magazineText.text = "00";
+        _magazineText = CreateText("弹药总览", ammoRoot.transform, 32f, FontStyles.Bold);
+        Anchor(_magazineText.rectTransform, new Vector2(0.58f, 0f), new Vector2(1f, 1f),
+            new Vector2(-28f, -34f), new Vector2(-18f, 0f), new Vector2(0f, 0.5f));
+        _magazineText.alignment = TextAlignmentOptions.MidlineRight;
+        _magazineText.text = "00/000";
 
         _reserveText = CreateText("备弹", ammoRoot.transform, 24f, FontStyles.Normal);
         Anchor(_reserveText.rectTransform, new Vector2(0.68f, 0f), new Vector2(1f, 0f),
             new Vector2(-14f, 48f), new Vector2(0f, 12f), new Vector2(0f, 0f));
         _reserveText.alignment = TextAlignmentOptions.BottomLeft;
         _reserveText.color = new Color(0.78f, 0.78f, 0.72f, 1f);
-        _reserveText.text = "/ 000";
+        _reserveText.text = "000";
+        _reserveText.gameObject.SetActive(false);
     }
 
     private void ApplyConfiguredSprites()
     {
-        ApplySprite(_healthBackground, _healthBackgroundSprite);
-        ApplySprite(_healthFill, _healthFillSprite);
-        ApplySprite(_healthFrame, _healthFrameSprite);
         ApplySprite(_ammoPanel, _ammoPanelSprite);
         if (_bloodOverlay)
         {
@@ -456,7 +457,7 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         text.fontStyle = style;
         text.color = new Color(0.94f, 0.93f, 0.86f, 1f);
         text.raycastTarget = false;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         return text;
     }
 

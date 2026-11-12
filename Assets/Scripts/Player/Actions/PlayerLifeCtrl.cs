@@ -14,6 +14,14 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     [SerializeField, Min(0.1f), InspectorName("镜头后退距离")] private float _cameraBackDistance = 2.7f;
     [SerializeField, Min(0f), InspectorName("镜头抬高距离")] private float _cameraRise = 1.2f;
     [SerializeField, Min(0.1f), InspectorName("镜头跟随速度")] private float _cameraFollowSpeed = 5f;
+    [SerializeField, Min(0f), InspectorName("死亡镜头碰撞半径")]
+    private float _deathCameraCollisionRadius = 0.2f;
+    [SerializeField, Min(0f), InspectorName("死亡镜头离墙余量")]
+    private float _deathCameraCollisionPadding = 0.08f;
+    [SerializeField, Min(0.1f), InspectorName("追踪击杀者转向速度")]
+    private float _killerLookSpeed = 4.5f;
+    [SerializeField, Min(0f), InspectorName("击杀者注视高度")]
+    private float _killerLookHeight = 1.25f;
 
     [Header("死亡表现")]
     [SerializeField, InspectorName("布娃娃")] private PlayerRagdollCtrl _ragdoll;
@@ -54,6 +62,9 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     private bool[] _hitboxEnabled;
     private SmartTimer.TimerTask _respawnTask;
     private bool _isClosing;
+    private Transform _killerLookTarget;
+    private DeathKillerOutline _killerOutline;
+    private readonly RaycastHit[] _deathCameraHits = new RaycastHit[24];
 
     public event Action Respawned;
 
@@ -125,10 +136,51 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
             transform.position + Vector3.up * 0.95f;
         Vector3 desired = focus - transform.forward * _cameraBackDistance +
             Vector3.up * _cameraRise;
+        desired = ResolveDeathCameraPosition(focus, desired);
         float blend = 1f - Mathf.Exp(-_cameraFollowSpeed * Time.deltaTime);
         _camera.transform.position = Vector3.Lerp(_camera.transform.position, desired, blend);
-        Quaternion look = Quaternion.LookRotation(focus - _camera.transform.position, Vector3.up);
-        _camera.transform.rotation = Quaternion.Slerp(_camera.transform.rotation, look, blend);
+        Vector3 lookPoint = _killerLookTarget
+            ? _killerLookTarget.position + Vector3.up * _killerLookHeight
+            : focus;
+        Vector3 lookDirection = lookPoint - _camera.transform.position;
+        if (lookDirection.sqrMagnitude > 0.0001f)
+        {
+            Quaternion look = Quaternion.LookRotation(lookDirection, Vector3.up);
+            float lookBlend = 1f - Mathf.Exp(-_killerLookSpeed * Time.deltaTime);
+            _camera.transform.rotation = Quaternion.Slerp(
+                _camera.transform.rotation, look, lookBlend);
+        }
+    }
+
+    private Vector3 ResolveDeathCameraPosition(Vector3 focus, Vector3 desired)
+    {
+        Vector3 offset = desired - focus;
+        float distance = offset.magnitude;
+        if (distance <= 0.001f || _deathCameraCollisionRadius <= 0f)
+        {
+            return desired;
+        }
+
+        int hitCount = Physics.SphereCastNonAlloc(
+            focus,
+            _deathCameraCollisionRadius,
+            offset / distance,
+            _deathCameraHits,
+            distance,
+            ~0,
+            QueryTriggerInteraction.Ignore);
+        float allowedDistance = distance;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = _deathCameraHits[i];
+            if (!hit.collider || hit.transform.IsChildOf(transform))
+            {
+                continue;
+            }
+            allowedDistance = Mathf.Min(allowedDistance,
+                Mathf.Max(0f, hit.distance - _deathCameraCollisionPadding));
+        }
+        return focus + offset.normalized * allowedDistance;
     }
 
     private void OnDisable()
@@ -144,6 +196,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     private void OnDestroy()
     {
         RestoreCamera();
+        ClearKillerTracking();
         if (_droppedWeapon)
         {
             Destroy(_droppedWeapon);
@@ -189,6 +242,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
             _droppedWeapon = null;
         }
         RestoreCamera();
+        ClearKillerTracking();
         SetHitboxesEnabled(true);
         _health.ResetHealth();
         _combatCtrl?.ResetAllAmmoToFull();
@@ -214,6 +268,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         }
 
         _isDead = true;
+        BeginKillerTracking(result.Instigator);
         DropWeapon();
         PrepareDeathCamera();
         CaptureAndDisableControls();
@@ -319,6 +374,32 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         _camera.transform.localRotation = _cameraLocalRotation;
         _camera.cullingMask = _cameraMask;
         _hasCameraPose = false;
+    }
+
+    private void BeginKillerTracking(PlayerInfo instigator)
+    {
+        ClearKillerTracking();
+        if (!instigator || instigator == _health.PlayerInfo)
+        {
+            return;
+        }
+
+        _killerLookTarget = instigator.transform;
+        // 只有本地玩家的死亡视角需要创建可见描边。
+        if (_inputCtrl && _inputCtrl.enabled)
+        {
+            _killerOutline = DeathKillerOutline.Show(instigator.gameObject, _camera);
+        }
+    }
+
+    private void ClearKillerTracking()
+    {
+        _killerLookTarget = null;
+        if (_killerOutline)
+        {
+            _killerOutline.Hide();
+            _killerOutline = null;
+        }
     }
 
     private void DropWeapon()

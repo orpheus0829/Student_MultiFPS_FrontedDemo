@@ -12,7 +12,24 @@ public enum WeaponCategory
     [InspectorName("精确射手步枪")] MarksmanRifle = 5,
     [InspectorName("狙击步枪")] SniperRifle = 6,
     [InspectorName("手枪")] Pistol = 7,
-    [InspectorName("左轮手枪")] Revolver = 8
+    [InspectorName("左轮手枪")] Revolver = 8,
+    [InspectorName("近战武器")] Melee = 9
+}
+
+[Serializable]
+public class WeaponMeleeData
+{
+    [SerializeField, InspectorName("启用近战命中")] private bool _enabled;
+    [SerializeField, Min(0.1f), InspectorName("攻击距离")] private float _range = 1.65f;
+    [SerializeField, Min(0.05f), InspectorName("攻击半径")] private float _radius = 0.55f;
+    [SerializeField, Min(0f), InspectorName("出拳至命中的延迟")] private float _impactDelay = 0.11f;
+    [SerializeField, Min(0.01f), InspectorName("完整动作时间")] private float _actionDuration = 0.78f;
+
+    public bool Enabled { get { return _enabled; } }
+    public float Range { get { return _range; } }
+    public float Radius { get { return _radius; } }
+    public float ImpactDelay { get { return _impactDelay; } }
+    public float ActionDuration { get { return _actionDuration; } }
 }
 
 [Flags]

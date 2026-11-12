@@ -9,6 +9,7 @@ public sealed class CharacterHealth : MonoBehaviour
 
     private PlayerInfo _playerInfo;
     private PlayerLifeCtrl _lifeCtrl;
+    private FirstPersonCameraMotionCtrl _cameraMotion;
     private float _currentHealth;
     private float _nextRecoveryTime = float.PositiveInfinity;
     private bool _isDead;
@@ -53,6 +54,7 @@ public sealed class CharacterHealth : MonoBehaviour
     {
         TryGetComponent(out _playerInfo);
         TryGetComponent(out _lifeCtrl);
+        _cameraMotion = GetComponentInChildren<FirstPersonCameraMotionCtrl>(true);
         ResetHealth();
     }
 
@@ -107,6 +109,10 @@ public sealed class CharacterHealth : MonoBehaviour
         float oldHealth = _currentHealth;
         _currentHealth = Mathf.Max(0f, _currentHealth - damage);
         float appliedDamage = oldHealth - _currentHealth;
+        if (appliedDamage > 0f && _cameraMotion)
+        {
+            _cameraMotion.PlayDamageFeedback(appliedDamage / Mathf.Max(1f, _maxHealth));
+        }
         _nextRecoveryTime = Time.time + RecoveryDelay;
         if (_currentHealth <= 0f)
         {

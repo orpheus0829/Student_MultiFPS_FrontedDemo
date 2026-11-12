@@ -10,6 +10,7 @@ public enum PlayerViewType
 [DisallowMultipleComponent]
 public sealed class PlayerAnimationView : MonoBehaviour
 {
+    private static readonly int PunchTrigger = Animator.StringToHash("Punch");
     private const float FirstPersonForwardThreshold = 0.1f;
     private const string UpperBodyWeaponLayerName = "UpperBodyWeapon";
 
@@ -47,8 +48,11 @@ public sealed class PlayerAnimationView : MonoBehaviour
     private bool _isUpperBodyWeaponActionActive;
     private bool _isFullBodyMotion;
     private bool _usesProceduralAutomaticFirePose;
+    private bool _isInspectActionActive;
     private WeaponActionType _upperBodyActionType;
     private Vector3 _restLocalPosition;
+    private AnimatorCullingMode _cullingModeBeforePunch;
+    private bool _hasPunchCullingOverride;
 
     private void Awake()
     {
@@ -87,6 +91,82 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
     }
 
+    public void StartPunch()
+    {
+        EnsureAnimatorBindings();
+        if (_characterAnimator && _characterAnimator.isActiveAndEnabled &&
+            _characterAnimator.gameObject.activeInHierarchy &&
+            _characterAnimator.runtimeAnimatorController &&
+            HasTriggerParameter(_characterAnimator, PunchTrigger))
+        {
+            if (!_hasPunchCullingOverride)
+            {
+                _cullingModeBeforePunch = _characterAnimator.cullingMode;
+                _hasPunchCullingOverride = true;
+            }
+            _characterAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            _characterAnimator.ResetTrigger(PunchTrigger);
+            _characterAnimator.SetTrigger(PunchTrigger);
+
+            // 近战层独立接管双臂/上半身。直接从该层播放挥砍，避免当前基础层
+            // 正处于换枪、疾跑或跳跃过渡时 AnyState Trigger 被延迟消费，造成
+            // “枪隐藏了但手臂仍停在原姿势”的半成品表现。
+            int meleeLayer = _characterAnimator.GetLayerIndex("MeleeUpperBody");
+            if (meleeLayer >= 0)
+            {
+                _characterAnimator.SetLayerWeight(meleeLayer, 1f);
+                int stateHash = Animator.StringToHash("MeleeUpperBody.MeleeSlash");
+                if (_characterAnimator.HasState(meleeLayer, stateHash))
+                {
+                    _characterAnimator.Play(stateHash, meleeLayer, 0f);
+                    _characterAnimator.Update(0f);
+                }
+            }
+        }
+    }
+
+    public void FinishPunch()
+    {
+        if (!_characterAnimator || !_characterAnimator.isActiveAndEnabled ||
+            !_characterAnimator.gameObject.activeInHierarchy ||
+            !_characterAnimator.runtimeAnimatorController)
+        {
+            return;
+        }
+
+        int meleeLayer = _characterAnimator.GetLayerIndex("MeleeUpperBody");
+        if (meleeLayer < 0)
+        {
+            return;
+        }
+
+        int emptyHash = Animator.StringToHash("MeleeUpperBody.Empty");
+        if (_characterAnimator.HasState(meleeLayer, emptyHash))
+        {
+            _characterAnimator.Play(emptyHash, meleeLayer, 0f);
+        }
+        _characterAnimator.SetLayerWeight(meleeLayer, 0f);
+        if (_hasPunchCullingOverride)
+        {
+            _characterAnimator.cullingMode = _cullingModeBeforePunch;
+            _hasPunchCullingOverride = false;
+        }
+    }
+
+    private static bool HasTriggerParameter(Animator animator, int parameterHash)
+    {
+        AnimatorControllerParameter[] parameters = animator.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i].nameHash == parameterHash &&
+                parameters[i].type == AnimatorControllerParameterType.Trigger)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void SetProceduralAutomaticFirePose(bool enabled)
     {
         _usesProceduralAutomaticFirePose = enabled;
@@ -108,6 +188,12 @@ public sealed class PlayerAnimationView : MonoBehaviour
         bool isSprinting = frame.IsSprinting;
         bool isVaulting = frame.IsVaulting;
         bool isSliding = frame.IsSliding;
+
+        // 检视期间仍允许角色移动，但冲刺姿势必须等检视完整结束后再覆盖。
+        if (_isInspectActionActive)
+        {
+            isSprinting = false;
+        }
 
         if (_viewType == PlayerViewType.FirstPerson)
         {
@@ -317,6 +403,8 @@ public sealed class PlayerAnimationView : MonoBehaviour
             return;
         }
 
+        _isInspectActionActive = action.ActionType == WeaponActionType.Inspect;
+
         EnsureAnimatorBindings();
         int actionValue = (int)action.ActionType;
         if (_viewType == PlayerViewType.FirstPerson &&
@@ -386,6 +474,10 @@ public sealed class PlayerAnimationView : MonoBehaviour
 
     public void CompleteWeaponAction(WeaponActionType actionType)
     {
+        if (actionType == WeaponActionType.Inspect)
+        {
+            _isInspectActionActive = false;
+        }
         EnsureAnimatorBindings();
         if (_viewType == PlayerViewType.ThirdPerson &&
             actionType == WeaponActionType.Fire)
@@ -420,6 +512,10 @@ public sealed class PlayerAnimationView : MonoBehaviour
 
     public void CancelWeaponAction(WeaponActionType actionType)
     {
+        if (actionType == WeaponActionType.Inspect)
+        {
+            _isInspectActionActive = false;
+        }
         EnsureAnimatorBindings();
         if (_viewType == PlayerViewType.ThirdPerson &&
             actionType == WeaponActionType.Fire)
@@ -489,6 +585,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
 
     public void ResetPresentation()
     {
+        _isInspectActionActive = false;
         _isUpperBodyWeaponActionActive = false;
         _upperBodyWeaponWeight = 0f;
         _upperBodyActionType = WeaponActionType.None;

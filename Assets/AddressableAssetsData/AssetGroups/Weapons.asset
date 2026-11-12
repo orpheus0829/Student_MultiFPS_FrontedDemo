@@ -29,6 +29,14 @@ MonoBehaviour:
     - type.prefab
     - weapon.mgx5
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0742a43426a82974181c721f6e798b89
+    m_Address: weapon.melee-fist.blade
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.prefab
+    - type.weapon
+    - weapon.melee-fist
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0d895228a90da104ba26cf45f96c412a
     m_Address: weapon.dgl-50.actions
     m_ReadOnly: 0
@@ -492,6 +500,14 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.animator
     - weapon.kolibri
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d67bf468eb62493b9043c030aa6f0172
+    m_Address: weapon.melee-fist.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.weapon
+    - weapon.melee-fist
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e067f90c461f0db4f83d69e7606a70a0
     m_Address: weapon.mps5.actions

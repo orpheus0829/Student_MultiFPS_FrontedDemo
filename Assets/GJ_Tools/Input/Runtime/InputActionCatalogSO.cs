@@ -201,7 +201,8 @@ public class InputActionCatalogSO : ScriptableObject
             new InputActionData(GJInputAction.Settings, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/escape")),
             new InputActionData(GJInputAction.CycleWeapon, InputActionType.PassThrough, "Vector2", InputActivationMode.Press, new InputBindingData("鼠标滚轮", "<Mouse>/scroll")),
             new InputActionData(GJInputAction.Slide, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/c")),
-            new InputActionData(GJInputAction.ToggleView, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/tab"))
+            new InputActionData(GJInputAction.ToggleView, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/tab")),
+            new InputActionData(GJInputAction.Punch, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/f"))
         };
     }
 

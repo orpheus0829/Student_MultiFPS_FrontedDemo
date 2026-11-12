@@ -13,6 +13,7 @@ public class PlayerActionCtrl : MonoBehaviour
     [SerializeField, InspectorName("玩家枪械栏")] private PlayerWeaponInventoryCtrl _weaponInventoryCtrl;
     [SerializeField, InspectorName("枪械动作")] private WeaponActionCtrl _weaponActionCtrl;
     [SerializeField, InspectorName("枪械战斗")] private WeaponCombatCtrl _weaponCombatCtrl;
+    [SerializeField, InspectorName("近战战斗")] private PlayerMeleeCombatCtrl _meleeCombatCtrl;
 
     [Header("第一人称反馈")]
     [SerializeField, InspectorName("镜头运动反馈")] private FirstPersonCameraMotionCtrl _cameraMotionCtrl;
@@ -22,12 +23,16 @@ public class PlayerActionCtrl : MonoBehaviour
     private bool _isFiring;
     private bool _weaponActionBlockedAim;
     private bool _wasAirborne;
+    private bool _isPunching;
 
     public event Action<PlayerInputCommand> CommandReceived;
     public event Action<bool> OperationLockChanged;
     public event Action FireShot;
     public event Action VaultStarted;
     public event Action VaultFinished;
+    public event Action PunchStarted;
+    public event Action PunchCompleted;
+    public event Action PunchCanceled;
 
     public PlayerDataSO PlayerData
     {
@@ -77,6 +82,22 @@ public class PlayerActionCtrl : MonoBehaviour
         }
     }
 
+    public bool IsPunching
+    {
+        get
+        {
+            return _isPunching;
+        }
+    }
+
+    public float PunchProgress
+    {
+        get
+        {
+            return _meleeCombatCtrl ? _meleeCombatCtrl.NormalizedProgress : 0f;
+        }
+    }
+
     private void Awake()
     {
         if (!_moveCtrl)
@@ -98,6 +119,14 @@ public class PlayerActionCtrl : MonoBehaviour
         if (!_weaponCombatCtrl)
         {
             TryGetComponent(out _weaponCombatCtrl);
+        }
+        if (!_meleeCombatCtrl)
+        {
+            TryGetComponent(out _meleeCombatCtrl);
+        }
+        if (!_meleeCombatCtrl)
+        {
+            _meleeCombatCtrl = gameObject.AddComponent<PlayerMeleeCombatCtrl>();
         }
         if (!_cameraMotionCtrl)
         {
@@ -140,6 +169,12 @@ public class PlayerActionCtrl : MonoBehaviour
         if (_weaponCombatCtrl)
         {
             _weaponCombatCtrl.ShotFired += HandleShotFired;
+        }
+        if (_meleeCombatCtrl)
+        {
+            _meleeCombatCtrl.PunchStarted += HandlePunchStarted;
+            _meleeCombatCtrl.PunchCompleted += HandlePunchCompleted;
+            _meleeCombatCtrl.PunchCanceled += HandlePunchCanceled;
         }
     }
 
@@ -191,6 +226,13 @@ public class PlayerActionCtrl : MonoBehaviour
         {
             _weaponCombatCtrl.ShotFired -= HandleShotFired;
         }
+        if (_meleeCombatCtrl)
+        {
+            _meleeCombatCtrl.PunchStarted -= HandlePunchStarted;
+            _meleeCombatCtrl.PunchCompleted -= HandlePunchCompleted;
+            _meleeCombatCtrl.PunchCanceled -= HandlePunchCanceled;
+            _meleeCombatCtrl.CancelPunch();
+        }
 
         if (_aimCtrl)
         {
@@ -207,6 +249,7 @@ public class PlayerActionCtrl : MonoBehaviour
         }
 
         _isFiring = false;
+        _isPunching = false;
         _weaponActionBlockedAim = false;
         _wasAirborne = false;
     }
@@ -220,12 +263,24 @@ public class PlayerActionCtrl : MonoBehaviour
 
         if (command.Action == GJInputAction.Aim)
         {
+            if (_isPunching)
+            {
+                if (command.Phase == PlayerInputPhase.Canceled)
+                {
+                    _aimCtrl.ReceiveAimInput(PlayerInputPhase.Canceled);
+                }
+                return;
+            }
             HandleAimCommand(command);
             return;
         }
 
         if (command.Action == GJInputAction.CycleWeapon)
         {
+            if (_isPunching)
+            {
+                return;
+            }
             HandleWeaponCycleCommand(command);
             return;
         }
@@ -243,6 +298,20 @@ public class PlayerActionCtrl : MonoBehaviour
         }
 
         if (IsOperationLocked)
+        {
+            return;
+        }
+
+        if (command.Action == GJInputAction.Punch)
+        {
+            HandlePunchCommand(command);
+            return;
+        }
+
+        if (_isPunching &&
+            (command.Action == GJInputAction.Fire ||
+            command.Action == GJInputAction.Reload ||
+            command.Action == GJInputAction.Inspect))
         {
             return;
         }
@@ -370,6 +439,16 @@ public class PlayerActionCtrl : MonoBehaviour
         }
     }
 
+    private void HandlePunchCommand(PlayerInputCommand command)
+    {
+        if (command.Phase != PlayerInputPhase.Started || !_meleeCombatCtrl)
+        {
+            return;
+        }
+
+        _meleeCombatCtrl.TryPunch();
+    }
+
     private void CancelInspect()
     {
         WeaponActionDefinition action = _weaponActionCtrl.CurrentAction;
@@ -406,6 +485,7 @@ public class PlayerActionCtrl : MonoBehaviour
 
     private void HandleVaultStarted()
     {
+        _meleeCombatCtrl?.CancelPunch();
         _isFiring = false;
         _weaponCombatCtrl.ReceiveFireInput(PlayerInputPhase.Canceled);
         _aimCtrl.CancelForVault();
@@ -486,6 +566,57 @@ public class PlayerActionCtrl : MonoBehaviour
         else
         {
             _cameraMotionCtrl.PlayFireFeedback();
+        }
+    }
+
+    private void HandlePunchStarted()
+    {
+        _isPunching = true;
+        _isFiring = false;
+        _weaponCombatCtrl.ReceiveFireInput(PlayerInputPhase.Canceled);
+
+        WeaponActionDefinition currentAction = _weaponActionCtrl.CurrentAction;
+        bool wasInspecting = currentAction != null &&
+            currentAction.ActionType == WeaponActionType.Inspect;
+        _weaponActionCtrl.CancelCurrentAction(
+            WeaponActionCancelReason.Manual,
+            true);
+        if (wasInspecting)
+        {
+            _cameraMotionCtrl?.CancelInspectFeedback();
+        }
+
+        // 即时清除瞄准进度，确保逻辑、FOV 与 Animator 不会继续残留举枪姿势。
+        _aimCtrl.BeginMeleeAction();
+        PunchStarted?.Invoke();
+    }
+
+    private void HandlePunchCompleted()
+    {
+        FinishPunch(false);
+    }
+
+    private void HandlePunchCanceled()
+    {
+        FinishPunch(true);
+    }
+
+    private void FinishPunch(bool canceled)
+    {
+        if (!_isPunching)
+        {
+            return;
+        }
+
+        _isPunching = false;
+        _aimCtrl.EndMeleeAction();
+        if (canceled)
+        {
+            PunchCanceled?.Invoke();
+        }
+        else
+        {
+            PunchCompleted?.Invoke();
         }
     }
 

@@ -55,7 +55,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -182,7 +182,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -257,7 +257,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -332,7 +332,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -447,16 +447,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4c2ce0fe7aac40f58114b59ad3aa7e82, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatHudUI
-  _healthBackgroundSprite: {fileID: 0}
-  _healthFillSprite: {fileID: 0}
-  _healthFrameSprite: {fileID: 0}
-  _ammoPanelSprite: {fileID: 0}
-  _bloodOverlaySprite: {fileID: 0}
-  _redGlowSprite: {fileID: 0}
-  _maximumBloodAlpha: 0.62
-  _maximumGlowAlpha: 0.72
+  _ammoPanelSprite: {fileID: 21300000, guid: 0dbdf47304d1cb94fa39b94774efea45, type: 3}
+  _bloodOverlaySprite: {fileID: 21300000, guid: 91a21e86c8496d143bdb93a4a161a622, type: 3}
+  _redGlowSprite: {fileID: 21300000, guid: 5fb1c562cdfa3a74eb2ac9de51d0b523, type: 3}
+  _maximumBloodAlpha: 0.82
+  _maximumGlowAlpha: 0.92
   _overlayFollowSpeed: 5
   _breathingFrequency: 1.15
   _breathingAmplitude: 0.16
@@ -538,7 +535,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d0688f069a346bfbd586daf59f149ec, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCrosshairUI
   _baseCrosshairGroup: {fileID: 111100006}
   _topLine: {fileID: 4179196515413749860}

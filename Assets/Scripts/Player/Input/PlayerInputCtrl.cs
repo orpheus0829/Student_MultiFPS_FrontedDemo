@@ -34,6 +34,7 @@ public class PlayerInputCtrl : MonoBehaviour
         EmitButton(GJInputAction.Inspect);
         EmitButton(GJInputAction.Scoreboard);
         EmitButton(GJInputAction.ToggleView);
+        EmitButton(GJInputAction.Punch);
         EmitButton(GJInputAction.Settings);
     }
 

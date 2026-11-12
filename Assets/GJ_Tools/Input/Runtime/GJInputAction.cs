@@ -12,5 +12,6 @@ public enum GJInputAction
     Settings = 9,
     CycleWeapon = 10,
     Slide = 11,
-    ToggleView = 12
+    ToggleView = 12,
+    Punch = 13
 }

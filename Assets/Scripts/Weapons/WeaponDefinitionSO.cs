@@ -6,6 +6,7 @@ public sealed class WeaponDefinitionSO : ScriptableObject
     [SerializeField] private WeaponBasicData _basic = new WeaponBasicData();
     [SerializeField] private WeaponFireData _fire = new WeaponFireData();
     [SerializeField] private WeaponDamageData _damage = new WeaponDamageData();
+    [SerializeField] private WeaponMeleeData _melee = new WeaponMeleeData();
     [SerializeField] private WeaponAmmoData _ammo = new WeaponAmmoData();
     [SerializeField] private WeaponAccuracyData _accuracy = new WeaponAccuracyData();
     [SerializeField] private WeaponGameplayRecoilData _gameplayRecoil = new WeaponGameplayRecoilData();
@@ -23,6 +24,7 @@ public sealed class WeaponDefinitionSO : ScriptableObject
     public WeaponBasicData Basic { get { return _basic; } }
     public WeaponFireData Fire { get { return _fire; } }
     public WeaponDamageData Damage { get { return _damage; } }
+    public WeaponMeleeData Melee { get { return _melee; } }
     public WeaponAmmoData Ammo { get { return _ammo; } }
     public WeaponAccuracyData Accuracy { get { return _accuracy; } }
     public WeaponGameplayRecoilData GameplayRecoil { get { return _gameplayRecoil; } }
@@ -52,6 +54,11 @@ public sealed class WeaponDefinitionSO : ScriptableObject
         if (_damage == null)
         {
             _damage = new WeaponDamageData();
+        }
+
+        if (_melee == null)
+        {
+            _melee = new WeaponMeleeData();
         }
 
         if (_ammo == null)

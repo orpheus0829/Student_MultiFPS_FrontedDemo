@@ -92,6 +92,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5167663255633709143, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
+      propertyPath: _maxHealth
+      value: 200
+      objectReference: {fileID: 0}
     - target: {fileID: 5407221480056961132, guid: ebcd729811b8c3843b52a280533834c4, type: 3}
       propertyPath: _autoRespawn
       value: 0

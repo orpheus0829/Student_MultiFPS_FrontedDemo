@@ -14,6 +14,7 @@ public sealed class PlayerAimCtrl : MonoBehaviour
     private bool _isAimRequested;
     private bool _isActionLocked;
     private bool _isWeaponActionBlocking;
+    private bool _isMeleeBlocking;
     private bool _requiresAimRelease;
     private float _aimProgress;
 
@@ -89,6 +90,7 @@ public sealed class PlayerAimCtrl : MonoBehaviour
         _isAimRequested = false;
         _isActionLocked = false;
         _isWeaponActionBlocking = false;
+        _isMeleeBlocking = false;
         _requiresAimRelease = false;
         SetAimProgress(0f);
     }
@@ -126,6 +128,7 @@ public sealed class PlayerAimCtrl : MonoBehaviour
         if (!CanAim() ||
             _isActionLocked ||
             _isWeaponActionBlocking ||
+            _isMeleeBlocking ||
             _requiresAimRelease)
         {
             return false;
@@ -149,6 +152,26 @@ public sealed class PlayerAimCtrl : MonoBehaviour
     public void EndWeaponAction()
     {
         _isWeaponActionBlocking = false;
+        if (_isAimInputHeld)
+        {
+            TryStartAim();
+        }
+    }
+
+    /// <summary>
+    /// 拳击开始时立刻撤销瞄准逻辑和瞄准姿势。这里独立于枪械动作锁，
+    /// 避免拳击取消换弹后，换弹结束回调错误地把仍在按住的瞄准重新举起。
+    /// </summary>
+    public void BeginMeleeAction()
+    {
+        _isMeleeBlocking = true;
+        StopAim();
+        SetAimProgress(0f);
+    }
+
+    public void EndMeleeAction()
+    {
+        _isMeleeBlocking = false;
         if (_isAimInputHeld)
         {
             TryStartAim();

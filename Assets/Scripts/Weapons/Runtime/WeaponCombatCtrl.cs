@@ -222,8 +222,9 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         if (_actionCtrl.IsBusy)
         {
             WeaponActionDefinition currentAction = _actionCtrl.CurrentAction;
+            bool isInspect = currentAction.ActionType == WeaponActionType.Inspect;
             bool isPerRoundReload = IsPerRoundAction(currentAction.ActionType);
-            if (!isPerRoundReload && !_actionCtrl.CanFireAfterReloadCommit)
+            if (!isInspect && !isPerRoundReload && !_actionCtrl.CanFireAfterReloadCommit)
             {
                 return false;
             }

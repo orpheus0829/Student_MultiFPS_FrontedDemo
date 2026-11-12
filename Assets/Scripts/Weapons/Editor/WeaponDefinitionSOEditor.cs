@@ -63,6 +63,7 @@ public sealed class WeaponDefinitionSOEditor : Editor
         {
             DrawFireData();
             DrawDamageData();
+            DrawMeleeData();
             DrawAmmoData();
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
@@ -119,6 +120,17 @@ public sealed class WeaponDefinitionSOEditor : Editor
         Draw("_damage._closeDistanceScoreFactor", "近距离得分系数");
         Draw("_damage._farDistanceScoreFactor", "远距离得分系数");
         Draw("_damage._killBonus", "击杀奖励");
+    }
+
+    private void DrawMeleeData()
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("近战命中", EditorStyles.boldLabel);
+        Draw("_melee._enabled", "启用近战命中");
+        Draw("_melee._range", "攻击距离");
+        Draw("_melee._radius", "攻击半径");
+        Draw("_melee._impactDelay", "出拳至命中的延迟");
+        Draw("_melee._actionDuration", "完整动作时间");
     }
 
     private void DrawAmmoData()

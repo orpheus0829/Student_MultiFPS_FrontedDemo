@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &969490858315363116
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 265216633828713855, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: playOnAwake
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 265216633828713855, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 0.22500001
+      objectReference: {fileID: 0}
+    - target: {fileID: 265216633828713855, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].countCurve.scalar
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 265216633828713855, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].countCurve.minMaxState
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2536666484147888349, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_Name
+      value: MeleeHitBurst
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6596759783850418278, guid: ce249aaba124403448a807c5c6eb92be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ce249aaba124403448a807c5c6eb92be, type: 3}

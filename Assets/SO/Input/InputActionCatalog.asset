@@ -193,8 +193,20 @@ MonoBehaviour:
     _bindings:
     - _name: "\u952E\u76D8"
       _path: <Keyboard>/tab
-      _interactions:
-      _processors:
-      _groups:
+      _interactions: 
+      _processors: 
+      _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 13
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Mouse>/forwardButton
+      _interactions: 
+      _processors: 
+      _groups: 
       _isComposite: 0
       _isPartOfComposite: 0

@@ -144,6 +144,9 @@ MonoBehaviour:
     - type.character
     - type.voice
     - effect.projectile
+    - type.weapon
+    - weapon.melee-fist
+    - effect.melee
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: 091ee3b7ecf690147a371c94278d3774, type: 2}
