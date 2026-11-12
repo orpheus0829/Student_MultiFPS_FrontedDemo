@@ -2070,9 +2070,10 @@ MonoBehaviour:
   _maximumLookDownAngle: 32
   _upperBodyPitchSpeed: 10
   _upperBodyPitchBlendSpeed: 8
-  _meleeBladePrefab: {fileID: 292881475993496346, guid: 0742a43426a82974181c721f6e798b89, type: 3}
-  _firstPersonBladeScale: 0.1
-  _thirdPersonBladeScale: 0.1
+  _showMeleeBlade: 0
+  _meleeBladePrefab: {fileID: 46080550320215766, guid: 746dcfad5135c554282d11e7dcb6a16d, type: 3}
+  _firstPersonBladeScale: 0.5
+  _thirdPersonBladeScale: 0.5
 --- !u!114 &2675419983097019558
 MonoBehaviour:
   m_ObjectHideFlags: 0

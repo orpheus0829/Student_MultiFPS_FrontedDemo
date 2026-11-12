@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 public sealed class CharacterHealth : MonoBehaviour
 {
+    private static readonly List<CharacterHealth> ActiveActors = new List<CharacterHealth>();
     [Header("生命值")]
     [SerializeField, Min(1f), InspectorName("生命上限")] private float _maxHealth = 100f;
 
@@ -39,6 +41,15 @@ public sealed class CharacterHealth : MonoBehaviour
         }
     }
 
+    public bool IsRecovering
+    {
+        get
+        {
+            return !_isDead && _currentHealth < _maxHealth &&
+                Time.time >= _nextRecoveryTime;
+        }
+    }
+
     public PlayerInfo PlayerInfo
     {
         get
@@ -50,12 +61,34 @@ public sealed class CharacterHealth : MonoBehaviour
     public event Action<float, float> HealthChanged;
     public event Action Died;
 
+    public static IReadOnlyList<CharacterHealth> Actors
+    {
+        get { return ActiveActors; }
+    }
+
     private void Awake()
     {
         TryGetComponent(out _playerInfo);
         TryGetComponent(out _lifeCtrl);
         _cameraMotion = GetComponentInChildren<FirstPersonCameraMotionCtrl>(true);
         ResetHealth();
+        if (!TryGetComponent<AINoiseEmitter>(out _))
+        {
+            gameObject.AddComponent<AINoiseEmitter>();
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (!ActiveActors.Contains(this))
+        {
+            ActiveActors.Add(this);
+        }
+    }
+
+    private void OnDisable()
+    {
+        ActiveActors.Remove(this);
     }
 
     private void Update()
@@ -158,5 +191,11 @@ public sealed class CharacterHealth : MonoBehaviour
             PlayerDataSO data = _lifeCtrl ? _lifeCtrl.PlayerData : null;
             return data ? Mathf.Max(0.1f, data.HealthRecoveryDuration) : 6f;
         }
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        ActiveActors.Clear();
     }
 }

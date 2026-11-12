@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponDefinitionSO
   _basic:
     _weaponId: melee-fist
-    _weaponName: "\u62F3\u51FB"
+    _weaponName: "\u8FD1\u6218\u653B\u51FB"
     _category: 9
     _tags: 1
     _iconResourceId: weapon.melee-fist.silhouette
@@ -52,8 +52,8 @@ MonoBehaviour:
     _enabled: 1
     _range: 1.65
     _radius: 0.55
-    _impactDelay: 0.3666
-    _actionDuration: 1.3334
+    _impactDelay: 0.0666667
+    _actionDuration: 1.0333333
   _ammo:
     _magazineCapacity: 1
     _startingReserveAmmo: 0

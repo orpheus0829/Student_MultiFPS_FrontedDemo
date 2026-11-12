@@ -8,7 +8,6 @@ using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 
-[InitializeOnLoad]
 public static class MeleeTimelinePreviewBuilder
 {
     private const int PreviewBuildVersion = 3;
@@ -30,11 +29,6 @@ public static class MeleeTimelinePreviewBuilder
     private static readonly Quaternion BladeRotation =
         new Quaternion(0.009287184f, 0.70543915f, -0.31225657f, 0.63621175f);
     private static readonly Vector3 BladeScale = new Vector3(1f, 0.6f, 0.1f);
-
-    static MeleeTimelinePreviewBuilder()
-    {
-        EditorApplication.delayCall += BuildMissingPreviews;
-    }
 
     [MenuItem("GunDemo/近战/生成或重建第一与第三人称 Timeline 预览")]
     public static void RebuildAll()
@@ -70,6 +64,12 @@ public static class MeleeTimelinePreviewBuilder
         {
             Debug.LogException(exception);
         }
+    }
+
+    [MenuItem("GunDemo/近战/返回正常游戏场景 %#g")]
+    public static void ReturnToGameScene()
+    {
+        EditorSceneManager.OpenScene("Assets/Scenes/example.unity", OpenSceneMode.Single);
     }
 
     private static void BuildMissingPreviews()

@@ -6,6 +6,9 @@ public sealed class AIPathNavigator
     private const float CornerReachedDistance = 0.65f;
     private readonly NavMeshPath _path = new NavMeshPath();
     private int _cornerIndex;
+    private Vector3 _lastOrigin;
+    private Vector3 _lastDestination;
+    private float _nextCalculationTime;
 
     public bool HasPath
     {
@@ -18,6 +21,15 @@ public sealed class AIPathNavigator
 
     public bool Calculate(Vector3 origin, Vector3 destination)
     {
+        if (Time.time < _nextCalculationTime &&
+            Vector3.Distance(origin, _lastOrigin) < 1f &&
+            Vector3.Distance(destination, _lastDestination) < 1.5f)
+        {
+            return HasPath;
+        }
+        _nextCalculationTime = Time.time + 0.2f;
+        _lastOrigin = origin;
+        _lastDestination = destination;
         _path.ClearCorners();
         _cornerIndex = 1;
         if (!NavMesh.SamplePosition(origin, out NavMeshHit start, 3f, NavMesh.AllAreas) ||

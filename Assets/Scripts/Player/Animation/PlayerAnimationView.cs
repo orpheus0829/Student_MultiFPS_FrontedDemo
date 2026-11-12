@@ -11,6 +11,9 @@ public enum PlayerViewType
 public sealed class PlayerAnimationView : MonoBehaviour
 {
     private static readonly int PunchTrigger = Animator.StringToHash("Punch");
+    // 原动画半速后的完整时长为 1.3333333 秒；只使用末尾 1.0333333 秒。
+    // 因此从归一化 0.225 处开始，随后正向播放至动画末尾。
+    private const float MeleeStartNormalizedTime = 0.225f;
     private const float FirstPersonForwardThreshold = 0.1f;
     private const string UpperBodyWeaponLayerName = "UpperBodyWeapon";
 
@@ -118,7 +121,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
                 int stateHash = Animator.StringToHash("MeleeUpperBody.MeleeSlash");
                 if (_characterAnimator.HasState(meleeLayer, stateHash))
                 {
-                    _characterAnimator.Play(stateHash, meleeLayer, 0f);
+                    _characterAnimator.Play(stateHash, meleeLayer, MeleeStartNormalizedTime);
                     _characterAnimator.Update(0f);
                 }
             }

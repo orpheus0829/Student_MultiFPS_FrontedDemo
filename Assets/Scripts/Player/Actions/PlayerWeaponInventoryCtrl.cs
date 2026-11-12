@@ -60,6 +60,14 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         }
     }
 
+    public int CurrentWeaponIndex
+    {
+        get
+        {
+            return _currentIndex;
+        }
+    }
+
     public int ConfiguredWeaponCount
     {
         get
@@ -124,14 +132,18 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 
     public bool TryCycle(int direction)
     {
-        if (direction == 0 || _isSwitching || !_weaponActionCtrl ||
-            GetUsableWeaponCount() <= 1)
+        if (direction == 0 || GetUsableWeaponCount() <= 1)
         {
             return false;
         }
 
-        int targetIndex = FindNextIndex(direction > 0 ? 1 : -1);
-        if (targetIndex < 0 || targetIndex == _currentIndex)
+        return TryEquipIndex(FindNextIndex(direction > 0 ? 1 : -1));
+    }
+
+    public bool TryEquipIndex(int index)
+    {
+        if (!IsIndexUsable(index) || index == _currentIndex || _isSwitching ||
+            !_weaponActionCtrl)
         {
             return false;
         }
@@ -139,10 +151,10 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         _weaponActionCtrl.CancelCurrentAction(
             WeaponActionCancelReason.WeaponChanged,
             true);
-        _pendingIndex = targetIndex;
+        _pendingIndex = index;
         _isSwitching = true;
         int switchVersion = ++_switchVersion;
-        _prepareTask = PrepareSwitchAsync(_weaponResourceIds[targetIndex], switchVersion);
+        _prepareTask = PrepareSwitchAsync(_weaponResourceIds[index], switchVersion);
 
         if (!_weaponActionCtrl.TryStartAction(WeaponActionType.Holster))
         {

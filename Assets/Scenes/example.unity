@@ -4209,8 +4209,12 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1942660574578620649, guid: 809848eefcc98f14091876e28cee069c, type: 3}
+      propertyPath: _aiCount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1942660574578620649, guid: 809848eefcc98f14091876e28cee069c, type: 3}
       propertyPath: _aiDefinitions.Array.size
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1942660574578620649, guid: 809848eefcc98f14091876e28cee069c, type: 3}
       propertyPath: _aiDefinitions.Array.data[0]._difficulty

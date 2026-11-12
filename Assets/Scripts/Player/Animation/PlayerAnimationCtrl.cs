@@ -27,17 +27,16 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
     private float _upperBodyPitchBlendSpeed = 8f;
 
     [Header("近战刀劈表现")]
+    [SerializeField, InspectorName("显示近战刀")] private bool _showMeleeBlade;
     [SerializeField, InspectorName("安比近战刀预制体")] private GameObject _meleeBladePrefab;
-    [SerializeField, Min(0.001f), InspectorName("第一人称刀缩放")] private float _firstPersonBladeScale = 0.1f;
-    [SerializeField, Min(0.001f), InspectorName("第三人称刀缩放")] private float _thirdPersonBladeScale = 0.1f;
+    [SerializeField, Min(0.001f), InspectorName("第一人称刀缩放倍率")] private float _firstPersonBladeScale = 0.5f;
+    [SerializeField, Min(0.001f), InspectorName("第三人称刀缩放倍率")] private float _thirdPersonBladeScale = 0.5f;
 
-    // 原样取自 RPG/Action_RPG_Demo 的安比 Prefab：
-    // hand_r -> Grab_Weapon -> 刀。不要把两级变换近似合并，否则在 FP 骨架上会偏位。
-    private static readonly Vector3 RpgGrabWeaponPosition =
-        new Vector3(-0.07887875f, 0.061014097f, 0.0068266448f);
-    private static readonly Vector3 RpgBladePosition = new Vector3(-0.095f, -0.177f, -0.146f);
+    // RPG ATK2 在 0.1 秒激活的安比武器_L_2，挂在左手骨下的原始变换。
+    private static readonly Vector3 RpgBladePosition = new Vector3(-0.0803f, -0.158f, 0.09f);
     private static readonly Quaternion RpgBladeRotation =
-        new Quaternion(-0.11309409f, -0.678862f, -0.034314904f, -0.72469217f);
+        new Quaternion(0.009287184f, 0.70543915f, -0.31225657f, 0.63621175f);
+    private static readonly Vector3 RpgBladeScale = new Vector3(1f, 0.6f, 0.1f);
 
     private FirstPersonCameraCtrl _cameraCtrl;
     private CharacterHealth _health;
@@ -204,7 +203,10 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
 
         _isPunchPresentationActive = true;
         _weaponViewCtrl?.SetWeaponModelsVisible(false);
-        SpawnMeleeBlades();
+        if (_showMeleeBlade)
+        {
+            SpawnMeleeBlades();
+        }
 
         if (_firstPersonView)
         {
@@ -232,10 +234,10 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         {
             return;
         }
-        Transform firstHand = FindRightHand(_firstPersonView, false);
-        Transform thirdHand = FindRightHand(_thirdPersonView, true);
-        _firstPersonMeleeBlade = SpawnBlade(firstHand, _firstPersonBladeScale, "FP_Grab_Weapon");
-        _thirdPersonMeleeBlade = SpawnBlade(thirdHand, _thirdPersonBladeScale, "TP_Grab_Weapon");
+        Transform firstHand = FindLeftHand(_firstPersonView, false);
+        Transform thirdHand = FindLeftHand(_thirdPersonView, true);
+        _firstPersonMeleeBlade = SpawnBlade(firstHand, _firstPersonBladeScale, "FP_BLACK_BLADE");
+        _thirdPersonMeleeBlade = SpawnBlade(thirdHand, _thirdPersonBladeScale, "TP_BLACK_BLADE");
     }
 
     private GameObject SpawnBlade(Transform hand, float bladeScale, string pivotName)
@@ -244,78 +246,18 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         {
             return null;
         }
-        GameObject pivot = new GameObject(pivotName);
-        pivot.transform.SetParent(hand, false);
-        pivot.transform.localPosition = RpgGrabWeaponPosition;
-        pivot.transform.localRotation = Quaternion.identity;
-        pivot.transform.localScale = Vector3.one;
-
-        GameObject blade = Instantiate(_meleeBladePrefab, pivot.transform, false);
-        blade.name = _meleeBladePrefab.name;
+        GameObject blade = Instantiate(_meleeBladePrefab, hand, false);
+        blade.name = pivotName;
+        Vector3 prefabScale = blade.transform.localScale;
         blade.transform.localPosition = RpgBladePosition;
         blade.transform.localRotation = RpgBladeRotation;
-        blade.transform.localScale = Vector3.one * Mathf.Max(0.01f, bladeScale);
-        KeepOnlyBlackWeaponGeometry(blade);
-        return pivot;
+        blade.transform.localScale = Vector3.Scale(
+            prefabScale,
+            RpgBladeScale * Mathf.Max(0.01f, bladeScale));
+        return blade;
     }
 
-    private static void KeepOnlyBlackWeaponGeometry(GameObject blade)
-    {
-        // 该 FBX 把绿色刀鞘和黑色棍状刀体合并在同一个 SkinnedMesh 中。
-        // 只缩放 joint_katana 会把刀鞘压成一团，仍会残留；这里按蒙皮权重
-        // 真正删除刀鞘三角形，只留下 joint_Anbi_Weapon_* 控制的黑色刀体。
-        foreach (SkinnedMeshRenderer renderer in blade.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-        {
-            Mesh source = renderer.sharedMesh;
-            if (!source || !source.isReadable)
-            {
-                continue;
-            }
-
-            Transform[] bones = renderer.bones;
-            bool[] weaponBones = new bool[bones.Length];
-            for (int i = 0; i < bones.Length; i++)
-            {
-                weaponBones[i] = bones[i] && bones[i].name.IndexOf(
-                    "joint_Anbi_Weapon", System.StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            BoneWeight[] weights = source.boneWeights;
-            Mesh filtered = Instantiate(source);
-            filtered.name = source.name + "_BlackWeaponOnly";
-            for (int subMesh = 0; subMesh < source.subMeshCount; subMesh++)
-            {
-                int[] triangles = source.GetTriangles(subMesh);
-                var kept = new System.Collections.Generic.List<int>(triangles.Length);
-                for (int i = 0; i + 2 < triangles.Length; i += 3)
-                {
-                    if (UsesWeaponBone(weights[triangles[i]], weaponBones) +
-                        UsesWeaponBone(weights[triangles[i + 1]], weaponBones) +
-                        UsesWeaponBone(weights[triangles[i + 2]], weaponBones) >= 1.5f)
-                    {
-                        kept.Add(triangles[i]);
-                        kept.Add(triangles[i + 1]);
-                        kept.Add(triangles[i + 2]);
-                    }
-                }
-                filtered.SetTriangles(kept, subMesh, false);
-            }
-            filtered.RecalculateBounds();
-            renderer.sharedMesh = filtered;
-        }
-    }
-
-    private static float UsesWeaponBone(BoneWeight weight, bool[] weaponBones)
-    {
-        float result = 0f;
-        if (weight.boneIndex0 < weaponBones.Length && weaponBones[weight.boneIndex0]) result += weight.weight0;
-        if (weight.boneIndex1 < weaponBones.Length && weaponBones[weight.boneIndex1]) result += weight.weight1;
-        if (weight.boneIndex2 < weaponBones.Length && weaponBones[weight.boneIndex2]) result += weight.weight2;
-        if (weight.boneIndex3 < weaponBones.Length && weaponBones[weight.boneIndex3]) result += weight.weight3;
-        return result;
-    }
-
-    private static Transform FindRightHand(PlayerAnimationView view, bool humanoid)
+    private static Transform FindLeftHand(PlayerAnimationView view, bool humanoid)
     {
         Animator animator = view ? view.CharacterAnimator : null;
         if (!animator)
@@ -324,11 +266,11 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         }
         if (humanoid && animator.isHuman)
         {
-            return animator.GetBoneTransform(HumanBodyBones.RightHand);
+            return animator.GetBoneTransform(HumanBodyBones.LeftHand);
         }
         foreach (Transform child in animator.GetComponentsInChildren<Transform>(true))
         {
-            if (child.name == "hand_r") return child;
+            if (child.name == "hand_l") return child;
         }
         return null;
     }
