@@ -108,7 +108,7 @@ MonoBehaviour:
     connectionMode: 0
     rotationalInterpolation: 0.5
     rootRotation: 0
-    updateMode: 10
+    updateMode: 0
     animationPoseRatio: 0
     reductionSetting:
       simpleDistance: 0
@@ -129,7 +129,7 @@ MonoBehaviour:
       distanceCullingFadeRatio: 0.2
       distanceCullingReferenceObject: {fileID: 0}
     normalAxis: 1
-    gravity: 9.8
+    gravity: 4.37
     gravityDirection:
       x: 0
       y: -1
@@ -138,7 +138,7 @@ MonoBehaviour:
     stablizationTimeAfterReset: 0.25
     blendWeight: 1
     damping:
-      value: 0.12
+      value: 0
       useCurve: 0
       curve:
         serializedVersion: 2
@@ -221,7 +221,7 @@ MonoBehaviour:
       distanceCompression: 0.08
     distanceConstraint:
       stiffness:
-        value: 1
+        value: 0.5
         useCurve: 0
         curve:
           serializedVersion: 2
@@ -313,7 +313,7 @@ MonoBehaviour:
     motionConstraint:
       useMaxDistance: 1
       maxDistance:
-        value: 0.75
+        value: 0.78
         useCurve: 1
         curve:
           serializedVersion: 2
@@ -435,13 +435,13 @@ MonoBehaviour:
       syncPartner: {fileID: 0}
       clothMass: 0
     wind:
-      influence: 0
-      frequency: 1
-      turbulence: 1
+      influence: 2
+      frequency: 1.41
+      turbulence: 1.43
       blend: 0.7
       synchronization: 0.7
       depthWeight: 0
-      movingWind: 0
+      movingWind: 3.88
     springConstraint:
       useSpring: 0
       springPower: 0.04
@@ -450,94 +450,363 @@ MonoBehaviour:
       springNoise: 0
   serializeData2:
     initData:
-      initVersion: 0
-      localHash: 0
-      globalHash: 0
-      clothType: 0
+      initVersion: 2
+      localHash: 36734
+      globalHash: 1333638273
+      clothType: 1
       clothTransformRecord:
-        transform: {fileID: 0}
+        transform: {fileID: 2662067226115722545}
         localPosition: {x: 0, y: 0, z: 0}
-        localRotation: {x: 0, y: 0, z: 0, w: 0}
-        position: {x: 0, y: 0, z: 0}
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        scale: {x: 0, y: 0, z: 0}
+        localRotation: {x: 0, y: 0, z: 0, w: 1}
+        position: {x: 32.302116, y: 0.12999833, z: 4.6200986}
+        rotation: {x: -0, y: -0, z: -0, w: 1}
+        scale: {x: 1, y: 1, z: 1}
         localToWorldMatrix:
-          e00: 0
+          e00: 1
           e01: 0
           e02: 0
-          e03: 0
+          e03: 32.302116
           e10: 0
-          e11: 0
+          e11: 1
           e12: 0
-          e13: 0
+          e13: 0.12999833
           e20: 0
           e21: 0
-          e22: 0
-          e23: 0
+          e22: 1
+          e23: 4.6200986
           e30: 0
           e31: 0
           e32: 0
-          e33: 0
+          e33: 1
         worldToLocalMatrix:
-          e00: 0
+          e00: 1
           e01: 0
           e02: 0
-          e03: 0
+          e03: -32.302116
           e10: 0
-          e11: 0
+          e11: 1
           e12: 0
-          e13: 0
+          e13: -0.12999833
           e20: 0
           e21: 0
-          e22: 0
-          e23: 0
+          e22: 1
+          e23: -4.6200986
           e30: 0
           e31: 0
           e32: 0
-          e33: 0
+          e33: 1
       normalAdjustmentTransformRecord:
-        transform: {fileID: 0}
+        transform: {fileID: 2662067226115722545}
         localPosition: {x: 0, y: 0, z: 0}
-        localRotation: {x: 0, y: 0, z: 0, w: 0}
-        position: {x: 0, y: 0, z: 0}
-        rotation: {x: 0, y: 0, z: 0, w: 0}
-        scale: {x: 0, y: 0, z: 0}
+        localRotation: {x: 0, y: 0, z: 0, w: 1}
+        position: {x: 32.302116, y: 0.12999833, z: 4.6200986}
+        rotation: {x: -0, y: -0, z: -0, w: 1}
+        scale: {x: 1, y: 1, z: 1}
         localToWorldMatrix:
-          e00: 0
+          e00: 1
           e01: 0
           e02: 0
-          e03: 0
+          e03: 32.302116
           e10: 0
-          e11: 0
+          e11: 1
           e12: 0
-          e13: 0
+          e13: 0.12999833
           e20: 0
           e21: 0
-          e22: 0
-          e23: 0
+          e22: 1
+          e23: 4.6200986
           e30: 0
           e31: 0
           e32: 0
-          e33: 0
+          e33: 1
         worldToLocalMatrix:
-          e00: 0
+          e00: 1
           e01: 0
           e02: 0
-          e03: 0
+          e03: -32.302116
           e10: 0
-          e11: 0
+          e11: 1
           e12: 0
-          e13: 0
+          e13: -0.12999833
           e20: 0
           e21: 0
-          e22: 0
-          e23: 0
+          e22: 1
+          e23: -4.6200986
           e30: 0
           e31: 0
           e32: 0
-          e33: 0
+          e33: 1
       customSkinningBoneRecords: []
-      clothSetupDataList: []
+      clothSetupDataList:
+      - setupType: 1
+        vertexCount: 0
+        hasSkinnedMesh: 0
+        hasBoneWeight: 0
+        skinRootBoneIndex: 0
+        renderTransformIndex: 9
+        skinBoneCount: 9
+        transformCount: 10
+        useTransformCount: 10
+        useTransformIndexArray: 00000000010000000200000003000000040000000500000006000000070000000800000009000000
+        transformArray:
+        - {fileID: 1330494780775822952}
+        - {fileID: 2263625790845208027}
+        - {fileID: 4806245825922751373}
+        - {fileID: 4987751258193647150}
+        - {fileID: 2436183568544239059}
+        - {fileID: 3916081281180289809}
+        - {fileID: 2696323590609142698}
+        - {fileID: 1141108999969163026}
+        - {fileID: 3628869509825398186}
+        - {fileID: 2662067226115722545}
+        transformPositions:
+        - x: 32.30212
+          y: 1.1810284
+          z: 4.558737
+        - x: 32.30212
+          y: 1.1770787
+          z: 4.459626
+        - x: 32.302124
+          y: 1.1708428
+          z: 4.3032117
+        - x: 32.302128
+          y: 1.1648141
+          z: 4.151789
+        - x: 32.30213
+          y: 1.1583701
+          z: 3.990591
+        - x: 32.30213
+          y: 1.1521332
+          z: 3.8329287
+        - x: 32.302135
+          y: 1.1448576
+          z: 3.6518664
+        - x: 32.30172
+          y: 1.1111622
+          z: 3.599244
+        - x: 32.303493
+          y: 1.2559311
+          z: 3.504918
+        - x: 32.302116
+          y: 0.12999833
+          z: 4.6200986
+        transformRotations:
+        - value:
+            x: 0.7210474
+            y: 0.000006162257
+            z: 0.000006162252
+            w: -0.69288564
+        - value:
+            x: 0.72105336
+            y: 0.000006162136
+            z: 0.0000061621386
+            w: -0.69287944
+        - value:
+            x: 0.721035
+            y: 0.0000061624764
+            z: 0.0000061624783
+            w: -0.6928985
+        - value:
+            x: 0.72109056
+            y: 0.000006161499
+            z: 0.000006161502
+            w: -0.6928408
+        - value:
+            x: 0.7209461
+            y: 0.0000061640167
+            z: 0.0000061640185
+            w: -0.69299114
+        - value:
+            x: 0.7211628
+            y: 0.0000061602573
+            z: 0.000006160259
+            w: -0.6927655
+        - value:
+            x: -0.6584163
+            y: -0.0000835855
+            z: -0.0000835855
+            w: -0.7526541
+        - value:
+            x: -0.00000074505806
+            y: 2.2532709e-10
+            z: 0.0000000024626843
+            w: -0.9999999
+        - value:
+            x: -0.00000059604645
+            y: 2.2789581e-10
+            z: 0.00000000181939
+            w: -0.9999999
+        - value:
+            x: -0
+            y: -0
+            z: -0
+            w: 1
+        transformLocalPositions:
+        - x: 0.0000000018388232
+          y: 0.00089730613
+          z: -0.00083256274
+        - x: -2.8421708e-15
+          y: 0.0009918971
+          z: 2.7475874e-10
+        - x: 9.094947e-15
+          y: 0.0015653863
+          z: -9.964871e-10
+        - x: -4.5474734e-15
+          y: 0.0015154243
+          z: 2.4218105e-10
+        - x: 2.842171e-16
+          y: 0.0016132703
+          z: 9.499961e-10
+        - x: 5.1159075e-15
+          y: 0.0015778579
+          z: -3.7196784e-11
+        - x: 1.08002494e-14
+          y: 0.0018120855
+          z: 1.1182672e-10
+        - x: -0.0000042274023
+          y: -0.0005663558
+          z: 0.00026398207
+        - x: 0.000013849954
+          y: -0.0013087352
+          z: -0.0012962508
+        - x: 0
+          y: 0
+          z: 0
+        transformLocalRotations:
+        - value:
+            x: -0.7303151
+            y: -0.000006471449
+            z: 0.000005305674
+            w: 0.6831104
+        - value:
+            x: -0.000008717179
+            y: -7.572254e-11
+            z: 1.6566837e-10
+            w: 1
+        - value:
+            x: 0.000026531521
+            y: 2.4078872e-10
+            z: -4.767595e-10
+            w: 1
+        - value:
+            x: -0.00008008629
+            y: -7.252723e-10
+            z: 0.0000000013675181
+            w: 1
+        - value:
+            x: 0.00020847007
+            y: 0.000000001887287
+            z: -0.000000003522951
+            w: 1
+        - value:
+            x: -0.00031292255
+            y: -0.000000002832387
+            z: 0.000000005261701
+            w: 0.99999994
+        - value:
+            x: 0.99891424
+            y: 0.0000063189405
+            z: 0.00011876446
+            w: 0.046587363
+        - value:
+            x: -0.6584157
+            y: -0.00008358736
+            z: -0.000083587154
+            w: 0.7526545
+        - value:
+            x: -0.6584158
+            y: -0.00008358692
+            z: -0.00008358668
+            w: 0.7526544
+        - value:
+            x: 0
+            y: 0
+            z: 0
+            w: 1
+        transformScales:
+        - x: 100
+          y: 99.99998
+          z: 99.99995
+        - x: 100
+          y: 99.99997
+          z: 99.99994
+        - x: 100
+          y: 99.99997
+          z: 99.99994
+        - x: 100
+          y: 99.99997
+          z: 99.99995
+        - x: 100
+          y: 99.99997
+          z: 99.999954
+        - x: 100
+          y: 99.99999
+          z: 99.99996
+        - x: 100
+          y: 99.99996
+          z: 100.00181
+        - x: 100
+          y: 100.00177
+          z: 100.00001
+        - x: 100
+          y: 100.001755
+          z: 99.99999
+        - x: 1
+          y: 1
+          z: 1
+        initRenderLocalToWorld:
+          c0:
+            x: 1
+            y: 0
+            z: 0
+            w: 0
+          c1:
+            x: 0
+            y: 1
+            z: 0
+            w: 0
+          c2:
+            x: 0
+            y: 0
+            z: 1
+            w: 0
+          c3:
+            x: 32.302116
+            y: 0.12999833
+            z: 4.6200986
+            w: 1
+        initRenderWorldtoLocal:
+          c0:
+            x: 1
+            y: 0
+            z: -0
+            w: -0
+          c1:
+            x: 0
+            y: 1
+            z: -0
+            w: -0
+          c2:
+            x: 0
+            y: 0
+            z: 1
+            w: -0
+          c3:
+            x: -32.302116
+            y: -0.12999833
+            z: -4.6200986
+            w: 1
+        initRenderRotation:
+          value:
+            x: -0
+            y: -0
+            z: -0
+            w: 1
+        initRenderScale:
+          x: 1
+          y: 1
+          z: 1
+        originalMesh: {fileID: 0}
     selectionData:
       positions:
       - x: 0.0000036243528
@@ -626,15 +895,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 32.302116
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.12999833
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 4.6200986
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
       propertyPath: m_LocalRotation.w
@@ -735,14 +1004,54 @@ PrefabInstance:
       addedObject: {fileID: 8035947633071357088}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+--- !u!4 &1141108999969163026 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2881596430932345870, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1330494780775822952 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -5017667711395744396, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
   m_PrefabInstance: {fileID: 2894534974531715868}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &2263625790845208027 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -5241777026941745465, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2436183568544239059 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 712804821443366607, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2696323590609142698 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8268555880871771978, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3432250084255147255 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3628869509825398186 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -7316342036157970762, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3916081281180289809 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -7029060100603607027, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4806245825922751373 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7680962986508032145, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
+  m_PrefabInstance: {fileID: 2894534974531715868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4987751258193647150 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7859759291908724018, guid: 8c5a38331f666a445af180bc4436e0da, type: 3}
   m_PrefabInstance: {fileID: 2894534974531715868}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &6375328338121847071 stripped
