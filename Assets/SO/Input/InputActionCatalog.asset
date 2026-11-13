@@ -132,7 +132,7 @@ MonoBehaviour:
     _activationMode: 0
     _bindings:
     - _name: "\u952E\u76D8"
-      _path: <Keyboard>/g
+      _path: <Keyboard>/h
       _interactions: 
       _processors: 
       _groups: 
@@ -144,7 +144,7 @@ MonoBehaviour:
     _activationMode: 1
     _bindings:
     - _name: "\u952E\u76D8"
-      _path: <Keyboard>/f1
+      _path: <Keyboard>/leftAlt
       _interactions: 
       _processors: 
       _groups: 
@@ -208,5 +208,53 @@ MonoBehaviour:
       _interactions: 
       _processors: 
       _groups: 
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 14
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 1
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/e
+      _interactions:
+      _processors:
+      _groups:
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 15
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/b
+      _interactions:
+      _processors:
+      _groups:
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 16
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/g
+      _interactions:
+      _processors:
+      _groups:
+      _isComposite: 0
+      _isPartOfComposite: 0
+  - _id: 17
+    _type: 1
+    _expectedControlType: Button
+    _activationMode: 0
+    _bindings:
+    - _name: "\u952E\u76D8"
+      _path: <Keyboard>/f
+      _interactions:
+      _processors:
+      _groups:
       _isComposite: 0
       _isPartOfComposite: 0

@@ -29,6 +29,7 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
     private Image _weaponSilhouette;
     private TMP_Text _magazineText;
     private TMP_Text _reserveText;
+    private TMP_Text _bombCarriedText;
     private Image _bloodOverlay;
     private Image _redGlow;
     private Sprite _fallbackBloodSprite;
@@ -38,12 +39,14 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
     private PlayerLifeCtrl _life;
     private WeaponActionCtrl _weaponAction;
     private WeaponCombatCtrl _weaponCombat;
+    private MatchManager _matchManager;
     private ResourceMgr _resources;
     private string _loadedSilhouetteId;
     private int _silhouetteLoadVersion;
     private float _targetDamageSeverity;
     private float _displayedDamageSeverity;
     private bool _isBound;
+    private bool _hasExplicitBindingRequest;
 
     public bool IsHudVisible { get { return _hudGroup && _hudGroup.alpha > 0.5f; } }
     public float HealthNormalized { get { return _healthSlider ? _healthSlider.value : 0f; } }
@@ -55,18 +58,40 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
     public Image BloodOverlay { get { return _bloodOverlay; } }
     public Image RedGlow { get { return _redGlow; } }
 
+    public void SetBombCarried(bool carried)
+    {
+        if (_bombCarriedText)
+        {
+            _bombCarriedText.gameObject.SetActive(carried);
+        }
+    }
+
     private void Awake()
     {
         BuildInterface();
+        if (!TryGetComponent<ScoreboardUI>(out _))
+        {
+            gameObject.AddComponent<ScoreboardUI>();
+        }
+        if (!TryGetComponent<MatchFeedbackBinding>(out _))
+        {
+            gameObject.AddComponent<MatchFeedbackBinding>();
+        }
+        if (!TryGetComponent<MatchRoundIntroUI>(out _))
+        {
+            gameObject.AddComponent<MatchRoundIntroUI>();
+        }
         ApplyConfiguredSprites();
         SetAlive(false);
     }
 
     private void Start()
     {
-        if (!_isBound)
+        BindMatchEvents();
+        if (!_isBound && !_hasExplicitBindingRequest)
         {
-            Bind(FindLocalPlayer());
+            LocalPlayerLocator.TryGet(out GameObject player);
+            Bind(player);
         }
     }
 
@@ -85,6 +110,7 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        UnbindMatchEvents();
         Unbind();
         ReleaseSilhouette();
         DestroyRuntimeSprite(_fallbackBloodSprite);
@@ -93,6 +119,7 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
 
     public void Bind(GameObject localPlayer)
     {
+        _hasExplicitBindingRequest = true;
         Unbind();
         if (!localPlayer || localPlayer.GetComponent<AIPlayerCtrl>())
         {
@@ -122,6 +149,7 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         HandleWeaponChanged(_weaponAction.CurrentWeaponData);
         HandleAmmoChanged(_weaponCombat.MagazineAmmo, _weaponCombat.ReserveAmmo);
         SetAlive(!_health.IsDead && !_life.IsDead);
+        RefreshBombCarried();
     }
 
     public void ApplyArtSprites(
@@ -164,20 +192,55 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         _weaponAction = null;
         _weaponCombat = null;
         _isBound = false;
+        SetBombCarried(false);
     }
 
-    private GameObject FindLocalPlayer()
+    private void BindMatchEvents()
     {
-        PlayerLifeCtrl[] candidates = FindObjectsByType<PlayerLifeCtrl>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        for (int i = 0; i < candidates.Length; i++)
+        if (_matchManager)
         {
-            if (candidates[i] && !candidates[i].GetComponent<AIPlayerCtrl>())
-            {
-                return candidates[i].gameObject;
-            }
+            return;
         }
-        return null;
+
+        _matchManager = MatchManager.Instance;
+        _matchManager.BombCarrierChanged += HandleBombCarrierChanged;
+        _matchManager.RoundStateChanged += HandleMatchStateChanged;
+        RefreshBombCarried();
+    }
+
+    private void UnbindMatchEvents()
+    {
+        if (!_matchManager)
+        {
+            return;
+        }
+
+        _matchManager.BombCarrierChanged -= HandleBombCarrierChanged;
+        _matchManager.RoundStateChanged -= HandleMatchStateChanged;
+        _matchManager = null;
+    }
+
+    private void HandleBombCarrierChanged(PlayerInfo carrier)
+    {
+        SetBombCarried(_health && carrier && carrier == _health.PlayerInfo);
+    }
+
+    private void HandleMatchStateChanged(MatchState state)
+    {
+        RefreshBombCarried();
+    }
+
+    private void RefreshBombCarried()
+    {
+        MatchConfig config = _matchManager ? _matchManager.Config : null;
+        if (config == null || _matchManager.State == MatchState.Idle ||
+            !config.Mode || config.Mode.Kind != ModeKind.Bomb)
+        {
+            SetBombCarried(false);
+            return;
+        }
+
+        HandleBombCarrierChanged(_matchManager.BombCarrier);
     }
 
     private void HandleHealthChanged(float current, float maximum)
@@ -324,7 +387,21 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         _redGlow.raycastTarget = false;
 
         BuildHealth(root.transform);
+        BuildBombCarried(root.transform);
         BuildAmmo(root.transform);
+    }
+
+    private void BuildBombCarried(Transform root)
+    {
+        _bombCarriedText = CreateText(
+            "炸弹携带提示", root, 24f, FontStyles.Bold);
+        Anchor(_bombCarriedText.rectTransform,
+            new Vector2(0f, 0f), new Vector2(0f, 0f),
+            new Vector2(260f, 36f), new Vector2(42f, 84f), new Vector2(0f, 0f));
+        _bombCarriedText.alignment = TextAlignmentOptions.MidlineLeft;
+        _bombCarriedText.color = new Color(1f, 0.72f, 0.16f, 1f);
+        _bombCarriedText.text = "已携带炸弹";
+        _bombCarriedText.gameObject.SetActive(false);
     }
 
     private void BuildHealth(Transform root)

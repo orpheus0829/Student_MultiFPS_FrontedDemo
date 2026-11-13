@@ -256,6 +256,13 @@ public class PlayerActionCtrl : MonoBehaviour
 
     public void Receive(PlayerInputCommand command)
     {
+        // 互动监听方需要在操作锁定期间仍能收到松手，以便取消长按交互。
+        if (command.Action == GJInputAction.Interact)
+        {
+            CommandReceived?.Invoke(command);
+            return;
+        }
+
         if (HandleMovementCommand(command))
         {
             return;

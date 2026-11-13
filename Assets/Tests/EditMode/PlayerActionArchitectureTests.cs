@@ -281,7 +281,7 @@ public sealed class PlayerActionArchitectureTests
     }
 
     [Test]
-    public void InputCatalogUsesTabForViewAndF1ForScoreboard()
+    public void InputCatalogUsesTabForViewLeftAltForScoreboardAndEForInteract()
     {
         Object catalog = AssetDatabase.LoadMainAssetAtPath(
             "Assets/SO/Input/InputActionCatalog.asset");
@@ -289,11 +289,12 @@ public sealed class PlayerActionArchitectureTests
         SerializedProperty actions = new SerializedObject(catalog).FindProperty("_actions");
         string viewBinding = null;
         string scoreboardBinding = null;
+        string interactBinding = null;
         for (int index = 0; index < actions.arraySize; index++)
         {
             SerializedProperty action = actions.GetArrayElementAtIndex(index);
             int actionId = action.FindPropertyRelative("_id").intValue;
-            if (actionId != 8 && actionId != 12)
+            if (actionId != 8 && actionId != 12 && actionId != 14)
             {
                 continue;
             }
@@ -305,14 +306,19 @@ public sealed class PlayerActionArchitectureTests
             {
                 scoreboardBinding = path;
             }
-            else
+            else if (actionId == 12)
             {
                 viewBinding = path;
+            }
+            else
+            {
+                interactBinding = path;
             }
         }
 
         Assert.That(viewBinding, Is.EqualTo("<Keyboard>/tab"));
-        Assert.That(scoreboardBinding, Is.EqualTo("<Keyboard>/f1"));
+        Assert.That(scoreboardBinding, Is.EqualTo("<Keyboard>/leftAlt"));
+        Assert.That(interactBinding, Is.EqualTo("<Keyboard>/e"));
     }
 
     [Test]

@@ -384,6 +384,14 @@ MonoBehaviour:
     - type.weapon_action
     - weapon.as-val
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8bcd9d31ff170f5408750b5a92e3c49f
+    m_Address: weapon.melee-fist.actions
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.weapon_action
+    - weapon.melee-fist
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9365ea82b553a154086fbdaf6a145dd4
     m_Address: weapon.x18.animator.first_person_weapon
     m_ReadOnly: 0

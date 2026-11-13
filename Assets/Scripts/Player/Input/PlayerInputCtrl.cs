@@ -35,6 +35,10 @@ public class PlayerInputCtrl : MonoBehaviour
         EmitButton(GJInputAction.Scoreboard);
         EmitButton(GJInputAction.ToggleView);
         EmitButton(GJInputAction.Punch);
+        EmitButton(GJInputAction.Interact);
+        EmitButton(GJInputAction.OpenShop);
+        EmitButton(GJInputAction.DropWeapon);
+        EmitButton(GJInputAction.PickupWeapon);
         EmitButton(GJInputAction.Settings);
     }
 

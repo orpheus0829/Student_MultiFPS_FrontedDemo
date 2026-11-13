@@ -77,6 +77,11 @@ public static class CombatDamage
             return CreateIgnoredResult(request);
         }
 
+        if (target.TryGetComponent(out PlayerArmorCtrl armor))
+        {
+            requestedDamage = armor.Mitigate(requestedDamage, request.BodyPart);
+        }
+
         bool wasKilled;
         float remainingHealth;
         float appliedDamage = target.ApplyDamage(

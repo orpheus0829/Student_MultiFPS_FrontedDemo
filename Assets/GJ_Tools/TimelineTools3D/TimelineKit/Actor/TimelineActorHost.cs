@@ -6,7 +6,8 @@ using UnityEngine.Playables;
 
 [AddComponentMenu("TimelineKit/TimelineActorHost")]
 [RequireComponent(typeof(PlayableDirector))]
-public class TimelineActorHost : MonoBehaviour, ITimelineHitHost, ITimelineEffectHost
+public class TimelineActorHost : MonoBehaviour, ITimelineHitHost, ITimelineEffectHost,
+    ITimelineAudioBusHost
 {
     [Header("命中扫描")]
     [Tooltip("判定发射锚点。命中盒从这里往外扫，留空则用角色自身位置")]
@@ -234,6 +235,11 @@ public class TimelineActorHost : MonoBehaviour, ITimelineHitHost, ITimelineEffec
 
     public void PlaySound(AudioClip clip)
     {
+        PlaySound(clip, GJAudioBus.FeedbackSfx);
+    }
+
+    public void PlaySound(AudioClip clip, GJAudioBus bus)
+    {
         if (clip == null)
         {
             return;
@@ -251,7 +257,8 @@ public class TimelineActorHost : MonoBehaviour, ITimelineHitHost, ITimelineEffec
         {
             sfxSource.pitch = UnityEngine.Random.Range(pitchRange.x, pitchRange.y);
         }
-        sfxSource.PlayOneShot(clip);
+        AudioMgr.instance.PlayOneShot(
+            sfxSource, clip, bus);
         sfxSource.pitch = oldPitch;
     }
 

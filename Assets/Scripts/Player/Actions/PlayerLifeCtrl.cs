@@ -62,6 +62,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     private bool[] _hitboxEnabled;
     private SmartTimer.TimerTask _respawnTask;
     private bool _isClosing;
+    private float _respawnDelayOverride = -1f;
     private Transform _killerLookTarget;
     private DeathKillerOutline _killerOutline;
     private readonly RaycastHit[] _deathCameraHits = new RaycastHit[24];
@@ -70,12 +71,36 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
 
     public float RespawnDelay
     {
-        get { return _playerData ? _playerData.RespawnDelay : 5f; }
+        get
+        {
+            return _respawnDelayOverride >= 0f
+                ? _respawnDelayOverride
+                : _playerData ? _playerData.RespawnDelay : 5f;
+        }
     }
 
     public bool IsDead
     {
         get { return _isDead; }
+    }
+
+    public bool AutoRespawnEnabled
+    {
+        get { return _autoRespawn; }
+    }
+
+    public void SetAutoRespawn(bool enabled)
+    {
+        _autoRespawn = enabled;
+        if (!enabled)
+        {
+            CancelRespawnTask();
+        }
+    }
+
+    public void SetRespawnDelayOverride(float delay)
+    {
+        _respawnDelayOverride = delay >= 0f ? delay : -1f;
     }
 
     public PlayerDataSO PlayerData
@@ -187,10 +212,7 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
     {
         _isClosing = true;
         CombatDamage.DamageResolved -= HandleDamageResolved;
-        if (_respawnTask != null && _respawnTask.IsRunning)
-        {
-            _respawnTask.Stop();
-        }
+        CancelRespawnTask();
     }
 
     private void OnDestroy()
@@ -220,21 +242,13 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
             return false;
         }
 
+        CancelRespawnTask();
         if (_characterController)
         {
             _characterController.enabled = false;
         }
         _ragdoll?.StandUp();
-        if (_spawnZone && _spawnZone.TryGetRandomPosition(out Vector3 position))
-        {
-            transform.position = position;
-            transform.rotation = _spawnZone.transform.rotation;
-        }
-        else
-        {
-            transform.position = _initialPosition;
-            transform.rotation = _initialRotation;
-        }
+        MoveToSpawnPoint();
 
         if (_droppedWeapon)
         {
@@ -260,6 +274,34 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         return true;
     }
 
+    public bool ResetForRound()
+    {
+        if (_isClosing || !_health)
+        {
+            return false;
+        }
+
+        CancelRespawnTask();
+        if (_isDead)
+        {
+            return TryRespawn();
+        }
+
+        if (_characterController)
+        {
+            _characterController.enabled = false;
+        }
+        MoveToSpawnPoint();
+        _weaponActionCtrl?.CancelCurrentAction(WeaponActionCancelReason.Disabled, true);
+        _health.ResetHealth();
+        _combatCtrl?.ResetAllAmmoToFull();
+        if (_characterController)
+        {
+            _characterController.enabled = true;
+        }
+        return true;
+    }
+
     private void HandleDamageResolved(DamageResult result)
     {
         if (_isDead || result == null || !result.WasKill || result.Target != _health)
@@ -269,7 +311,12 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
 
         _isDead = true;
         BeginKillerTracking(result.Instigator);
-        DropWeapon();
+        // 只有爆破模式安装了经济控制器；爆破死亡掉主武器，手枪永不掉落。
+        if (TryGetComponent(out BombEconomyPlayerCtrl economyPlayer) &&
+            economyPlayer.IsActive)
+        {
+            economyPlayer.DropWeaponsOnDeath();
+        }
         PrepareDeathCamera();
         CaptureAndDisableControls();
         if (_hasCameraPose && _camera)
@@ -329,6 +376,32 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         if (_animationCtrl) _animationCtrl.enabled = _animationCtrlWasEnabled;
         if (_cameraCtrl) _cameraCtrl.enabled = _cameraCtrlWasEnabled;
         if (_cameraMotionCtrl) _cameraMotionCtrl.enabled = _cameraMotionCtrlWasEnabled;
+    }
+
+    private void MoveToSpawnPoint()
+    {
+        if (_spawnZone && _spawnZone.TryGetRandomPosition(out Vector3 position))
+        {
+            transform.position = position;
+            transform.rotation = _spawnZone.transform.rotation;
+            return;
+        }
+
+        transform.position = _initialPosition;
+        transform.rotation = _initialRotation;
+    }
+
+    private void CancelRespawnTask()
+    {
+        if (_respawnTask == null || !_respawnTask.IsRunning)
+        {
+            return;
+        }
+
+        // SmartTimer.Stop 会执行 OnEnd；先移除复活回调，仅保留任务注册表清理。
+        _respawnTask.OnEnd -= Respawn;
+        _respawnTask.Stop();
+        _respawnTask = null;
     }
 
     private void SetHitboxesEnabled(bool isEnabled)

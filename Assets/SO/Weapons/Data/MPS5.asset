@@ -48,6 +48,26 @@ MonoBehaviour:
     _closeDistanceScoreFactor: 1.15
     _farDistanceScoreFactor: 0.95
     _killBonus: 95
+  _melee:
+    _enabled: 0
+    _range: 1.65
+    _radius: 0.55
+    _impactDelay: 0.11
+    _actionDuration: 0.78
+    _firstPersonStartPosition: {x: 0, y: 0, z: 0}
+    _firstPersonStartRotation: {x: 0, y: 0, z: 0, w: 1}
+    _firstPersonStartScale: {x: 1, y: 1, z: 1}
+    _firstPersonEndPosition: {x: 0, y: 0, z: 0}
+    _firstPersonEndRotation: {x: 0, y: 0, z: 0, w: 1}
+    _firstPersonEndScale: {x: 1, y: 1, z: 1}
+    _arcHeightFactor: 0.3
+    _arcForwardFactor: 0.16
+    _overshootPercent: 0.08
+    _thirdPersonPosition: {x: 0, y: 0, z: 0}
+    _thirdPersonRotation: {x: 0, y: 0, z: 0, w: 1}
+    _thirdPersonScale: {x: 1, y: 1, z: 1}
+    _thirdPersonAnimationSpeed: 1
+    _thirdPersonWeaponShowDelay: 0
   _ammo:
     _magazineCapacity: 30
     _startingReserveAmmo: 120

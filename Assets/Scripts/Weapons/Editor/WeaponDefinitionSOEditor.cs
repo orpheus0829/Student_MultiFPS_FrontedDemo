@@ -131,6 +131,22 @@ public sealed class WeaponDefinitionSOEditor : Editor
         Draw("_melee._radius", "攻击半径");
         Draw("_melee._impactDelay", "出拳至命中的延迟");
         Draw("_melee._actionDuration", "完整动作时间");
+        DrawSubTitle("第一人称程序挥砍");
+        Draw("_melee._firstPersonStartPosition", "起点位置");
+        Draw("_melee._firstPersonStartRotation", "起点旋转");
+        Draw("_melee._firstPersonStartScale", "起点缩放");
+        Draw("_melee._firstPersonEndPosition", "终点位置");
+        Draw("_melee._firstPersonEndRotation", "终点旋转");
+        Draw("_melee._firstPersonEndScale", "终点缩放");
+        Draw("_melee._arcHeightFactor", "弧高系数");
+        Draw("_melee._arcForwardFactor", "前探系数");
+        Draw("_melee._overshootPercent", "过冲比例");
+        DrawSubTitle("第三人称武器表现");
+        Draw("_melee._thirdPersonPosition", "手部局部位置");
+        Draw("_melee._thirdPersonRotation", "手部局部旋转");
+        Draw("_melee._thirdPersonScale", "局部缩放");
+        Draw("_melee._thirdPersonAnimationSpeed", "动画速度");
+        Draw("_melee._thirdPersonWeaponShowDelay", "武器出现延迟");
     }
 
     private void DrawAmmoData()

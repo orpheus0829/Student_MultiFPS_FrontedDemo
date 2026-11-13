@@ -16,6 +16,7 @@ public sealed class AIDecisionCore
         AIDifficultyProfile profile,
         bool hasCover,
         bool needsReload,
+        AIUtilityBias utilityBias,
         out AIBehaviorId selected)
     {
         selected = _current;
@@ -69,6 +70,13 @@ public sealed class AIDecisionCore
             w.RetreatCover +
             profile.RetreatPreference * w.RetreatPreference : 0f;
 
+        patrol = ApplyBias(patrol, utilityBias.Patrol);
+        investigate = ApplyBias(investigate, utilityBias.Investigate);
+        engage = ApplyBias(engage, utilityBias.Engage);
+        takeCover = ApplyBias(takeCover, utilityBias.TakeCover);
+        reposition = ApplyBias(reposition, utilityBias.Reposition);
+        retreat = ApplyBias(retreat, utilityBias.Retreat);
+
         AIBehaviorId best = _current;
         float currentScore = Score(
             _current, patrol, investigate, engage, takeCover, reposition, retreat);
@@ -99,6 +107,11 @@ public sealed class AIDecisionCore
         _lastSwitchTime = Time.time;
         selected = best;
         return true;
+    }
+
+    private static float ApplyBias(float score, float bias)
+    {
+        return score <= 0f ? 0f : Mathf.Clamp(score + bias, 0f, 2f);
     }
 
     private static float Score(

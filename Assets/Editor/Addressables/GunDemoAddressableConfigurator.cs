@@ -30,10 +30,21 @@ public static class GunDemoAddressableConfigurator
     private const string BulletTracerPath =
         "Assets/Prefabs/Effects/Weapons/HovlBulletTracer.prefab";
     private const string BulletTracerAddress = "effect.weapon.bullet_tracer";
+    private const string BombPrefabPath = "Assets/Prefabs/Props/Bomb.prefab";
+    private const string BombPrefabAddress = "prop.bomb.prefab";
     private const string BulletImpactPrefabPath =
         "Assets/Prefabs/Effects/BulletImpacts/BulletImpactDecal.prefab";
     private const string BulletImpactTextureFolder =
         "Assets/Resource/Effects/BulletImpacts/Textures";
+    private const string AudioSettingsPath = "Assets/SO/Audio/AudioSettings.asset";
+    private const string CombatFeedbackAudioDataPath =
+        "Assets/SO/Audio/CombatFeedbackAudio.asset";
+    private const string FeedbackHitAudioPath =
+        "Assets/Resource/Audio/Feedback/Hit.wav";
+    private const string FeedbackKillAudioPath =
+        "Assets/Resource/Audio/Feedback/Kill.wav";
+    private const string FeedbackHeadshotKillAudioPath =
+        "Assets/Resource/Audio/Feedback/HeadshotKill.wav";
 
     [MenuItem("工具/Gun Demo/资源/配置 Addressables")]
     public static void ConfigureFromMenu()
@@ -66,6 +77,52 @@ public static class GunDemoAddressableConfigurator
             "Assets/Prefabs/Characters/IdleAIPlayer.prefab",
             "character.ai_player.prefab",
             new[] { "type.prefab", "type.character" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombPrefabPath,
+            BombPrefabAddress,
+            new[] { "type.prefab", "type.match" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            MatchContentConfigurator.SoloModePath,
+            "mode.solo.data",
+            new[] { "type.data", "type.match" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            MatchContentConfigurator.TdmModePath,
+            "mode.tdm.short.data",
+            new[] { "type.data", "type.match" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            MatchContentConfigurator.BombModePath,
+            "mode.bomb.data",
+            new[] { "type.data", "type.match" },
+            configuredGuids,
+            report);
+        RegisterMatchLogo(
+            settings, groups[LocalCommonGroup], configuredGuids, report,
+            "Assets/Resource/UI/Match/Mode_Solo.png", "ui.match.mode.solo.logo");
+        RegisterMatchLogo(
+            settings, groups[LocalCommonGroup], configuredGuids, report,
+            "Assets/Resource/UI/Match/Mode_Tdm.png", "ui.match.mode.tdm.logo");
+        RegisterMatchLogo(
+            settings, groups[LocalCommonGroup], configuredGuids, report,
+            "Assets/Resource/UI/Match/Mode_Bomb.png", "ui.match.mode.bomb.logo");
+        ConfigureSharedAudio(
+            settings,
+            groups[LocalCommonGroup],
             configuredGuids,
             report);
         Register(
@@ -432,6 +489,77 @@ public static class GunDemoAddressableConfigurator
         }
     }
 
+    private static void ConfigureSharedAudio(
+        AddressableAssetSettings settings,
+        AddressableAssetGroup group,
+        Dictionary<string, string> configuredGuids,
+        GunDemoAddressableConfigureReport report)
+    {
+        EnsureAudioDataAssets();
+        Register(
+            settings,
+            group,
+            AudioSettingsPath,
+            "audio.settings",
+            new[] { "type.audio", "type.data" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            CombatFeedbackAudioDataPath,
+            "audio.combat-feedback.data",
+            new[] { "type.audio", "type.data", "audio.feedback" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            FeedbackHitAudioPath,
+            "audio.feedback.hit",
+            new[] { "type.audio", "audio.feedback" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            FeedbackKillAudioPath,
+            "audio.feedback.kill",
+            new[] { "type.audio", "audio.feedback" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            FeedbackHeadshotKillAudioPath,
+            "audio.feedback.headshot-kill",
+            new[] { "type.audio", "audio.feedback" },
+            configuredGuids,
+            report);
+    }
+
+    private static void EnsureAudioDataAssets()
+    {
+        const string folder = "Assets/SO/Audio";
+        if (!AssetDatabase.IsValidFolder(folder))
+        {
+            AssetDatabase.CreateFolder("Assets/SO", "Audio");
+        }
+
+        if (!AssetDatabase.LoadAssetAtPath<AudioSettingsSO>(AudioSettingsPath))
+        {
+            AudioSettingsSO settings = ScriptableObject.CreateInstance<AudioSettingsSO>();
+            AssetDatabase.CreateAsset(settings, AudioSettingsPath);
+        }
+
+        if (!AssetDatabase.LoadAssetAtPath<CombatFeedbackAudioSO>(CombatFeedbackAudioDataPath))
+        {
+            CombatFeedbackAudioSO feedback =
+                ScriptableObject.CreateInstance<CombatFeedbackAudioSO>();
+            AssetDatabase.CreateAsset(feedback, CombatFeedbackAudioDataPath);
+        }
+    }
+
     private static void ConfigureSharedEffects(
         AddressableAssetSettings settings,
         AddressableAssetGroup group,
@@ -702,6 +830,24 @@ public static class GunDemoAddressableConfigurator
             count--;
         }
         return new string(result, 0, count);
+    }
+
+    private static void RegisterMatchLogo(
+        AddressableAssetSettings settings,
+        AddressableAssetGroup group,
+        Dictionary<string, string> configuredGuids,
+        GunDemoAddressableConfigureReport report,
+        string path,
+        string address)
+    {
+        Register(
+            settings,
+            group,
+            path,
+            address,
+            new[] { "type.texture", "type.ui", "type.match" },
+            configuredGuids,
+            report);
     }
 
     private static int CompareAssetGuidsByPath(string left, string right)

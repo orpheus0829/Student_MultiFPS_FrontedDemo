@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41fb17eaf9a8a8848aa1dba643ec8754, type: 3}
+  m_Name: Solo
+  m_EditorClassIdentifier: Assembly-CSharp::ModeDefinitionSO
+  _kind: 0
+  _modeId: mode.solo
+  _displayName: "\u4E2A\u4EBA\u7ADE\u6280"
+  _isBuiltIn: 1
+  _teamCount: 8
+  _teamSize: 1
+  _respawnEnabled: 1
+  _respawnDelay: 5
+  _winCondition: 0
+  _scoreToWin: 30
+  _roundTimeLimit: 300
+  _logoResourceId: ui.match.mode.solo.logo
+  _aiPatchId: solo.self_preservation
+  _items:
+  - _key: score.kill
+    _type: 1
+    _number: 100
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.assist
+    _type: 1
+    _number: 25
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.headshotBonus
+    _type: 1
+    _number: 25
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.roundWin
+    _type: 1
+    _number: 100
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.matchWin
+    _type: 1
+    _number: 500
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: rules.type
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: solo
+    _isRemovable: 0
+  - _key: match.usesRounds
+    _type: 0
+    _number: 0
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: match.respawnEnabled
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text: 
+    _isRemovable: 0
+  - _key: match.respawnDelay
+    _type: 2
+    _number: 5
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: solo.respawnEnabled
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text: 
+    _isRemovable: 0
+  - _key: solo.roundTimeLimit
+    _type: 2
+    _number: 300
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: solo.scoreToWin
+    _type: 1
+    _number: 30
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: ai.selfPreservation
+    _type: 2
+    _number: 1
+    _flag: 0
+    _text: 
+    _isRemovable: 0

@@ -1,0 +1,304 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41fb17eaf9a8a8848aa1dba643ec8754, type: 3}
+  m_Name: Bomb
+  m_EditorClassIdentifier: Assembly-CSharp::ModeDefinitionSO
+  _kind: 2
+  _modeId: mode.bomb
+  _displayName: "\u7206\u7834\u6A21\u5F0F"
+  _isBuiltIn: 1
+  _teamCount: 2
+  _teamSize: 5
+  _respawnEnabled: 0
+  _respawnDelay: 0
+  _winCondition: 2
+  _scoreToWin: 6
+  _roundTimeLimit: 120
+  _logoResourceId: ui.match.mode.bomb.logo
+  _aiPatchId: bomb.team_strategy
+  _items:
+  - _key: score.kill
+    _type: 1
+    _number: 100
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.assist
+    _type: 1
+    _number: 25
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.headshotBonus
+    _type: 1
+    _number: 25
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.roundWin
+    _type: 1
+    _number: 100
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: score.matchWin
+    _type: 1
+    _number: 500
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: rules.type
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: bomb
+    _isRemovable: 0
+  - _key: features.bombObjective
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text: 
+    _isRemovable: 0
+  - _key: features.economy
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text: 
+    _isRemovable: 0
+  - _key: features.eliminationRounds
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text: 
+    _isRemovable: 0
+  - _key: match.usesRounds
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text: 
+    _isRemovable: 0
+  - _key: match.respawnEnabled
+    _type: 0
+    _number: 0
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: match.respawnDelay
+    _type: 2
+    _number: 0
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: match.roundsToWin
+    _type: 1
+    _number: 6
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: match.roundRestartDelay
+    _type: 2
+    _number: 4
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.resourceId
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: prop.bomb.prefab
+    _isRemovable: 0
+  - _key: bomb.plantDuration
+    _type: 2
+    _number: 3
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.defuseDuration
+    _type: 2
+    _number: 5
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.fuseDuration
+    _type: 2
+    _number: 40
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.pickupRadius
+    _type: 2
+    _number: 1.8
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.siteRadius
+    _type: 2
+    _number: 3
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.roundTimeLimit
+    _type: 2
+    _number: 120
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.roundRestartDelay
+    _type: 2
+    _number: 4
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.roundsToWin
+    _type: 1
+    _number: 6
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.attackerTeam
+    _type: 1
+    _number: 0
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.defenderTeam
+    _type: 1
+    _number: 1
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: bomb.carrierSpeedScale
+    _type: 2
+    _number: 0.92
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.startMoney
+    _type: 1
+    _number: 800
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.maxMoney
+    _type: 1
+    _number: 16000
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.buyDuration
+    _type: 2
+    _number: 25
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.killReward
+    _type: 1
+    _number: 300
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.smgKillReward
+    _type: 1
+    _number: 600
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.shotgunKillReward
+    _type: 1
+    _number: 900
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.meleeKillReward
+    _type: 1
+    _number: 1500
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.headshotBonus
+    _type: 1
+    _number: 100
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.roundWinReward
+    _type: 1
+    _number: 3250
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.roundLossReward
+    _type: 1
+    _number: 1900
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.defaultPistol
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: weapon.m1911.data
+    _isRemovable: 0
+  - _key: economy.shopItems
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: AK|weapon.ak.data|2700;AS Val|weapon.as-val.data|2900;MPS5|weapon.mps5.data|1500;PDW90|weapon.pdw90.data|2350;KXG12|weapon.kxg-12.data|2000;Kar98k|weapon.kar98k.data|3200
+    _isRemovable: 0
+  - _key: economy.killRewardOverrides
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: mps5=600;pdw90=600;kxg-12=900;melee-fist=1500
+    _isRemovable: 0
+  - _key: economy.armorPrice
+    _type: 1
+    _number: 650
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.helmetPrice
+    _type: 1
+    _number: 350
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.pickupDistance
+    _type: 2
+    _number: 3.2
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.dropForwardSpeed
+    _type: 2
+    _number: 2
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: economy.dropUpSpeed
+    _type: 2
+    _number: 0.6
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: ai.attackBias
+    _type: 2
+    _number: 1
+    _flag: 0
+    _text: 
+    _isRemovable: 0
+  - _key: ai.defendBias
+    _type: 2
+    _number: 1
+    _flag: 0
+    _text: 
+    _isRemovable: 0

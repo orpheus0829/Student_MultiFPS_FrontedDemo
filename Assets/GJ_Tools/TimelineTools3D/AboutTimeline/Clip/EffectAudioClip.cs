@@ -6,6 +6,8 @@ public class EffectAudioClip : PlayableAsset
     [Header("特效音效盒参数")]
     [Tooltip("触发时播放的音效(可空，只播特效)")]
     public AudioClip sound;
+    [Tooltip("该声音使用的统一音频分类")]
+    public GJAudioBus audioBus = GJAudioBus.FeedbackSfx;
     [Tooltip("触发生成的特效预制体(可空，只播音效)")]
     public GameObject effectPrefab;
     [Tooltip("特效/音效发声点相对角色的本地偏移")]

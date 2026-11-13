@@ -25,11 +25,55 @@ public class WeaponMeleeData
     [SerializeField, Min(0f), InspectorName("出拳至命中的延迟")] private float _impactDelay = 0.11f;
     [SerializeField, Min(0.01f), InspectorName("完整动作时间")] private float _actionDuration = 0.78f;
 
+    [SerializeField, InspectorName("第一人称起点位置")]
+    private Vector3 _firstPersonStartPosition;
+    [SerializeField, InspectorName("第一人称起点旋转")]
+    private Quaternion _firstPersonStartRotation = Quaternion.identity;
+    [SerializeField, InspectorName("第一人称起点缩放")]
+    private Vector3 _firstPersonStartScale = Vector3.one;
+    [SerializeField, InspectorName("第一人称终点位置")]
+    private Vector3 _firstPersonEndPosition;
+    [SerializeField, InspectorName("第一人称终点旋转")]
+    private Quaternion _firstPersonEndRotation = Quaternion.identity;
+    [SerializeField, InspectorName("第一人称终点缩放")]
+    private Vector3 _firstPersonEndScale = Vector3.one;
+    [SerializeField, Range(0.05f, 0.6f), InspectorName("挥砍弧高系数")]
+    private float _arcHeightFactor = 0.3f;
+    [SerializeField, Range(-0.3f, 0.5f), InspectorName("挥砍前探系数")]
+    private float _arcForwardFactor = 0.16f;
+    [SerializeField, Range(0f, 0.15f), InspectorName("挥砍过冲比例")]
+    private float _overshootPercent = 0.08f;
+
+    [SerializeField, InspectorName("第三人称武器位置")]
+    private Vector3 _thirdPersonPosition;
+    [SerializeField, InspectorName("第三人称武器旋转")]
+    private Quaternion _thirdPersonRotation = Quaternion.identity;
+    [SerializeField, InspectorName("第三人称武器缩放")]
+    private Vector3 _thirdPersonScale = Vector3.one;
+    [SerializeField, Range(0.1f, 2f), InspectorName("第三人称动画速度")]
+    private float _thirdPersonAnimationSpeed = 1f;
+    [SerializeField, Min(0f), InspectorName("第三人称武器出现延迟")]
+    private float _thirdPersonWeaponShowDelay;
+
     public bool Enabled { get { return _enabled; } }
     public float Range { get { return _range; } }
     public float Radius { get { return _radius; } }
     public float ImpactDelay { get { return _impactDelay; } }
     public float ActionDuration { get { return _actionDuration; } }
+    public Vector3 FirstPersonStartPosition { get { return _firstPersonStartPosition; } }
+    public Quaternion FirstPersonStartRotation { get { return _firstPersonStartRotation; } }
+    public Vector3 FirstPersonStartScale { get { return _firstPersonStartScale; } }
+    public Vector3 FirstPersonEndPosition { get { return _firstPersonEndPosition; } }
+    public Quaternion FirstPersonEndRotation { get { return _firstPersonEndRotation; } }
+    public Vector3 FirstPersonEndScale { get { return _firstPersonEndScale; } }
+    public float ArcHeightFactor { get { return _arcHeightFactor; } }
+    public float ArcForwardFactor { get { return _arcForwardFactor; } }
+    public float OvershootPercent { get { return _overshootPercent; } }
+    public Vector3 ThirdPersonPosition { get { return _thirdPersonPosition; } }
+    public Quaternion ThirdPersonRotation { get { return _thirdPersonRotation; } }
+    public Vector3 ThirdPersonScale { get { return _thirdPersonScale; } }
+    public float ThirdPersonAnimationSpeed { get { return _thirdPersonAnimationSpeed; } }
+    public float ThirdPersonWeaponShowDelay { get { return _thirdPersonWeaponShowDelay; } }
 }
 
 [Flags]

@@ -196,13 +196,17 @@ public class InputActionCatalogSO : ScriptableObject
             new InputActionData(GJInputAction.Fire, InputActionType.Button, "Button", InputActivationMode.Hold, new InputBindingData("鼠标", "<Mouse>/leftButton")),
             new InputActionData(GJInputAction.Aim, InputActionType.Button, "Button", InputActivationMode.Hold, new InputBindingData("鼠标", "<Mouse>/rightButton")),
             new InputActionData(GJInputAction.Reload, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/r")),
-            new InputActionData(GJInputAction.Inspect, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/g")),
-            new InputActionData(GJInputAction.Scoreboard, InputActionType.Button, "Button", InputActivationMode.Hold, new InputBindingData("键盘", "<Keyboard>/f1")),
+            new InputActionData(GJInputAction.Inspect, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/h")),
+            new InputActionData(GJInputAction.Scoreboard, InputActionType.Button, "Button", InputActivationMode.Hold, new InputBindingData("键盘", "<Keyboard>/leftAlt")),
             new InputActionData(GJInputAction.Settings, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/escape")),
             new InputActionData(GJInputAction.CycleWeapon, InputActionType.PassThrough, "Vector2", InputActivationMode.Press, new InputBindingData("鼠标滚轮", "<Mouse>/scroll")),
             new InputActionData(GJInputAction.Slide, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/c")),
             new InputActionData(GJInputAction.ToggleView, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/tab")),
-            new InputActionData(GJInputAction.Punch, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/f"))
+            new InputActionData(GJInputAction.Punch, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("鼠标侧键", "<Mouse>/forwardButton")),
+            new InputActionData(GJInputAction.Interact, InputActionType.Button, "Button", InputActivationMode.Hold, new InputBindingData("键盘", "<Keyboard>/e")),
+            new InputActionData(GJInputAction.OpenShop, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/b")),
+            new InputActionData(GJInputAction.DropWeapon, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/g")),
+            new InputActionData(GJInputAction.PickupWeapon, InputActionType.Button, "Button", InputActivationMode.Press, new InputBindingData("键盘", "<Keyboard>/f"))
         };
     }
 

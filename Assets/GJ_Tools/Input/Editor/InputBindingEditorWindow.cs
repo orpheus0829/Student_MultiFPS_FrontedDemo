@@ -531,10 +531,18 @@ public class InputBindingEditorWindow : EditorWindow
                 return "检视";
             case GJInputAction.Scoreboard:
                 return "战绩板";
+            case GJInputAction.Interact:
+                return "互动";
             case GJInputAction.ToggleView:
                 return "切换视角";
             case GJInputAction.Settings:
                 return "设置";
+            case GJInputAction.OpenShop:
+                return "打开商城";
+            case GJInputAction.DropWeapon:
+                return "丢弃武器";
+            case GJInputAction.PickupWeapon:
+                return "拾取武器";
             default:
                 return id.ToString();
         }
@@ -552,7 +560,10 @@ public class InputBindingEditorWindow : EditorWindow
 
     private static bool CanChangeActivationMode(GJInputAction id)
     {
-        return id == GJInputAction.Sprint || id == GJInputAction.Aim || id == GJInputAction.Scoreboard;
+        return id == GJInputAction.Sprint ||
+            id == GJInputAction.Aim ||
+            id == GJInputAction.Scoreboard ||
+            id == GJInputAction.Interact;
     }
 
     private static string GetActivationModeName(InputActivationMode activationMode)

@@ -39,6 +39,7 @@ public sealed class AIWorldModel
     private float _nextSenseTime;
     private Vector3 _noisePosition;
     private float _noiseTime = float.NegativeInfinity;
+    private Func<CharacterHealth, bool> _targetFilter;
 
     public AITrackedTarget CurrentTarget { get; private set; }
     public bool HasRecentNoise
@@ -72,6 +73,15 @@ public sealed class AIWorldModel
     {
         _profile = profile;
         _nextSenseTime = 0f;
+    }
+
+    public void SetTargetFilter(Func<CharacterHealth, bool> targetFilter)
+    {
+        _targetFilter = targetFilter;
+        if (CurrentTarget != null && !CanConsiderAsTarget(CurrentTarget.Actor))
+        {
+            CurrentTarget = null;
+        }
     }
 
     public void Enable()
@@ -111,7 +121,8 @@ public sealed class AIWorldModel
     public bool CanConsiderAsTarget(CharacterHealth actor)
     {
         return actor && !actor.IsDead && actor != _self &&
-            !actor.transform.IsChildOf(_transform);
+            !actor.transform.IsChildOf(_transform) &&
+            (_targetFilter == null || _targetFilter(actor));
     }
 
     public Vector3 GetKnownTargetPosition()

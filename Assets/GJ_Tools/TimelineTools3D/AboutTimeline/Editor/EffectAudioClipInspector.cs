@@ -7,6 +7,7 @@ public class EffectAudioClipInspector : Editor
     private SerializedProperty useRepeatSpawn;
     private SerializedProperty spawnInterval;
     private SerializedProperty sound;
+    private SerializedProperty audioBus;
     private SerializedProperty effectPrefab;
     private SerializedProperty spawnOffset;
     private SerializedProperty spawnEuler;
@@ -17,6 +18,7 @@ public class EffectAudioClipInspector : Editor
         useRepeatSpawn = serializedObject.FindProperty("useRepeatSpawn");
         spawnInterval = serializedObject.FindProperty("spawnInterval");
         sound = serializedObject.FindProperty("sound");
+        audioBus = serializedObject.FindProperty("audioBus");
         effectPrefab = serializedObject.FindProperty("effectPrefab");
         spawnOffset = serializedObject.FindProperty("spawnOffset");
         spawnEuler = serializedObject.FindProperty("spawnEuler");
@@ -32,6 +34,9 @@ public class EffectAudioClipInspector : Editor
 
         EditorGUILayout.LabelField("播放内容", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(sound, new GUIContent("音效", "片段触发时播放；留空则只生成特效"));
+        EditorGUI.BeginDisabledGroup(sound.objectReferenceValue == null);
+        EditorGUILayout.PropertyField(audioBus, new GUIContent("音频分类", "决定该声音受音乐、角色语音、战斗或反馈音量的哪一组控制"));
+        EditorGUI.EndDisabledGroup();
         EditorGUILayout.PropertyField(effectPrefab, new GUIContent("特效预制体", "片段触发时生成；留空则只播放音效"));
         bool hasSound = sound.objectReferenceValue != null;
         bool hasVfx = effectPrefab.objectReferenceValue != null;

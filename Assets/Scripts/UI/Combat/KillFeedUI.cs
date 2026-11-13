@@ -106,6 +106,27 @@ public sealed class KillFeedUI : MonoBehaviour
     private string BuildContent(KillFeedMessage message)
     {
         StringBuilder builder = new StringBuilder(96);
+        if (message.Kind == KillFeedKind.Assist)
+        {
+            AppendText(builder, "你助攻击杀了");
+            AppendText(builder, EscapeName(message.VictimName));
+            return builder.ToString();
+        }
+        if (message.Kind == KillFeedKind.LocalKill)
+        {
+            AppendText(builder, "你使用");
+            bool hasLocalWeaponIcon = IsSafeSpriteToken(message.WeaponSpriteToken);
+            AppendSprite(builder, hasLocalWeaponIcon
+                ? message.WeaponSpriteToken
+                : _normalKillSpriteToken, 1f);
+            AppendText(builder, "击杀了");
+            AppendText(builder, EscapeName(message.VictimName));
+            AppendSprite(builder, message.IsHeadshot
+                ? _headshotSpriteToken
+                : _normalKillSpriteToken,
+                message.IsHeadshot ? _headshotSpriteScale : 1f);
+            return builder.ToString();
+        }
         AppendText(builder, EscapeName(message.KillerName));
         bool hasWeaponIcon = IsSafeSpriteToken(message.WeaponSpriteToken);
         AppendSprite(builder, hasWeaponIcon

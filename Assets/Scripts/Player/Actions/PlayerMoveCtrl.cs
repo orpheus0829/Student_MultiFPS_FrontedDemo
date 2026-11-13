@@ -46,12 +46,14 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
     private bool _isSliding;
     private bool _isGrounded;
     private bool _airSlideEligible;
+    private bool _externalLock;
     private float _verticalSpeed;
     private float _vaultElapsed;
     private float _slideElapsed;
     private float _standingHeight;
     private Vector3 _standingCenter;
     private float _externalSpeedMultiplier = 1f;
+    private float _gameplaySpeedMultiplier = 1f;
     private float _airSprintCarryRemaining;
     private float _queuedSlideRemaining;
 
@@ -137,7 +139,7 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
     {
         get
         {
-            return _isVaulting;
+            return _isVaulting || _externalLock;
         }
     }
 
@@ -238,19 +240,21 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
 
     public void SetMoveInput(Vector2 moveInput)
     {
-        _moveInput = Vector2.ClampMagnitude(moveInput, 1f);
+        _moveInput = _externalLock
+            ? Vector2.zero
+            : Vector2.ClampMagnitude(moveInput, 1f);
         RefreshSprintState();
     }
 
     public void SetSprintInput(bool isPressed)
     {
-        _sprintRequested = isPressed;
+        _sprintRequested = isPressed && !_externalLock;
         RefreshSprintState();
     }
 
     public bool TryJumpOrVault()
     {
-        if (!_characterController || !_playerData || _isVaulting || _isSliding ||
+        if (_externalLock || !_characterController || !_playerData || _isVaulting || _isSliding ||
             !_characterController.isGrounded)
         {
             return false;
@@ -269,7 +273,7 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
 
     public bool TryStartSlide()
     {
-        if (!_characterController || !_actionSet || _isVaulting || _isSliding)
+        if (_externalLock || !_characterController || !_actionSet || _isVaulting || _isSliding)
         {
             return false;
         }
@@ -327,6 +331,25 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
         _externalSpeedMultiplier = Mathf.Max(0f, multiplier);
     }
 
+    public void SetGameplaySpeedMultiplier(float multiplier)
+    {
+        _gameplaySpeedMultiplier = Mathf.Max(0f, multiplier);
+    }
+
+    public void SetExternalLock(bool locked)
+    {
+        if (_externalLock == locked)
+        {
+            return;
+        }
+        _externalLock = locked;
+        if (locked)
+        {
+            ResetInput();
+            _queuedDisplacement = Vector3.zero;
+        }
+    }
+
     public void ResetInput()
     {
         _moveInput = Vector2.zero;
@@ -355,7 +378,9 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
             _queuedSlideRemaining = Mathf.Max(0f, _queuedSlideRemaining - Time.deltaTime);
         }
 
-        Vector3 horizontalDirection = GetWorldMoveDirection();
+        Vector3 horizontalDirection = _externalLock
+            ? Vector3.zero
+            : GetWorldMoveDirection();
         if (horizontalDirection.sqrMagnitude > 1f)
         {
             horizontalDirection.Normalize();
@@ -365,7 +390,7 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
         float moveSpeed = _isSprinting
             ? _playerData.SprintSpeed
             : _playerData.MoveSpeed;
-        moveSpeed *= _externalSpeedMultiplier;
+        moveSpeed *= _externalSpeedMultiplier * _gameplaySpeedMultiplier;
         _verticalSpeed += _playerData.Gravity * Time.deltaTime;
 
         Vector3 desiredVelocity = horizontalDirection * moveSpeed;
@@ -389,7 +414,9 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
                 Mathf.SmoothStep(0f, 1f, releaseProgress));
         }
 
-        float acceleration = airborne
+        float acceleration = _externalLock
+            ? _groundDeceleration * 2f
+            : airborne
             ? (horizontalDirection.sqrMagnitude > 0f ? _airAcceleration : _airDeceleration)
             : (horizontalDirection.sqrMagnitude > 0f ? _groundAcceleration : _groundDeceleration);
         _horizontalVelocity = Vector3.MoveTowards(
@@ -444,7 +471,8 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
     {
         _slideElapsed += Time.deltaTime;
         float progress = Mathf.Clamp01(_slideElapsed / _actionSet.SlideDuration);
-        float speed = _actionSet.EvaluateSlideSpeed(progress) * _externalSpeedMultiplier;
+        float speed = _actionSet.EvaluateSlideSpeed(progress) *
+            _externalSpeedMultiplier * _gameplaySpeedMultiplier;
         _verticalSpeed += _playerData.Gravity * Time.deltaTime;
         Vector3 displacement = _slideDirection * speed * Time.deltaTime;
         displacement += Vector3.up * _verticalSpeed * Time.deltaTime;
@@ -709,5 +737,6 @@ public sealed class PlayerMoveCtrl : MonoBehaviour
         _vaultElapsed = 0f;
         _slideElapsed = 0f;
         _externalSpeedMultiplier = 1f;
+        _gameplaySpeedMultiplier = 1f;
     }
 }

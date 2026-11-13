@@ -13,9 +13,13 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
 
     [Header("声音")]
     [SerializeField, InspectorName("枪械音源")] private AudioSource _audioSource;
+    [SerializeField, InspectorName("最小可听距离"), Min(0.01f)] private float _audioMinDistance = 2f;
+    [SerializeField, InspectorName("最大可听距离"), Min(0.01f)] private float _audioMaxDistance = 80f;
 
     private readonly List<AudioClip> _fireClips = new List<AudioClip>();
     private readonly List<AudioClip> _weaponEventClips = new List<AudioClip>();
+    private readonly List<AudioClip> _reloadClips = new List<AudioClip>();
+    private readonly List<AudioClip> _mechanicalClips = new List<AudioClip>();
     private readonly List<string> _loadedAudioIds = new List<string>();
 
     private ResourceMgr _resourceMgr;
@@ -23,6 +27,7 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
     private WeaponDefinitionSO _weaponData;
     private GameObject _firstPersonMuzzleFlash;
     private GameObject _thirdPersonMuzzleFlash;
+    private AudioClip _dryFireClip;
     private AudioClip _equipClip;
     private AudioClip _unequipClip;
     private int _loadVersion;
@@ -46,6 +51,7 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
             TryGetComponent(out _audioSource);
         }
         _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
+        ConfigureAudioSource();
 
         if (!_actionCtrl || !_combatCtrl || !_weaponViewCtrl || !_audioSource)
         {
@@ -93,6 +99,10 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         }
 
         _loadVersion++;
+        if (_audioSource)
+        {
+            AudioMgr.instance.UnregisterSource(_audioSource);
+        }
         ReleaseFeedbackResources();
     }
 
@@ -128,11 +138,22 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
             weaponData.Audio.WeaponEventSoundResourceIds,
             _weaponEventClips,
             loadVersion);
+        _dryFireClip = await LoadClipAsync(
+            weaponData.Audio.DryFireSoundResourceId,
+            loadVersion);
         _equipClip = await LoadClipAsync(
             weaponData.Audio.EquipSoundResourceId,
             loadVersion);
         _unequipClip = await LoadClipAsync(
             weaponData.Audio.UnequipSoundResourceId,
+            loadVersion);
+        await LoadClipListAsync(
+            weaponData.Audio.ReloadSoundResourceIds,
+            _reloadClips,
+            loadVersion);
+        await LoadClipListAsync(
+            weaponData.Audio.MechanicalSoundResourceIds,
+            _mechanicalClips,
             loadVersion);
     }
 
@@ -271,7 +292,8 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         _audioSource.pitch = UnityEngine.Random.Range(pitchRange.x, pitchRange.y);
         float volume = UnityEngine.Random.Range(volumeRange.x, volumeRange.y);
         AudioClip clip = _fireClips[UnityEngine.Random.Range(0, _fireClips.Count)];
-        _audioSource.PlayOneShot(clip, volume);
+        AudioMgr.instance.PlayOneShot(
+            _audioSource, clip, GJAudioBus.CombatSfx, volume);
     }
 
     private void PlayMuzzleFlash()
@@ -324,6 +346,11 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         PlayOneShot(_unequipClip);
     }
 
+    public void PlayDryFireSound()
+    {
+        PlayOneShot(_dryFireClip);
+    }
+
     public void PlayWeaponSound(int clipIndex)
     {
         if (clipIndex < 0 || clipIndex >= _weaponEventClips.Count)
@@ -334,11 +361,49 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         PlayOneShot(_weaponEventClips[clipIndex]);
     }
 
+    public void PlayReloadSound(int clipIndex)
+    {
+        PlayIndexedSound(_reloadClips, clipIndex);
+    }
+
+    public void PlayMechanicalSound(int clipIndex)
+    {
+        PlayIndexedSound(_mechanicalClips, clipIndex);
+    }
+
+    private void ConfigureAudioSource()
+    {
+        if (!_audioSource)
+        {
+            return;
+        }
+
+        _audioSource.playOnAwake = false;
+        _audioSource.spatialBlend = 1f;
+        _audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        _audioSource.minDistance = Mathf.Max(0.01f, _audioMinDistance);
+        _audioSource.maxDistance = Mathf.Max(
+            _audioSource.minDistance,
+            _audioMaxDistance);
+        _audioSource.dopplerLevel = 0f;
+    }
+
+    private void PlayIndexedSound(IReadOnlyList<AudioClip> clips, int clipIndex)
+    {
+        if (clipIndex < 0 || clipIndex >= clips.Count)
+        {
+            return;
+        }
+
+        PlayOneShot(clips[clipIndex]);
+    }
+
     private void PlayOneShot(AudioClip clip)
     {
         if (_audioSource && clip)
         {
-            _audioSource.PlayOneShot(clip);
+            AudioMgr.instance.PlayOneShot(
+                _audioSource, clip, GJAudioBus.CombatSfx);
         }
     }
 
@@ -362,6 +427,9 @@ public sealed class WeaponFeedbackCtrl : MonoBehaviour
         _loadedAudioIds.Clear();
         _fireClips.Clear();
         _weaponEventClips.Clear();
+        _reloadClips.Clear();
+        _mechanicalClips.Clear();
+        _dryFireClip = null;
         _equipClip = null;
         _unequipClip = null;
     }

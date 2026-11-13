@@ -39,6 +39,7 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.sprite
+    - type.ui
     - type.weapon_ui
     - weapon.melee-fist
     FlaggedDuringContentUpdateRestriction: 0

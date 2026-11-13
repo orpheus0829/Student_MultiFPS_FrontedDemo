@@ -28,6 +28,11 @@ public interface ITimelineEffectHost
     void RecycleEffect(GameObject effect);
 }
 
+public interface ITimelineAudioBusHost
+{
+    void PlaySound(AudioClip clip, GJAudioBus bus);
+}
+
 public interface IDamageable
 {
     void TakeDamage(float amount);

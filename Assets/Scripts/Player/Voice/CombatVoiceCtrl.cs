@@ -93,6 +93,10 @@ public sealed class CombatVoiceCtrl : MonoBehaviour
             _lifeCtrl.Respawned -= HandleRespawned;
         }
         StopVoice();
+        if (_audioSource)
+        {
+            AudioMgr.instance.UnregisterSource(_audioSource);
+        }
     }
 
     private void OnDestroy()
@@ -297,7 +301,8 @@ public sealed class CombatVoiceCtrl : MonoBehaviour
 
         _playingAudioResourceId = resourceId;
         _audioSource.clip = clip;
-        _audioSource.Play();
+        AudioMgr.instance.Play(
+            _audioSource, clip, GJAudioBus.CharacterVoice);
         PublishSubtitle(line.Subtitle, clip.length);
     }
 
@@ -323,8 +328,7 @@ public sealed class CombatVoiceCtrl : MonoBehaviour
         _audioQueue.Clear();
         if (_audioSource)
         {
-            _audioSource.Stop();
-            _audioSource.clip = null;
+            AudioMgr.instance.Stop(_audioSource);
         }
         ReleasePlayingAudio();
         _isLoadingAudio = false;

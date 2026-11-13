@@ -5,6 +5,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 {
+    private const float ModeInteractionRadius = 3.5f;
+    private const float ModeInteractionRetryInterval = 0.25f;
     private static readonly System.Collections.Generic.List<AIPlayerCtrl> ActiveAI =
         new System.Collections.Generic.List<AIPlayerCtrl>();
     [Header("AI 身份")]
@@ -17,7 +19,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
     [SerializeField, InspectorName("视线遮挡层")] private LayerMask _sightMask = ~0;
 
     private readonly AIDecisionCore _decision = new AIDecisionCore();
-    private readonly AICoverEvaluator _coverEvaluator = new AICoverEvaluator();
+    private AICoverEvaluator _coverEvaluator;
     private PlayerActionCtrl _actionCtrl;
     private PlayerMoveCtrl _moveCtrl;
     private PlayerAimCtrl _aimCtrl;
@@ -26,6 +28,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
     private PlayerWeaponInventoryCtrl _inventory;
     private FirstPersonCameraCtrl _cameraCtrl;
     private CharacterHealth _health;
+    private BombInteractCtrl _bombInteractCtrl;
     private AIWorldModel _world;
     private AIAimActuator _aimActuator;
     private AIFireActuator _fireActuator;
@@ -35,7 +38,10 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
     private Vector3 _patrolPoint;
     private Vector3 _coverPoint;
     private float _nextCoverEvaluation;
+    private float _nextModeInteractionAttempt;
     private bool _hasCover;
+    private bool _isHoldingInteract;
+    private IAIModePatchSession _modePatchSession;
 
     public AIDifficulty Difficulty { get { return _difficulty; } }
     public AIDifficultyProfile Profile { get { return _profile; } }
@@ -62,6 +68,8 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 
     private void Awake()
     {
+        // AICoverEvaluator 会创建 NavMeshPath；Unity 禁止在 MonoBehaviour 字段初始化期调用。
+        _coverEvaluator = new AICoverEvaluator();
         TryGetComponent(out _actionCtrl);
         TryGetComponent(out _moveCtrl);
         TryGetComponent(out _aimCtrl);
@@ -114,7 +122,11 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
         bool needsReload = NeedsReload();
         AIBehaviorId previous = _decision.Current;
         _decision.TrySelect(
-            _world, _health, _profile, _hasCover, needsReload, out AIBehaviorId selected);
+            _world, _health, _profile, _hasCover, needsReload,
+            _modePatchSession != null
+                ? _modePatchSession.GetUtilityBias()
+                : default,
+            out AIBehaviorId selected);
         if (selected != previous)
         {
             BehaviorChanged?.Invoke(selected);
@@ -127,7 +139,9 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
         _intent = AIBehaviors.Build(
             _decision.Current, _world, transform, _profile,
             _patrolPoint, _coverPoint, _hasCover);
+        ApplyModeObjective(ref _intent);
         EnrichCombatIntent(ref _intent);
+        ApplyModeInteraction(ref _intent);
         _aimActuator.Tick(_intent, _weaponActionCtrl.CurrentWeaponData);
         _fireActuator.Tick(
             _intent,
@@ -162,6 +176,125 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
         }
         SetDifficulty(parsed);
         return true;
+    }
+
+    public void InstallModePatch(IAIModePatch patch, AIModeContext context)
+    {
+        UninstallModePatch();
+        if (patch == null)
+        {
+            return;
+        }
+        _modePatchSession = patch.CreateSession(this, context);
+        _world?.SetTargetFilter(context != null ? context.TargetFilter : null);
+        _modePatchSession?.OnMatchStart();
+    }
+
+    public void UninstallModePatch()
+    {
+        CancelModeInteraction();
+        _modePatchSession = null;
+        _world?.SetTargetFilter(null);
+    }
+
+    public void NotifyRoundStart(int roundIndex)
+    {
+        CancelModeInteraction();
+        TryGetComponent(out _bombInteractCtrl);
+        _modePatchSession?.OnRoundStart(roundIndex);
+    }
+
+    public void NotifyRoundEnd(bool won)
+    {
+        CancelModeInteraction();
+        _modePatchSession?.OnRoundEnd(won);
+    }
+
+    public void NotifyTargetKilled(PlayerInfo victim)
+    {
+        _modePatchSession?.OnTargetKilled(victim);
+    }
+
+    private void ApplyModeObjective(ref AIIntent intent)
+    {
+        if (_modePatchSession == null || intent.Target != null && intent.Target.Visible ||
+            !_modePatchSession.TryGetObjective(out AIObjective objective))
+        {
+            return;
+        }
+        intent.HasMoveDestination = true;
+        intent.MoveDestination = objective.Position;
+        intent.Sprint = true;
+        intent.Aim = false;
+        intent.Fire = false;
+    }
+
+    private void ApplyModeInteraction(ref AIIntent intent)
+    {
+        if (_isHoldingInteract && (!_bombInteractCtrl || !_bombInteractCtrl.IsInteracting))
+        {
+            ReleaseModeInteraction();
+        }
+
+        bool hasVisibleTarget = intent.Target != null && intent.Target.Visible;
+        if (_modePatchSession == null || hasVisibleTarget ||
+            !_modePatchSession.TryGetObjective(out AIObjective objective) ||
+            !CanInteractWithObjective(objective))
+        {
+            CancelModeInteraction();
+            return;
+        }
+
+        if (_bombInteractCtrl && _bombInteractCtrl.IsInteracting)
+        {
+            SuppressIntentForInteraction(ref intent);
+            return;
+        }
+
+        if (Time.time < _nextModeInteractionAttempt)
+        {
+            return;
+        }
+
+        _nextModeInteractionAttempt = Time.time + ModeInteractionRetryInterval;
+        if (!_bombInteractCtrl && !TryGetComponent(out _bombInteractCtrl))
+        {
+            return;
+        }
+
+        Send(GJInputAction.Interact, PlayerInputPhase.Started, Vector2.zero);
+        if (!_bombInteractCtrl.IsInteracting)
+        {
+            return;
+        }
+
+        _isHoldingInteract = true;
+        SuppressIntentForInteraction(ref intent);
+    }
+
+    private bool CanInteractWithObjective(AIObjective objective)
+    {
+        if (objective.Kind != AIObjectiveKind.AttackSite &&
+            objective.Kind != AIObjectiveKind.Bomb)
+        {
+            return false;
+        }
+
+        Vector3 offset = objective.Position - transform.position;
+        offset.y = 0f;
+        return offset.sqrMagnitude <= ModeInteractionRadius * ModeInteractionRadius;
+    }
+
+    private void SuppressIntentForInteraction(ref AIIntent intent)
+    {
+        intent.HasMoveDestination = false;
+        intent.Sprint = false;
+        intent.Mobility = AIMobilityIntent.None;
+        intent.Aim = false;
+        intent.Fire = false;
+        intent.Reload = false;
+        intent.Melee = false;
+        intent.SwitchWeapon = false;
     }
 
     private void EnrichCombatIntent(ref AIIntent intent)
@@ -248,8 +381,23 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 
     private void StopAllCommands()
     {
+        CancelModeInteraction();
         _fireActuator?.Stop();
         _motionActuator?.Stop();
+    }
+
+    private void CancelModeInteraction()
+    {
+        if (_isHoldingInteract || _bombInteractCtrl && _bombInteractCtrl.IsInteracting)
+        {
+            ReleaseModeInteraction();
+        }
+    }
+
+    private void ReleaseModeInteraction()
+    {
+        Send(GJInputAction.Interact, PlayerInputPhase.Canceled, Vector2.zero);
+        _isHoldingInteract = false;
     }
 
     private void Send(

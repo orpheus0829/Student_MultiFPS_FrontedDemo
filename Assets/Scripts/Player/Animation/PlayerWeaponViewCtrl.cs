@@ -92,6 +92,16 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
         }
     }
 
+    public void SetFirstPersonArmsVisible(bool visible)
+    {
+        _hideFirstPersonPresentation = !visible;
+        SetFirstPersonRenderersHidden(!visible);
+        if (_firstPersonWeapon)
+        {
+            _firstPersonWeapon.SetActive(visible);
+        }
+    }
+
     private void Awake()
     {
         if (!_weaponActionCtrl)

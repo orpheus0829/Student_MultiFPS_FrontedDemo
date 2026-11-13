@@ -2064,16 +2064,15 @@ MonoBehaviour:
   _weaponActionCtrl: {fileID: 111100003}
   _actionCtrl: {fileID: 0}
   _weaponViewCtrl: {fileID: 111100008}
+  _meleeCombatCtrl: {fileID: 3780233180362563139}
   _firstPersonView: {fileID: 6592013405939300546}
   _thirdPersonView: {fileID: 3126009935223978009}
   _maximumLookUpAngle: 42
   _maximumLookDownAngle: 32
   _upperBodyPitchSpeed: 10
   _upperBodyPitchBlendSpeed: 8
-  _showMeleeBlade: 0
+  _showMeleeBlade: 1
   _meleeBladePrefab: {fileID: 46080550320215766, guid: 746dcfad5135c554282d11e7dcb6a16d, type: 3}
-  _firstPersonBladeScale: 0.5
-  _thirdPersonBladeScale: 0.5
 --- !u!114 &2675419983097019558
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2502,7 +2501,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMeleeCombatCtrl
   _weaponResourceId: weapon.melee-fist.data
   _weaponDataFallback: {fileID: 11400000, guid: d67bf468eb62493b9043c030aa6f0172, type: 2}
-  _hitEffectPrefab: {fileID: 3332767588167324657, guid: aeae611e7f028774996afaf7b0561ba8, type: 3}
+  _hitEffectPrefab: {fileID: 0}
   _hitEffectScale: 0.08
   _actionCtrl: {fileID: 5949354933009440359}
   _playerInfo: {fileID: 2675419983097019558}

@@ -120,7 +120,7 @@ MonoBehaviour:
       alignmentMode: 0
       adjustmentTransform: {fileID: 0}
     cullingSettings:
-      cameraCullingMode: 30
+      cameraCullingMode: 0
       cameraCullingMethod: 0
       cameraCullingRenderers: []
       distanceCullingLength:
@@ -129,7 +129,7 @@ MonoBehaviour:
       distanceCullingFadeRatio: 0.2
       distanceCullingReferenceObject: {fileID: 0}
     normalAxis: 1
-    gravity: 0
+    gravity: 9.8
     gravityDirection:
       x: 0
       y: -1
@@ -138,7 +138,7 @@ MonoBehaviour:
     stablizationTimeAfterReset: 0.25
     blendWeight: 1
     damping:
-      value: 0.18
+      value: 0.12
       useCurve: 0
       curve:
         serializedVersion: 2
@@ -194,7 +194,7 @@ MonoBehaviour:
     inertiaConstraint:
       anchor: {fileID: 0}
       anchorInertia: 0
-      worldInertia: 0.2
+      worldInertia: 0.35
       movementInertiaSmoothing: 0.4
       movementSpeedLimit:
         value: 2
@@ -252,7 +252,7 @@ MonoBehaviour:
     angleRestorationConstraint:
       useAngleRestoration: 1
       stiffness:
-        value: 0.7
+        value: 0.08
         useCurve: 0
         curve:
           serializedVersion: 2
@@ -283,7 +283,7 @@ MonoBehaviour:
     angleLimitConstraint:
       useAngleLimit: 1
       limitAngle:
-        value: 18
+        value: 70
         useCurve: 0
         curve:
           serializedVersion: 2
@@ -313,7 +313,7 @@ MonoBehaviour:
     motionConstraint:
       useMaxDistance: 1
       maxDistance:
-        value: 0.1
+        value: 0.75
         useCurve: 1
         curve:
           serializedVersion: 2
@@ -443,7 +443,7 @@ MonoBehaviour:
       depthWeight: 0
       movingWind: 0
     springConstraint:
-      useSpring: 1
+      useSpring: 0
       springPower: 0.04
       limitDistance: 0.1
       normalLimitRatio: 1
@@ -539,10 +539,46 @@ MonoBehaviour:
       customSkinningBoneRecords: []
       clothSetupDataList: []
     selectionData:
-      positions: []
-      attributes: []
-      maxConnectionDistance: 0
-      userEdit: 0
+      positions:
+      - x: 0.0000036243528
+        y: 1.05103
+        z: -0.06136155
+      - x: 0.000005352836
+        y: 1.0470804
+        z: -0.16047263
+      - x: 0.000008080631
+        y: 1.0408444
+        z: -0.3168869
+      - x: 0.000010721511
+        y: 1.0348158
+        z: -0.46830952
+      - x: 0.000013532454
+        y: 1.0283718
+        z: -0.62950766
+      - x: 0.00001628283
+        y: 1.0221349
+        z: -0.78717005
+      - x: 0.000019439542
+        y: 1.0148593
+        z: -0.9682323
+      - x: 0.0013759186
+        y: 1.1259328
+        z: -1.1151806
+      - x: -0.00039618116
+        y: 0.9811638
+        z: -1.0208545
+      attributes:
+      - Value: 1
+      - Value: 2
+      - Value: 2
+      - Value: 2
+      - Value: 2
+      - Value: 2
+      - Value: 2
+      - Value: 2
+      - Value: 2
+      maxConnectionDistance: 0.18420905
+      userEdit: 1
     preBuildData:
       enabled: 0
       buildId: 867e55c0

@@ -48,6 +48,26 @@ MonoBehaviour:
     _closeDistanceScoreFactor: 1
     _farDistanceScoreFactor: 1
     _killBonus: 100
+  _melee:
+    _enabled: 0
+    _range: 1.65
+    _radius: 0.55
+    _impactDelay: 0.11
+    _actionDuration: 0.78
+    _firstPersonStartPosition: {x: 0, y: 0, z: 0}
+    _firstPersonStartRotation: {x: 0, y: 0, z: 0, w: 1}
+    _firstPersonStartScale: {x: 1, y: 1, z: 1}
+    _firstPersonEndPosition: {x: 0, y: 0, z: 0}
+    _firstPersonEndRotation: {x: 0, y: 0, z: 0, w: 1}
+    _firstPersonEndScale: {x: 1, y: 1, z: 1}
+    _arcHeightFactor: 0.3
+    _arcForwardFactor: 0.16
+    _overshootPercent: 0.08
+    _thirdPersonPosition: {x: 0, y: 0, z: 0}
+    _thirdPersonRotation: {x: 0, y: 0, z: 0, w: 1}
+    _thirdPersonScale: {x: 1, y: 1, z: 1}
+    _thirdPersonAnimationSpeed: 1
+    _thirdPersonWeaponShowDelay: 0
   _ammo:
     _magazineCapacity: 2
     _startingReserveAmmo: 24
@@ -126,6 +146,87 @@ MonoBehaviour:
     _shellEjectionPointPath: 
     _magazinePointPath: 
     _leftHandIkPointPath: 
+    _thirdPersonFingerPose:
+      _useLeftGripPose: 0
+      _leftGripPose:
+        _thumb:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _index:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _middle:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _ring:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _little:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+      _useRightGripPose: 0
+      _rightIdlePose:
+        _thumb:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _index:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _middle:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _ring:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _little:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+      _rightFirePose:
+        _thumb:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _index:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _middle:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _ring:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
+        _little:
+          _proximal: 0
+          _intermediate: 0
+          _distal: 0
+          _spread: 0
   _audio:
     _fireSoundResourceIds:
     - weapon.drake_12.audio.s_drake_12_01_sounds

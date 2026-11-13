@@ -10,17 +10,15 @@ using UnityEngine.Timeline;
 
 public static class MeleeTimelinePreviewBuilder
 {
-    private const int PreviewBuildVersion = 3;
+    private const int PreviewBuildVersion = 4;
     private const string RootFolder = "Assets/Timelines/MeleePreview";
     private const string PlayerPrefabPath = "Assets/Prefabs/Characters/Player.prefab";
     private const string BladePrefabPath = "Assets/Prefabs/Weapons/Melee/AnbyBlackStick.prefab";
+    private const string FirstPersonBladePrefabPath =
+        "Assets/Prefabs/Weapons/Melee/AnbyMeleeBlade.prefab";
     private const string BladeMaterialPath =
         "Assets/Resource/Weapons/Melee/AnbyBlade/Materials/AnbyBlackStick.mat";
-    private const string FirstPersonControllerPath =
-        "Assets/Resource/Animations/FirstPerson/PlayerFirstPerson.controller";
     private const string HitEffectPrefabPath = "Assets/Prefabs/Effects/Melee/MeleeHitBurst.prefab";
-    private const string FirstPersonClipPath =
-        "Assets/Resource/Animations/FirstPerson/Melee/FP_Anby_Attack_Normal_02.anim";
     private const string ThirdPersonClipPath =
         "Assets/Resource/Animations/ThirdPerson/Melee/Anby_Attack_Normal_02.fbx";
 
@@ -29,6 +27,15 @@ public static class MeleeTimelinePreviewBuilder
     private static readonly Quaternion BladeRotation =
         new Quaternion(0.009287184f, 0.70543915f, -0.31225657f, 0.63621175f);
     private static readonly Vector3 BladeScale = new Vector3(1f, 0.6f, 0.1f);
+    private static readonly Vector3 FirstPersonStartPosition =
+        new Vector3(-0.46f, -0.34f, 0.78f);
+    private static readonly Vector3 FirstPersonStartEuler =
+        new Vector3(18f, -38f, 72f);
+    private static readonly Vector3 FirstPersonEndPosition =
+        new Vector3(0.42f, -0.02f, 0.64f);
+    private static readonly Vector3 FirstPersonEndEuler =
+        new Vector3(-22f, 42f, -58f);
+    private static readonly Vector3 FirstPersonBladeScale = Vector3.one * 0.5f;
 
     [MenuItem("GunDemo/近战/生成或重建第一与第三人称 Timeline 预览")]
     public static void RebuildAll()
@@ -99,6 +106,126 @@ public static class MeleeTimelinePreviewBuilder
 
     private static void BuildPreview(bool firstPerson, bool overwrite)
     {
+        if (firstPerson)
+        {
+            BuildFirstPersonPreview(overwrite);
+            return;
+        }
+
+        BuildThirdPersonPreview(overwrite);
+    }
+
+    private static void BuildFirstPersonPreview(bool overwrite)
+    {
+        const string prefix = "FP";
+        string scenePath = $"{RootFolder}/{prefix}_MeleePreview.unity";
+        string timelinePath = $"{RootFolder}/{prefix}_MeleePreview.playable";
+        if (!overwrite && AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath))
+        {
+            return;
+        }
+
+        GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+        GameObject bladePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            FirstPersonBladePrefabPath);
+        GameObject effectPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HitEffectPrefabPath);
+        if (!playerPrefab || !bladePrefab || !effectPrefab)
+        {
+            Debug.LogError("无法生成第一人称近战校准：玩家、刀或命中特效资源缺失。");
+            return;
+        }
+
+        DeletePreviewAssets(scenePath, timelinePath, overwrite);
+        Scene previous = PreparePreviewScene(
+            scenePath,
+            prefix,
+            out Scene scene,
+            out bool reopenGeneratedScene);
+        GameObject root = new GameObject("FP_MELEE_ARC_CALIBRATION");
+        GameObject player = CreatePreviewPlayer(playerPrefab, scene, true, root.transform);
+        PlayerAnimationView selected = FindSelectedView(player, true);
+        if (!selected)
+        {
+            ClosePreviewScene(scene, previous, scenePath, reopenGeneratedScene);
+            Debug.LogError("第一人称近战校准找不到第一人称表现对象。");
+            return;
+        }
+
+        DisableGameplay(player);
+        HideAllWeaponModels(player, selected);
+        HideViewRenderers(selected);
+        Camera camera = player.GetComponentInChildren<Camera>(true);
+        Transform calibrationRoot = new GameObject("第一人称刀姿态_只调整下面两个节点").transform;
+        calibrationRoot.SetParent(camera ? camera.transform : root.transform, false);
+
+        GameObject startBlade = CreateCalibrationBlade(
+            bladePrefab,
+            scene,
+            calibrationRoot,
+            "01_挥砍起点刀_调整位置旋转大小",
+            FirstPersonStartPosition,
+            FirstPersonStartEuler,
+            FirstPersonBladeScale);
+        GameObject endBlade = CreateCalibrationBlade(
+            bladePrefab,
+            scene,
+            calibrationRoot,
+            "02_挥砍终点刀_调整位置旋转大小",
+            FirstPersonEndPosition,
+            FirstPersonEndEuler,
+            FirstPersonBladeScale);
+        GameObject previewBlade = CreateCalibrationBlade(
+            bladePrefab,
+            scene,
+            calibrationRoot,
+            "03_弧线运动预览刀_不要手调",
+            FirstPersonStartPosition,
+            FirstPersonStartEuler,
+            FirstPersonBladeScale);
+
+        GameObject effectAdjust = CreateHitEffect(effectPrefab, scene, calibrationRoot);
+        TimelineAsset timeline = CreateTimeline(timelinePath, "FP_MeleePreview");
+        const double duration = 1.0333333d;
+
+        ActivationTrack startTrack = timeline.CreateTrack<ActivationTrack>(
+            null,
+            "起点刀_全程参考");
+        startTrack.CreateDefaultClip().duration = duration;
+        ActivationTrack endTrack = timeline.CreateTrack<ActivationTrack>(
+            null,
+            "终点刀_全程参考");
+        endTrack.CreateDefaultClip().duration = duration;
+        AnimationTrack arcTrack = timeline.CreateTrack<AnimationTrack>(
+            null,
+            "运动预览刀_自动弧线");
+        AnimationClip arcClip = CreateFirstPersonArcClip(timeline);
+        TimelineClip arcTimelineClip = arcTrack.CreateClip(arcClip);
+        arcTimelineClip.displayName = "蓄力→爆发→过冲→回收";
+        arcTimelineClip.duration = duration;
+        ActivationTrack effectTrack = timeline.CreateTrack<ActivationTrack>(
+            null,
+            "伤害API响应点_拖动此片段");
+        TimelineClip effectClip = effectTrack.CreateDefaultClip();
+        effectClip.start = 0.34d;
+        effectClip.duration = 0.04d;
+        effectClip.displayName = "调用 ResolveImpactNow";
+
+        PlayableDirector director = root.AddComponent<PlayableDirector>();
+        director.playableAsset = timeline;
+        director.playOnAwake = false;
+        director.timeUpdateMode = DirectorUpdateMode.GameTime;
+        director.SetGenericBinding(startTrack, startBlade);
+        director.SetGenericBinding(endTrack, endBlade);
+        director.SetGenericBinding(arcTrack, previewBlade);
+        director.SetGenericBinding(effectTrack, effectAdjust);
+
+        SaveAndClosePreview(scene, previous, scenePath, reopenGeneratedScene);
+        Debug.Log($"已生成第一人称无手臂弧线校准场景：{scenePath}");
+    }
+
+    private static void BuildThirdPersonPreview(bool overwrite)
+    {
+        const bool firstPerson = false;
         string prefix = firstPerson ? "FP" : "TP";
         string scenePath = $"{RootFolder}/{prefix}_MeleePreview.unity";
         string timelinePath = $"{RootFolder}/{prefix}_MeleePreview.playable";
@@ -110,22 +237,16 @@ public static class MeleeTimelinePreviewBuilder
         GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
         GameObject bladePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(BladePrefabPath);
         GameObject effectPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HitEffectPrefabPath);
-        AnimationClip clip = firstPerson
-            ? AssetDatabase.LoadAssetAtPath<AnimationClip>(FirstPersonClipPath)
-            : AssetDatabase.LoadAllAssetsAtPath(ThirdPersonClipPath)
-                .OfType<AnimationClip>()
-                .FirstOrDefault(item => !item.name.StartsWith("__preview__", StringComparison.Ordinal));
+        AnimationClip clip = AssetDatabase.LoadAllAssetsAtPath(ThirdPersonClipPath)
+            .OfType<AnimationClip>()
+            .FirstOrDefault(item => !item.name.StartsWith("__preview__", StringComparison.Ordinal));
         if (!playerPrefab || !bladePrefab || !effectPrefab || !clip)
         {
             Debug.LogError("无法生成近战 Timeline 预览：玩家、刀、特效或动画资源缺失。");
             return;
         }
 
-        if (overwrite)
-        {
-            AssetDatabase.DeleteAsset(scenePath);
-            AssetDatabase.DeleteAsset(timelinePath);
-        }
+        DeletePreviewAssets(scenePath, timelinePath, overwrite);
 
         Scene previous = SceneManager.GetActiveScene();
         bool reopenGeneratedScene = previous.path == scenePath;
@@ -138,23 +259,11 @@ public static class MeleeTimelinePreviewBuilder
         SceneManager.SetActiveScene(scene);
 
         GameObject root = new GameObject(prefix + "_MELEE_TIMELINE_PREVIEW");
-        GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, scene);
-        player.name = firstPerson ? "第一人称玩家预览" : "第三人称玩家预览";
-        player.transform.SetParent(root.transform, false);
-
-        PlayerAnimationView[] views = player.GetComponentsInChildren<PlayerAnimationView>(true);
-        PlayerAnimationView selected = views.FirstOrDefault(view =>
-            firstPerson ? view.ViewType == PlayerViewType.FirstPerson : view.ViewType == PlayerViewType.ThirdPerson);
-        foreach (PlayerAnimationView view in views)
-        {
-            view.gameObject.SetActive(view == selected);
-        }
+        GameObject player = CreatePreviewPlayer(playerPrefab, scene, false, root.transform);
+        PlayerAnimationView selected = FindSelectedView(player, false);
         // 预览场景只由 Timeline 驱动。禁用玩家玩法脚本，避免它们在 Play Mode
         // 覆盖双手骨骼、重新生成枪械，或对未运行 Controller 的 Animator 持续写参数。
-        foreach (MonoBehaviour behaviour in player.GetComponentsInChildren<MonoBehaviour>(true))
-        {
-            behaviour.enabled = false;
-        }
+        DisableGameplay(player);
         Animator animator = selected ? selected.CharacterAnimator : null;
         if (!animator)
         {
@@ -164,24 +273,19 @@ public static class MeleeTimelinePreviewBuilder
             return;
         }
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-        if (firstPerson)
-        {
-            animator.runtimeAnimatorController =
-                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(FirstPersonControllerPath);
-        }
         HideAllWeaponModels(player, selected);
 
         Transform hand = FindHand(animator, !firstPerson, false);
-        GameObject adjust = new GameObject("BLACK_BLADE_ADJUST_HERE");
+        GameObject adjust = new GameObject("棍子绑定调整点_调整位置旋转大小");
         adjust.transform.SetParent(hand, false);
         adjust.transform.localPosition = BladePosition;
         adjust.transform.localRotation = BladeRotation;
         adjust.transform.localScale = BladeScale;
         GameObject blade = (GameObject)PrefabUtility.InstantiatePrefab(bladePrefab, scene);
-        blade.name = "黑色棍状刀_资源实例";
+        blade.name = "第三人称棍子_资源实例_不要单独调整";
         blade.transform.SetParent(adjust.transform, false);
 
-        GameObject effectAdjust = new GameObject("HIT_EFFECT_ADJUST_HERE");
+        GameObject effectAdjust = new GameObject("命中特效位置_可选调整");
         effectAdjust.transform.SetParent(root.transform, false);
         effectAdjust.transform.localPosition = new Vector3(0f, 1.25f, 1.1f);
         effectAdjust.transform.localScale = Vector3.one * 0.08f;
@@ -193,7 +297,7 @@ public static class MeleeTimelinePreviewBuilder
         timeline.name = prefix + "_MeleePreview";
         AssetDatabase.CreateAsset(timeline, timelinePath);
         AnimationTrack animationTrack = timeline.CreateTrack<AnimationTrack>(null,
-            firstPerson ? "第一人称双手_0.5倍速" : "第三人称上半身_0.5倍速");
+            "第三人称身体动作_0.5倍速");
         TimelineClip animationTimelineClip = animationTrack.CreateClip(clip);
         animationTimelineClip.displayName = "安比第二段普攻（0.5x）";
         animationTimelineClip.timeScale = 0.5d;
@@ -220,6 +324,243 @@ public static class MeleeTimelinePreviewBuilder
         else if (previous.IsValid())
             SceneManager.SetActiveScene(previous);
         Debug.Log($"已生成 {prefix} 近战可视化场景：{scenePath}");
+    }
+
+    private static void DeletePreviewAssets(
+        string scenePath,
+        string timelinePath,
+        bool overwrite)
+    {
+        if (!overwrite)
+        {
+            return;
+        }
+
+        AssetDatabase.DeleteAsset(scenePath);
+        AssetDatabase.DeleteAsset(timelinePath);
+    }
+
+    private static Scene PreparePreviewScene(
+        string scenePath,
+        string prefix,
+        out Scene scene,
+        out bool reopenGeneratedScene)
+    {
+        Scene previous = SceneManager.GetActiveScene();
+        reopenGeneratedScene = previous.path == scenePath;
+        if (reopenGeneratedScene)
+        {
+            previous = EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene,
+                NewSceneMode.Single);
+        }
+
+        scene = EditorSceneManager.NewScene(
+            NewSceneSetup.EmptyScene,
+            NewSceneMode.Additive);
+        scene.name = prefix + "_MeleePreview";
+        SceneManager.SetActiveScene(scene);
+        return previous;
+    }
+
+    private static GameObject CreatePreviewPlayer(
+        GameObject playerPrefab,
+        Scene scene,
+        bool firstPerson,
+        Transform parent)
+    {
+        GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, scene);
+        player.name = firstPerson ? "第一人称相机参考_手和枪已隐藏" : "第三人称角色参考";
+        player.transform.SetParent(parent, false);
+        PlayerAnimationView[] views = player.GetComponentsInChildren<PlayerAnimationView>(true);
+        PlayerAnimationView selected = views.FirstOrDefault(view =>
+            firstPerson
+                ? view.ViewType == PlayerViewType.FirstPerson
+                : view.ViewType == PlayerViewType.ThirdPerson);
+        foreach (PlayerAnimationView view in views)
+        {
+            view.gameObject.SetActive(view == selected);
+        }
+        return player;
+    }
+
+    private static PlayerAnimationView FindSelectedView(
+        GameObject player,
+        bool firstPerson)
+    {
+        return player.GetComponentsInChildren<PlayerAnimationView>(true)
+            .FirstOrDefault(view => firstPerson
+                ? view.ViewType == PlayerViewType.FirstPerson
+                : view.ViewType == PlayerViewType.ThirdPerson);
+    }
+
+    private static void DisableGameplay(GameObject player)
+    {
+        foreach (MonoBehaviour behaviour in player.GetComponentsInChildren<MonoBehaviour>(true))
+        {
+            behaviour.enabled = false;
+        }
+    }
+
+    private static void HideViewRenderers(PlayerAnimationView view)
+    {
+        Animator animator = view ? view.CharacterAnimator : null;
+        if (!animator)
+        {
+            return;
+        }
+
+        Renderer[] renderers = animator.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].enabled = false;
+        }
+    }
+
+    private static GameObject CreateCalibrationBlade(
+        GameObject bladePrefab,
+        Scene scene,
+        Transform parent,
+        string name,
+        Vector3 position,
+        Vector3 euler,
+        Vector3 scale)
+    {
+        GameObject blade = (GameObject)PrefabUtility.InstantiatePrefab(bladePrefab, scene);
+        blade.name = name;
+        blade.transform.SetParent(parent, false);
+        blade.transform.localPosition = position;
+        blade.transform.localEulerAngles = euler;
+        blade.transform.localScale = scale;
+        return blade;
+    }
+
+    private static GameObject CreateHitEffect(
+        GameObject effectPrefab,
+        Scene scene,
+        Transform parent)
+    {
+        GameObject effectAdjust = new GameObject("伤害响应点_移动Timeline片段改时间");
+        effectAdjust.transform.SetParent(parent, false);
+        effectAdjust.transform.localPosition = new Vector3(0f, 0f, 1.1f);
+        effectAdjust.transform.localScale = Vector3.one * 0.08f;
+        GameObject effect = (GameObject)PrefabUtility.InstantiatePrefab(effectPrefab, scene);
+        effect.name = "命中特效_仅作为响应点参考";
+        effect.transform.SetParent(effectAdjust.transform, false);
+        return effectAdjust;
+    }
+
+    private static TimelineAsset CreateTimeline(string timelinePath, string name)
+    {
+        TimelineAsset timeline = ScriptableObject.CreateInstance<TimelineAsset>();
+        timeline.name = name;
+        AssetDatabase.CreateAsset(timeline, timelinePath);
+        return timeline;
+    }
+
+    private static AnimationClip CreateFirstPersonArcClip(TimelineAsset timeline)
+    {
+        AnimationClip clip = new AnimationClip
+        {
+            name = "FP_MeleeArc_DefaultPreview"
+        };
+        clip.frameRate = 60f;
+        Vector3 middlePosition = Vector3.Lerp(
+            FirstPersonStartPosition,
+            FirstPersonEndPosition,
+            0.5f) + new Vector3(0f, 0.28f, 0.18f);
+        Vector3 middleEuler = Vector3.Lerp(
+            FirstPersonStartEuler,
+            FirstPersonEndEuler,
+            0.5f) + new Vector3(-15f, 0f, -18f);
+        Vector3 overshootPosition = FirstPersonEndPosition + new Vector3(0.05f, -0.025f, 0.04f);
+        Vector3 overshootEuler = FirstPersonEndEuler + new Vector3(-5f, 7f, -8f);
+
+        SetVector3Curves(
+            clip,
+            "m_LocalPosition",
+            FirstPersonStartPosition,
+            middlePosition,
+            FirstPersonEndPosition,
+            overshootPosition);
+        SetVector3Curves(
+            clip,
+            "localEulerAnglesRaw",
+            FirstPersonStartEuler,
+            middleEuler,
+            FirstPersonEndEuler,
+            overshootEuler);
+        AssetDatabase.AddObjectToAsset(clip, timeline);
+        return clip;
+    }
+
+    private static void SetVector3Curves(
+        AnimationClip clip,
+        string propertyPrefix,
+        Vector3 start,
+        Vector3 middle,
+        Vector3 end,
+        Vector3 overshoot)
+    {
+        SetCurve(clip, propertyPrefix + ".x", start.x, middle.x, end.x, overshoot.x);
+        SetCurve(clip, propertyPrefix + ".y", start.y, middle.y, end.y, overshoot.y);
+        SetCurve(clip, propertyPrefix + ".z", start.z, middle.z, end.z, overshoot.z);
+    }
+
+    private static void SetCurve(
+        AnimationClip clip,
+        string propertyName,
+        float start,
+        float middle,
+        float end,
+        float overshoot)
+    {
+        AnimationCurve curve = new AnimationCurve(
+            new Keyframe(0f, start),
+            new Keyframe(0.08f, start),
+            new Keyframe(0.31f, middle),
+            new Keyframe(0.49f, end),
+            new Keyframe(0.54f, overshoot),
+            new Keyframe(0.76f, end));
+        for (int i = 0; i < curve.length; i++)
+        {
+            AnimationUtility.SetKeyLeftTangentMode(
+                curve,
+                i,
+                AnimationUtility.TangentMode.ClampedAuto);
+            AnimationUtility.SetKeyRightTangentMode(
+                curve,
+                i,
+                AnimationUtility.TangentMode.ClampedAuto);
+        }
+        clip.SetCurve(string.Empty, typeof(Transform), propertyName, curve);
+    }
+
+    private static void SaveAndClosePreview(
+        Scene scene,
+        Scene previous,
+        string scenePath,
+        bool reopenGeneratedScene)
+    {
+        EditorSceneManager.SaveScene(scene, scenePath);
+        ClosePreviewScene(scene, previous, scenePath, reopenGeneratedScene);
+    }
+
+    private static void ClosePreviewScene(
+        Scene scene,
+        Scene previous,
+        string scenePath,
+        bool reopenGeneratedScene)
+    {
+        EditorSceneManager.CloseScene(scene, true);
+        if (reopenGeneratedScene)
+        {
+            EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+        }
+        else if (previous.IsValid())
+        {
+            SceneManager.SetActiveScene(previous);
+        }
     }
 
     private static Transform FindHand(Animator animator, bool humanoid, bool right)

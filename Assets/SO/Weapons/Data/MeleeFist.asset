@@ -52,8 +52,22 @@ MonoBehaviour:
     _enabled: 1
     _range: 1.65
     _radius: 0.55
-    _impactDelay: 0.0666667
-    _actionDuration: 1.0333333
+    _impactDelay: 0.133333
+    _actionDuration: 0.716667
+    _firstPersonStartPosition: {x: -0.504, y: -0.312, z: 0.375}
+    _firstPersonStartRotation: {x: -0.1369142, y: -0.4925557, z: 0.727642, w: 0.4573624}
+    _firstPersonStartScale: {x: 0.5, y: 0.5, z: 0.5}
+    _firstPersonEndPosition: {x: 0.340205, y: 0.108494, z: 0.436433}
+    _firstPersonEndRotation: {x: -0.7646484, y: -0.01532827, z: -0.4286164, w: 0.481005}
+    _firstPersonEndScale: {x: 0.5, y: 0.5, z: 0.5}
+    _arcHeightFactor: 0.3
+    _arcForwardFactor: 0.16
+    _overshootPercent: 0.08
+    _thirdPersonPosition: {x: -0.0803, y: -0.158, z: 0.09}
+    _thirdPersonRotation: {x: 0.00928718, y: 0.7054391, z: -0.3122565, w: 0.6362117}
+    _thirdPersonScale: {x: 1, y: 0.6, z: 0.1}
+    _thirdPersonAnimationSpeed: 1
+    _thirdPersonWeaponShowDelay: 0.066667
   _ammo:
     _magazineCapacity: 1
     _startingReserveAmmo: 0
@@ -227,7 +241,7 @@ MonoBehaviour:
     _muzzleFlashResourceId: 
     _muzzleSmokeResourceId: 
     _shellResourceId: 
-    _tracerResourceId: 
+    _tracerResourceId: effect.weapon.bullet_tracer
     _impactEffectResourceId: 
   _cameraFeedback:
     _sourceCurve:

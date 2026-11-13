@@ -62,6 +62,20 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         }
     }
 
+    public void SetCurrentAmmo(int magazineAmmo, int reserveAmmo)
+    {
+        if (_ammoState == null || !_weaponData)
+        {
+            return;
+        }
+
+        _ammoState.MagazineAmmo = Mathf.Clamp(
+            magazineAmmo, 0, _weaponData.Ammo.MagazineCapacity);
+        _ammoState.ReserveAmmo = Mathf.Clamp(
+            reserveAmmo, 0, _weaponData.Ammo.MaximumReserveAmmo);
+        NotifyAmmoChanged();
+    }
+
     public bool CanFireDuringPerRoundReload
     {
         get

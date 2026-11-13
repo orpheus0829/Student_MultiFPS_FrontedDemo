@@ -28,12 +28,39 @@ public sealed class WeaponAnimationEventRelay : MonoBehaviour
         }
     }
 
+    public void PlayDryFireSound()
+    {
+        WeaponFeedbackCtrl feedbackCtrl = GetFeedbackCtrl();
+        if (feedbackCtrl)
+        {
+            feedbackCtrl.PlayDryFireSound();
+        }
+    }
+
     public void PlayWeaponSound(int clipIndex)
     {
         WeaponFeedbackCtrl feedbackCtrl = GetFeedbackCtrl();
         if (feedbackCtrl)
         {
             feedbackCtrl.PlayWeaponSound(clipIndex);
+        }
+    }
+
+    public void PlayReloadSound(int clipIndex)
+    {
+        WeaponFeedbackCtrl feedbackCtrl = GetFeedbackCtrl();
+        if (feedbackCtrl)
+        {
+            feedbackCtrl.PlayReloadSound(clipIndex);
+        }
+    }
+
+    public void PlayMechanicalSound(int clipIndex)
+    {
+        WeaponFeedbackCtrl feedbackCtrl = GetFeedbackCtrl();
+        if (feedbackCtrl)
+        {
+            feedbackCtrl.PlayMechanicalSound(clipIndex);
         }
     }
 

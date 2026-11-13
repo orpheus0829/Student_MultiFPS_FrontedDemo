@@ -73,7 +73,15 @@ public class EffectAudioBehaviour : PlayableBehaviour
     {
         if (clip.sound != null)
         {
-            _host.PlaySound(clip.sound);
+            ITimelineAudioBusHost audioBusHost = _host as ITimelineAudioBusHost;
+            if (audioBusHost != null)
+            {
+                audioBusHost.PlaySound(clip.sound, clip.audioBus);
+            }
+            else
+            {
+                _host.PlaySound(clip.sound);
+            }
         }
         if (clip.effectPrefab != null)
         {

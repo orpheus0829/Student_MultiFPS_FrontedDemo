@@ -11,9 +11,7 @@ public enum PlayerViewType
 public sealed class PlayerAnimationView : MonoBehaviour
 {
     private static readonly int PunchTrigger = Animator.StringToHash("Punch");
-    // 原动画半速后的完整时长为 1.3333333 秒；只使用末尾 1.0333333 秒。
-    // 因此从归一化 0.225 处开始，随后正向播放至动画末尾。
-    private const float MeleeStartNormalizedTime = 0.225f;
+    private const float MeleeStartNormalizedTime = 0f;
     private const float FirstPersonForwardThreshold = 0.1f;
     private const string UpperBodyWeaponLayerName = "UpperBodyWeapon";
 
@@ -55,7 +53,9 @@ public sealed class PlayerAnimationView : MonoBehaviour
     private WeaponActionType _upperBodyActionType;
     private Vector3 _restLocalPosition;
     private AnimatorCullingMode _cullingModeBeforePunch;
+    private float _animatorSpeedBeforePunch;
     private bool _hasPunchCullingOverride;
+    private bool _hasPunchSpeedOverride;
 
     private void Awake()
     {
@@ -94,7 +94,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
     }
 
-    public void StartPunch()
+    public void StartPunch(float playbackSpeed = 1f)
     {
         EnsureAnimatorBindings();
         if (_characterAnimator && _characterAnimator.isActiveAndEnabled &&
@@ -108,6 +108,12 @@ public sealed class PlayerAnimationView : MonoBehaviour
                 _hasPunchCullingOverride = true;
             }
             _characterAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            if (!_hasPunchSpeedOverride)
+            {
+                _animatorSpeedBeforePunch = _characterAnimator.speed;
+                _hasPunchSpeedOverride = true;
+            }
+            _characterAnimator.speed = Mathf.Max(0.1f, playbackSpeed);
             _characterAnimator.ResetTrigger(PunchTrigger);
             _characterAnimator.SetTrigger(PunchTrigger);
 
@@ -138,17 +144,21 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
 
         int meleeLayer = _characterAnimator.GetLayerIndex("MeleeUpperBody");
-        if (meleeLayer < 0)
+        if (meleeLayer >= 0)
         {
-            return;
+            int emptyHash = Animator.StringToHash("MeleeUpperBody.Empty");
+            if (_characterAnimator.HasState(meleeLayer, emptyHash))
+            {
+                _characterAnimator.Play(emptyHash, meleeLayer, 0f);
+            }
+            _characterAnimator.SetLayerWeight(meleeLayer, 0f);
         }
 
-        int emptyHash = Animator.StringToHash("MeleeUpperBody.Empty");
-        if (_characterAnimator.HasState(meleeLayer, emptyHash))
+        if (_hasPunchSpeedOverride)
         {
-            _characterAnimator.Play(emptyHash, meleeLayer, 0f);
+            _characterAnimator.speed = _animatorSpeedBeforePunch;
+            _hasPunchSpeedOverride = false;
         }
-        _characterAnimator.SetLayerWeight(meleeLayer, 0f);
         if (_hasPunchCullingOverride)
         {
             _characterAnimator.cullingMode = _cullingModeBeforePunch;

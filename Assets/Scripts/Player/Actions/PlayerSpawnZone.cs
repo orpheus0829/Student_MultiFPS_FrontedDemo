@@ -30,11 +30,14 @@ public sealed class AISpawnDefinition
 [DisallowMultipleComponent]
 public sealed class PlayerSpawnZone : MonoBehaviour
 {
+    public event Action<CharacterHealth, int> Spawned;
     [Header("区域")]
     [SerializeField, InspectorName("复活区模式")] private PlayerSpawnZoneMode _mode;
     [SerializeField, InspectorName("区域尺寸")] private Vector3 _size = new Vector3(10f, 3f, 10f);
     [SerializeField, InspectorName("地面层")] private LayerMask _groundMask = ~0;
     [SerializeField, Min(0f), InspectorName("离地高度")] private float _groundOffset = 0.15f;
+    [SerializeField, Min(0), InspectorName("对局槽位起始编号")]
+    private int _matchSlotOffset;
 
     [Header("AI 玩家")]
     [SerializeField, InspectorName("AI 玩家预制体资源 ID")]
@@ -54,6 +57,19 @@ public sealed class PlayerSpawnZone : MonoBehaviour
     public PlayerSpawnZoneMode Mode
     {
         get { return _mode; }
+    }
+
+    public int MatchSlotOffset { get { return _matchSlotOffset; } }
+
+    public bool OwnsMatchSlot(int slot)
+    {
+        if (slot < _matchSlotOffset)
+        {
+            return false;
+        }
+
+        int capacity = _mode == PlayerSpawnZoneMode.Ai ? Mathf.Max(1, _aiCount) : 1;
+        return slot < _matchSlotOffset + capacity;
     }
 
     private void Start()
@@ -198,6 +214,7 @@ public sealed class PlayerSpawnZone : MonoBehaviour
         {
             info.SetPlayerName("AI 玩家 " + (++_nextNameIndex));
         }
+        Spawned?.Invoke(health, _matchSlotOffset + slotIndex);
     }
 
     private void HandleAiDied()
@@ -218,8 +235,13 @@ public sealed class PlayerSpawnZone : MonoBehaviour
             return;
         }
 
-        _respawning.Add(deadHealth);
         PlayerLifeCtrl life = deadObject.GetComponent<PlayerLifeCtrl>();
+        if (!life || !life.AutoRespawnEnabled)
+        {
+            return;
+        }
+
+        _respawning.Add(deadHealth);
         float delay = life ? life.RespawnDelay : 5f;
         SmartTimer.instance.SetTimer(this, delay, () => RespawnAi(deadHealth));
     }
@@ -261,6 +283,7 @@ public sealed class PlayerSpawnZone : MonoBehaviour
     private void OnValidate()
     {
         _aiCount = Mathf.Max(0, _aiCount);
+        _matchSlotOffset = Mathf.Max(0, _matchSlotOffset);
         if (_aiDefinitions == null)
         {
             _aiDefinitions = new List<AISpawnDefinition>();
@@ -285,7 +308,12 @@ public sealed class PlayerSpawnZone : MonoBehaviour
         }
 
         PlayerLifeCtrl life = instance.GetComponent<PlayerLifeCtrl>();
-        if (!life || !life.TryRespawn())
+        if (!life || !life.AutoRespawnEnabled)
+        {
+            _respawning.Remove(health);
+            return;
+        }
+        if (!life.TryRespawn())
         {
             Debug.LogError($"{name} 无法复活 AI 玩家 {instance.name}。", instance);
         }

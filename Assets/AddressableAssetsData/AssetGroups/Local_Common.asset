@@ -15,10 +15,98 @@ MonoBehaviour:
   m_GroupName: Local_Common
   m_GUID: 49fd055beb77b8241a4321033ae725fb
   m_SerializeEntries:
+  - m_GUID: 02c69b7c77c040e4baf2e8f4760231d4
+    m_Address: audio.feedback.kill
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio.feedback
+    - type.audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 159adfd31aedd234b8a8f68dc54d2a1c
+    m_Address: ui.match.mode.tdm.logo
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.match
+    - type.texture
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3b244f22687a41d4dbaeafcc55bd8a57
+    m_Address: mode.bomb.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.match
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 44539841f3aafd84894ee0a1dd30f918
+    m_Address: prop.bomb.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.match
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 619b9ed0558cd414093778cd791c0f3e
+    m_Address: audio.feedback.hit
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio.feedback
+    - type.audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6417efcf0413e5049968e06b0323c9ea
+    m_Address: mode.tdm.short.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.match
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 67bab16c3efcde848a730d4eb62d7a8d
+    m_Address: ui.match.mode.solo.logo
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.match
+    - type.texture
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 734950ea81f42e246b8771002b38245e
+    m_Address: ui.match.mode.bomb.logo
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.match
+    - type.texture
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7df36f9e7eff09248a73e35523620ede
+    m_Address: mode.solo.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.match
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82648d1e5c2cda144a9e35143a284dc7
+    m_Address: audio.settings
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.audio
+    - type.data
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b8888888888888888888888888888888
     m_Address: weapon.catalog
     m_ReadOnly: 0
     m_SerializedLabels:
+    - type.data
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c3f16089043b6644bada895cba90d40f
+    m_Address: audio.feedback.headshot-kill
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio.feedback
+    - type.audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dbc642940ebd925409b7a2c11c0cadde
+    m_Address: audio.combat-feedback.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio.feedback
+    - type.audio
     - type.data
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
