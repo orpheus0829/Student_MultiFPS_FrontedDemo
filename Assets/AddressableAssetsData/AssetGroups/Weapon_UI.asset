@@ -84,6 +84,13 @@ MonoBehaviour:
     - type.ui
     - weapon.drake-12
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 766ed15aac29d674394d33a172337dc3
+    m_Address: ui.equipment.helmet.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.equipment
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7cae470c17d3b5f44bec71e2b0691591
     m_Address: weapon.g3.silhouette
     m_ReadOnly: 0
@@ -167,6 +174,13 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.ui
     - weapon.mps5
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df6698c37ec706248acb1a5b1fcb01c1
+    m_Address: ui.equipment.armor.silhouette
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.equipment
+    - type.ui
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e4cf7497f4055e14d86113df1a91023e
     m_Address: weapon.as-val.silhouette

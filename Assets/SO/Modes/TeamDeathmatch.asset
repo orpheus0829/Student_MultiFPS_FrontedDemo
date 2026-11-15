@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ModeDefinitionSO
   _kind: 1
   _modeId: mode.tdm.short
-  _displayName: "\u77ED\u56E2\u961F\u7ADE\u6280"
+  _displayName: "\u56E2\u961F\u7ADE\u6280"
   _isBuiltIn: 1
   _teamCount: 2
   _teamSize: 5
@@ -26,6 +26,12 @@ MonoBehaviour:
   _logoResourceId: ui.match.mode.tdm.logo
   _aiPatchId: tdm.teamwork
   _items:
+  - _key: match.startCountdown
+    _type: 2
+    _number: 5
+    _flag: 0
+    _text: 
+    _isRemovable: 0
   - _key: score.kill
     _type: 1
     _number: 100
@@ -61,6 +67,12 @@ MonoBehaviour:
     _number: 0
     _flag: 0
     _text: tdm
+    _isRemovable: 0
+  - _key: hud.scoreStyle
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: team
     _isRemovable: 0
   - _key: match.usesRounds
     _type: 0

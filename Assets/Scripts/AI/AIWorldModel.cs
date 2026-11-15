@@ -120,14 +120,57 @@ public sealed class AIWorldModel
 
     public bool CanConsiderAsTarget(CharacterHealth actor)
     {
-        return actor && !actor.IsDead && actor != _self &&
-            !actor.transform.IsChildOf(_transform) &&
-            (_targetFilter == null || _targetFilter(actor));
+        if (!actor || actor.IsDead || actor == _self ||
+            actor.transform.IsChildOf(_transform))
+        {
+            return false;
+        }
+
+        MatchManager match = MatchManager.Current;
+        if (match && _self.PlayerInfo && actor.PlayerInfo &&
+            match.IsFriendly(_self.PlayerInfo, actor.PlayerInfo))
+        {
+            return false;
+        }
+
+        return _targetFilter == null || _targetFilter(actor);
     }
 
     public Vector3 GetKnownTargetPosition()
     {
         return CurrentTarget != null ? CurrentTarget.LastKnownPosition : _transform.position;
+    }
+
+    public void ReceiveSharedTarget(AITrackedTarget source, float confidence)
+    {
+        if (source == null || !CanConsiderAsTarget(source.Actor))
+        {
+            return;
+        }
+
+        if (!_tracks.TryGetValue(source.Actor, out AITrackedTarget track))
+        {
+            track = new AITrackedTarget { Actor = source.Actor };
+            _tracks.Add(source.Actor, track);
+        }
+
+        float sharedConfidence = Mathf.Clamp01(confidence * source.Confidence);
+        if (track.Visible || track.Confidence >= sharedConfidence)
+        {
+            return;
+        }
+
+        track.Visible = false;
+        track.VisiblePoints = AIBodyPointMask.None;
+        track.LastKnownPosition = source.LastKnownPosition;
+        track.LastKnownVelocity = source.LastKnownVelocity;
+        track.Distance = Vector3.Distance(_transform.position, source.LastKnownPosition);
+        track.Confidence = sharedConfidence;
+        track.LastSeenTime = Time.time -
+            (1f - sharedConfidence) * _profile.MemoryDuration;
+        track.ThreatScore = Mathf.Max(track.ThreatScore, source.ThreatScore * 0.75f);
+        track.Vulnerability = source.Vulnerability;
+        track.UncertaintyRadius = Mathf.Max(1f, source.UncertaintyRadius + 1.5f);
     }
 
     private void UpdateTrack(CharacterHealth actor)
@@ -286,6 +329,15 @@ public sealed class AIWorldModel
         {
             return;
         }
+
+        CharacterHealth sourceActor = noise.Source
+            ? noise.Source.GetComponentInParent<CharacterHealth>()
+            : null;
+        if (sourceActor && !CanConsiderAsTarget(sourceActor))
+        {
+            return;
+        }
+
         float distance = Vector3.Distance(_transform.position, noise.Position);
         if (distance > Mathf.Min(_profile.HearingRadius, noise.Radius))
         {
@@ -294,6 +346,30 @@ public sealed class AIWorldModel
         Vector2 error = UnityEngine.Random.insideUnitCircle * noise.Uncertainty;
         _noisePosition = noise.Position + new Vector3(error.x, 0f, error.y);
         _noiseTime = Time.time;
+
+        if (_profile.Difficulty == AIDifficulty.Easy || !noise.Source)
+        {
+            return;
+        }
+
+        if (!CanConsiderAsTarget(sourceActor))
+        {
+            return;
+        }
+
+        if (!_tracks.TryGetValue(sourceActor, out AITrackedTarget track))
+        {
+            track = new AITrackedTarget { Actor = sourceActor };
+            _tracks.Add(sourceActor, track);
+        }
+
+        float confidence = _profile.Difficulty == AIDifficulty.Hard ? 0.8f : 0.5f;
+        track.Visible = false;
+        track.VisiblePoints = AIBodyPointMask.None;
+        track.LastKnownPosition = _noisePosition;
+        track.Distance = distance;
+        track.Confidence = Mathf.Max(track.Confidence, confidence);
+        track.LastSeenTime = Time.time - (1f - track.Confidence) * _profile.MemoryDuration;
     }
 
     private static bool IsReloadAction(WeaponActionType actionType)

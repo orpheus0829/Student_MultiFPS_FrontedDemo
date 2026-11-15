@@ -22,6 +22,13 @@ MonoBehaviour:
     - audio.feedback
     - type.audio
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 06ab7cce6212cc849a5d4d8cdb6b9caa
+    m_Address: ui.interaction.tablet.civilian
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.interaction
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 159adfd31aedd234b8a8f68dc54d2a1c
     m_Address: ui.match.mode.tdm.logo
     m_ReadOnly: 0
@@ -29,6 +36,20 @@ MonoBehaviour:
     - type.match
     - type.texture
     - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 18cd0a4815981e34ca1574152c0d90da
+    m_Address: equipment.armor.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.equipment
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34020825b9413c64f9b6a322a44e4f08
+    m_Address: map.battlefield2.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.map
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3b244f22687a41d4dbaeafcc55bd8a57
     m_Address: mode.bomb.data
@@ -42,6 +63,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.match
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 50cbcb7f626e1d34184ec2713ca317aa
+    m_Address: prop.equipment.helmet_crate
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.equipment
     - type.prefab
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 619b9ed0558cd414093778cd791c0f3e
@@ -66,6 +94,20 @@ MonoBehaviour:
     - type.texture
     - type.ui
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6a3da22d881bd0e48a0bc8c6addac7df
+    m_Address: equipment.helmet.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.equipment
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ecbdf05997f9f041856f7a450818274
+    m_Address: map.battlefield4.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.map
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 734950ea81f42e246b8771002b38245e
     m_Address: ui.match.mode.bomb.logo
     m_ReadOnly: 0
@@ -88,6 +130,20 @@ MonoBehaviour:
     - type.audio
     - type.data
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 90e1f18d2d5faf5468ca8885a62270c2
+    m_Address: map.catalog
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.map
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9c507ab7a2e3d5044aefbaabcff02cd7
+    m_Address: ui.interaction.key.square
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.interaction
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b8888888888888888888888888888888
     m_Address: weapon.catalog
     m_ReadOnly: 0
@@ -101,6 +157,21 @@ MonoBehaviour:
     - audio.feedback
     - type.audio
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce761e57cab39f44590ad28b2abbeffa
+    m_Address: prop.equipment.armor_crate
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.equipment
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7031ca55e0e19142a860d3d72dab122
+    m_Address: economy.bomb.shop_catalog
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.match
+    - type.shop
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: dbc642940ebd925409b7a2c11c0cadde
     m_Address: audio.combat-feedback.data
     m_ReadOnly: 0
@@ -108,6 +179,27 @@ MonoBehaviour:
     - audio.feedback
     - type.audio
     - type.data
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e30dfb49ec8bcd3478e75c6eb13c0810
+    m_Address: ui.interaction.key.wide
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.interaction
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e3de6b4126d91b54abd4b1c67514d18f
+    m_Address: map.battlefield5.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.map
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ed6f1be0037cca0429931c2fa62c2ab1
+    m_Address: map.battlefield3.data
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.data
+    - type.map
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 06debe68969ca7c418c169a0a1ed168b, type: 2}

@@ -352,7 +352,8 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
         _cameraCtrlWasEnabled = _cameraCtrl && _cameraCtrl.enabled;
         _cameraMotionCtrlWasEnabled = _cameraMotionCtrl && _cameraMotionCtrl.enabled;
 
-        if (_inputCtrl) _inputCtrl.enabled = false;
+        // 死亡期间仍保留输入采样，让战绩、设置等非战斗界面继续响应。
+        // 动作执行器已经停用，不会把移动或开火输入传进玩法层。
         if (_actionCtrl) _actionCtrl.enabled = false;
         if (_moveCtrl) _moveCtrl.enabled = false;
         if (_aimCtrl) _aimCtrl.enabled = false;

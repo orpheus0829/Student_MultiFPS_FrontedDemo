@@ -9,6 +9,7 @@ public class PlayerInputCtrl : MonoBehaviour
     [SerializeField] private InputActionCatalogSO _inputCatalog;
 
     private readonly HashSet<GJInputAction> _activeStates = new HashSet<GJInputAction>();
+    private readonly HashSet<object> _gameplayInputBlockers = new HashSet<object>();
 
     public event Action<PlayerInputCommand> CommandIssued;
 
@@ -19,6 +20,14 @@ public class PlayerInputCtrl : MonoBehaviour
 
     private void Update()
     {
+        if (_gameplayInputBlockers.Count > 0)
+        {
+            EmitButton(GJInputAction.Scoreboard);
+            EmitButton(GJInputAction.OpenShop);
+            EmitButton(GJInputAction.Settings);
+            return;
+        }
+
         EmitContinuous(GJInputAction.Move, InputMgr.instance.ReadVector2(GJInputAction.Move));
         EmitContinuous(GJInputAction.Look, InputMgr.instance.ReadVector2(GJInputAction.Look));
         EmitContinuous(
@@ -50,6 +59,33 @@ public class PlayerInputCtrl : MonoBehaviour
         }
 
         _activeStates.Clear();
+        _gameplayInputBlockers.Clear();
+    }
+
+    public void SetGameplayInputBlocked(object owner, bool blocked)
+    {
+        if (owner == null)
+        {
+            return;
+        }
+
+        bool changed = blocked
+            ? _gameplayInputBlockers.Add(owner)
+            : _gameplayInputBlockers.Remove(owner);
+        if (!changed || !blocked)
+        {
+            return;
+        }
+
+        CommandIssued?.Invoke(new PlayerInputCommand(
+            GJInputAction.Fire,
+            PlayerInputPhase.Canceled));
+        CommandIssued?.Invoke(new PlayerInputCommand(
+            GJInputAction.Aim,
+            PlayerInputPhase.Canceled));
+        CommandIssued?.Invoke(new PlayerInputCommand(
+            GJInputAction.Sprint,
+            PlayerInputPhase.Canceled));
     }
 
     private void EmitContinuous(GJInputAction action, Vector2 value)

@@ -1,21 +1,29 @@
 public sealed class CustomRules : ModeRulesBase
 {
     private float _remainingTime;
+    private bool _hasTimeLimit;
 
     public CustomRules(MatchManager match, MatchConfig config) : base(match, config)
     {
     }
+
+    public override float RemainingTime
+    {
+        get { return UnityEngine.Mathf.Max(0f, _remainingTime); }
+    }
+    public override bool HasTimeLimit { get { return _hasTimeLimit; } }
 
     public override void OnRoundStart()
     {
         _remainingTime = Config.Registry.GetFloat(
             "custom.roundTimeLimit",
             Config.Mode ? Config.Mode.RoundTimeLimit : 0f);
+        _hasTimeLimit = _remainingTime > 0f;
     }
 
     public override void Tick(float deltaTime)
     {
-        if (_remainingTime > 0f)
+        if (_hasTimeLimit && _remainingTime > 0f)
         {
             _remainingTime -= deltaTime;
         }
@@ -30,7 +38,8 @@ public sealed class CustomRules : ModeRulesBase
         WinConditionType condition = Config.Mode
             ? Config.Mode.WinCondition
             : WinConditionType.Score;
-        if (condition == WinConditionType.Time && _remainingTime <= 0f)
+        if (condition == WinConditionType.Time && _hasTimeLimit &&
+            _remainingTime <= 0f)
         {
             return Match.TryGetLeadingTeam(out winningTeam);
         }

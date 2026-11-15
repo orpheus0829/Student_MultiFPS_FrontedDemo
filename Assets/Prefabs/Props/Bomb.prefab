@@ -69,7 +69,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BombEntity
   _pickupRadius: 1.8
-  _carrierOffset: {x: 0, y: 0.2, z: 0}
+  _carrierOffset: {x: 0, y: 1.05, z: -0.22}
+  _carriedModelEuler: {x: 0, y: 0, z: 0}
   _armedLight: {fileID: 5996053281126686539}
   _minimumLightIntensity: 0.12
   _maximumLightIntensity: 4.5

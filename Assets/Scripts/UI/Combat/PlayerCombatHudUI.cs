@@ -81,6 +81,10 @@ public sealed class PlayerCombatHudUI : MonoBehaviour
         {
             gameObject.AddComponent<MatchRoundIntroUI>();
         }
+        if (!TryGetComponent<TeamFriendlyOutlineCtrl>(out _))
+        {
+            gameObject.AddComponent<TeamFriendlyOutlineCtrl>();
+        }
         ApplyConfiguredSprites();
         SetAlive(false);
     }

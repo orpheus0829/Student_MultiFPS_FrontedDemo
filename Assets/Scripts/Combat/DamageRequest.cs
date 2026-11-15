@@ -19,6 +19,7 @@ public sealed class DamageRequest
     private float _killBonus;
     private Vector3 _hitPoint;
     private Vector3 _hitDirection;
+    private bool _bypassArmor;
 
     public CharacterHealth Target
     {
@@ -218,6 +219,12 @@ public sealed class DamageRequest
         }
     }
 
+    public bool BypassArmor
+    {
+        get { return _bypassArmor; }
+        set { _bypassArmor = value; }
+    }
+
     public DamageRequest(CharacterHealth target, float baseDamage)
     {
         _target = target;
@@ -236,6 +243,7 @@ public sealed class DamageRequest
         _killBonus = 0f;
         _hitPoint = Vector3.zero;
         _hitDirection = Vector3.zero;
+        _bypassArmor = false;
     }
 
     public DamageRequest(DamageRequest source)
@@ -258,6 +266,7 @@ public sealed class DamageRequest
             _killBonus = 0f;
             _hitPoint = Vector3.zero;
             _hitDirection = Vector3.zero;
+            _bypassArmor = false;
             return;
         }
 
@@ -278,5 +287,6 @@ public sealed class DamageRequest
         _killBonus = source.KillBonus;
         _hitPoint = source.HitPoint;
         _hitDirection = source.HitDirection;
+        _bypassArmor = source.BypassArmor;
     }
 }

@@ -8,6 +8,24 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/example.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/BattleField1.unity
+    guid: 854f9e5b31cf8c34caafd88f66d36043
+  - enabled: 1
+    path: Assets/Scenes/Test Hall.unity
+    guid: 32758914f297836479adce08a71d0fd3
+  - enabled: 1
+    path: Assets/Scenes/BattleField2.unity
+    guid: db671717969128d48a947b05e106793a
+  - enabled: 1
+    path: Assets/Scenes/BattleField3.unity
+    guid: 8507d7b244318934f8f1e9762e206b74
+  - enabled: 1
+    path: Assets/Scenes/BattleField4.unity
+    guid: fd3f5604fe65e7d4cb18dd36f31ca1ad
+  - enabled: 1
+    path: Assets/Scenes/BattleField5.unity
+    guid: e474d56d59463f141ae8cdd35d9786d7
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 68c1ae356a76a3748b69a3f8511a530f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

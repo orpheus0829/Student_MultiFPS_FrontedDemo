@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public sealed class MatchDebugWindow : EditorWindow
 {
@@ -83,45 +84,44 @@ public sealed class MatchDebugWindow : EditorWindow
             return false;
         }
 
-        IReadOnlyList<CharacterHealth> actors = CharacterHealth.Actors;
-        List<MatchSlotConfig> slots = new List<MatchSlotConfig>();
-        List<CharacterHealth> participants = new List<CharacterHealth>();
-        LocalPlayerLocator.TryGet(out GameObject localPlayer);
-        for (int i = 0; i < actors.Count; i++)
+        if (!LocalPlayerLocator.TryGet(out GameObject localPlayer) ||
+            !localPlayer.TryGetComponent(out PlayerInfo localInfo))
         {
-            CharacterHealth actor = actors[i];
-            if (!actor || !actor.PlayerInfo)
-            {
-                continue;
-            }
-
-            bool isAI = actor.TryGetComponent(out AIPlayerCtrl _);
-            bool isLocalPlayer = localPlayer && actor.gameObject == localPlayer;
-            int slot = slots.Count;
-            int team = mode.Kind == ModeKind.Solo
-                ? slot
-                : slot % Mathf.Max(1, mode.TeamCount);
-            slots.Add(new MatchSlotConfig(
-                slot,
-                team,
-                actor.PlayerInfo.PlayerName,
-                isAI,
-                isLocalPlayer));
-            participants.Add(actor);
-        }
-
-        MatchManager manager = MatchManager.Instance;
-        if (!manager.StartMatch(new MatchConfig(mode, slots)))
-        {
+            Debug.LogError("正式对局需要场景中存在本地玩家。");
             return false;
         }
 
-        for (int i = 0; i < participants.Count; i++)
+        MapCatalogSO catalog = AssetDatabase.LoadAssetAtPath<MapCatalogSO>(
+            MatchContentConfigurator.MapCatalogPath);
+        MapDefinitionSO map = catalog
+            ? catalog.FindByScene(SceneManager.GetActiveScene().name)
+            : null;
+        if (map && !map.SupportsMode(mode.Kind))
         {
-            manager.BindParticipant(i, participants[i]);
+            Debug.LogError($"地图 {map.DisplayName} 不支持模式 {mode.DisplayName}。");
+            return false;
         }
 
-        return true;
+        List<MatchSlotConfig> slots = new List<MatchSlotConfig>();
+        int participantCount = Mathf.Max(1, mode.TeamCount * mode.TeamSize);
+        for (int slot = 0; slot < participantCount; slot++)
+        {
+            int team = mode.Kind == ModeKind.Solo
+                ? slot
+                : slot % Mathf.Max(1, mode.TeamCount);
+            bool isLocalPlayer = slot == 0;
+            slots.Add(new MatchSlotConfig(
+                slot,
+                team,
+                isLocalPlayer ? localInfo.PlayerName : $"AI 玩家 {slot}",
+                !isLocalPlayer,
+                isLocalPlayer,
+                string.Empty,
+                AIDifficulty.Normal));
+        }
+
+        MatchManager manager = MatchManager.Instance;
+        return manager.StartMatch(new MatchConfig(mode, slots, map));
     }
 
     private void HandlePlayModeStateChanged(PlayModeStateChange state)

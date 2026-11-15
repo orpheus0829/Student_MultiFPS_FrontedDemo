@@ -48,12 +48,14 @@ public sealed class MatchSlotConfig
 public sealed class MatchConfig
 {
     [SerializeField, InspectorName("模式定义")] private ModeDefinitionSO _mode;
+    [SerializeField, InspectorName("地图定义")] private MapDefinitionSO _map;
     [SerializeField, InspectorName("名册槽位")] private List<MatchSlotConfig> _slots =
         new List<MatchSlotConfig>();
 
     private ModeConfigRegistry _registry;
 
     public ModeDefinitionSO Mode { get { return _mode; } }
+    public MapDefinitionSO Map { get { return _map; } }
     public IReadOnlyList<MatchSlotConfig> Slots { get { return _slots; } }
 
     public ModeConfigRegistry Registry
@@ -72,9 +74,13 @@ public sealed class MatchConfig
     {
     }
 
-    public MatchConfig(ModeDefinitionSO mode, IEnumerable<MatchSlotConfig> slots = null)
+    public MatchConfig(
+        ModeDefinitionSO mode,
+        IEnumerable<MatchSlotConfig> slots = null,
+        MapDefinitionSO map = null)
     {
         _mode = mode;
+        _map = map;
         _slots = slots != null
             ? new List<MatchSlotConfig>(slots)
             : new List<MatchSlotConfig>();

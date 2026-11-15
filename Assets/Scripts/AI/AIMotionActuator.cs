@@ -90,7 +90,8 @@ public sealed class AIMotionActuator
         {
             return;
         }
-        if (profile.CanTacticalSlide && _sprintHeld &&
+        float distance = Vector3.Distance(_owner.position, _destination);
+        if (profile.CanTacticalSlide && _sprintHeld && distance > 5f &&
             (intent.Behavior == AIBehaviorId.Retreat ||
              intent.Behavior == AIBehaviorId.Reposition))
         {
@@ -98,9 +99,11 @@ public sealed class AIMotionActuator
             _send(GJInputAction.Slide, PlayerInputPhase.Started, Vector2.zero);
             return;
         }
-        if (profile.CanCombatJump && intent.Behavior == AIBehaviorId.Reposition)
+        if (profile.CanCombatJump && intent.Behavior == AIBehaviorId.Reposition &&
+            distance >= 2.5f && distance <= 8f)
         {
-            _nextMobilityTime = Time.time + 3f;
+            _nextMobilityTime = Time.time +
+                (profile.Difficulty == AIDifficulty.Hard ? 2.4f : 4.5f);
             _send(GJInputAction.JumpVault, PlayerInputPhase.Started, Vector2.zero);
         }
     }

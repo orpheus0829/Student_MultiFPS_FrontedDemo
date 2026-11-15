@@ -64,8 +64,45 @@ public sealed class PlayerCharacterModelCtrl : MonoBehaviour
     private bool _isSwitching;
 
     public string CurrentModelId { get { return _currentModelId; } }
+    public Animator CurrentBodyAnimator
+    {
+        get { return _thirdPersonView ? _thirdPersonView.CharacterAnimator : null; }
+    }
     public bool IsSwitching { get { return _isSwitching; } }
     public int ModelCount { get { return _models.Length; } }
+    public bool IsBodyReady
+    {
+        get
+        {
+            return isActiveAndEnabled && !_isSwitching &&
+                !string.IsNullOrWhiteSpace(_currentModelId) &&
+                _thirdPersonView && _thirdPersonView.CharacterAnimator;
+        }
+    }
+
+    public string GetCurrentBodyResourceId()
+    {
+        for (int i = 0; i < _models.Length; i++)
+        {
+            PlayerCharacterModelOption option = _models[i];
+            if (option != null && option.ModelId == _currentModelId)
+            {
+                return option.BodyResourceId;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    public Renderer[] GetCurrentBodyRenderers()
+    {
+        if (_currentBodyInstance)
+        {
+            return _currentBodyInstance.GetComponentsInChildren<Renderer>(true);
+        }
+
+        return _defaultBodyRenderers ?? Array.Empty<Renderer>();
+    }
 
     private void Awake()
     {

@@ -10,6 +10,12 @@ public sealed class BombRules : MonoBehaviour
     public const int DefaultAttackerTeam = 0;
     public const int DefaultDefenderTeam = 1;
 
+    private const string ExplosionSourceId = "objective.c4.explosion";
+    private const string ExplosionSourceName = "C4 炸弹";
+    private const float GroundProbeHeight = 2f;
+    private const float GroundProbeDistance = 6f;
+    private const float GroundContactOffset = 0.002f;
+
     [Header("炸弹生成")]
     [SerializeField, ResourceId(typeof(GameObject)), InspectorName("炸弹资源 ID")]
     private string _bombResourceId = DefaultBombResourceId;
@@ -27,9 +33,15 @@ public sealed class BombRules : MonoBehaviour
     [SerializeField, Min(0.1f), InspectorName("拆除时长")] private float _defuseDuration = 5f;
     [SerializeField, Min(1f), InspectorName("爆炸倒计时")] private float _fuseDuration = 40f;
 
+    [Header("爆炸")]
+    [SerializeField, Min(1f), InspectorName("致死半径")] private float _explosionKillRadius = 18f;
+    [SerializeField, Min(1f), InspectorName("特效尺寸")] private float _explosionVisualScale = 1f;
+
     private readonly List<BombInteractCtrl> _interactionCtrls = new List<BombInteractCtrl>();
+    private readonly RaycastHit[] _groundHits = new RaycastHit[24];
     private Func<PlayerInfo, int> _teamResolver;
     private BombEntity _bomb;
+    private PlayerInfo _bombPlanter;
     private PlayerMoveCtrl _slowedCarrierMoveCtrl;
     private float _carrierSpeedScale = 0.92f;
     private bool _roundActive;
@@ -99,6 +111,12 @@ public sealed class BombRules : MonoBehaviour
         _plantDuration = Mathf.Max(0.1f, registry.GetFloat("bomb.plantDuration", _plantDuration));
         _defuseDuration = Mathf.Max(0.1f, registry.GetFloat("bomb.defuseDuration", _defuseDuration));
         _fuseDuration = Mathf.Max(1f, registry.GetFloat("bomb.fuseDuration", _fuseDuration));
+        _explosionKillRadius = Mathf.Max(
+            1f,
+            registry.GetFloat("bomb.explosionKillRadius", _explosionKillRadius));
+        _explosionVisualScale = Mathf.Max(
+            1f,
+            registry.GetFloat("bomb.explosionVisualScale", _explosionVisualScale));
         _carrierSpeedScale = Mathf.Clamp(
             registry.GetFloat("bomb.carrierSpeedScale", _carrierSpeedScale),
             0.1f,
@@ -187,12 +205,13 @@ public sealed class BombRules : MonoBehaviour
             return false;
         }
 
-        Vector3 position = ResolveGroundPosition(planter.transform.position);
-        if (!_bomb.TryPlant(planter, site, position, _fuseDuration))
+        ResolveGroundPose(planter, out Vector3 position, out Quaternion rotation);
+        if (!_bomb.TryPlant(planter, site, position, rotation, _fuseDuration))
         {
             return false;
         }
 
+        _bombPlanter = planter;
         RestoreCarrierSpeed();
         BombCarrierChanged?.Invoke(null);
         BombPlanted?.Invoke(planter, site);
@@ -373,15 +392,55 @@ public sealed class BombRules : MonoBehaviour
         return player && player.TryGetComponent(out CharacterHealth health) && !health.IsDead;
     }
 
-    private Vector3 ResolveGroundPosition(Vector3 origin)
+    private void ResolveGroundPose(
+        PlayerInfo planter,
+        out Vector3 position,
+        out Quaternion rotation)
     {
-        Vector3 rayOrigin = origin + Vector3.up * 1.5f;
-        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 4f, ~0,
-            QueryTriggerInteraction.Ignore))
+        Vector3 origin = planter ? planter.transform.position : transform.position;
+        float yaw = planter ? planter.transform.eulerAngles.y : 0f;
+        position = origin;
+        rotation = Quaternion.Euler(0f, yaw, 0f);
+        Vector3 rayOrigin = origin + Vector3.up * GroundProbeHeight;
+        int hitCount = Physics.RaycastNonAlloc(
+            rayOrigin,
+            Vector3.down,
+            _groundHits,
+            GroundProbeDistance,
+            ~0,
+            QueryTriggerInteraction.Ignore);
+        float nearestDistance = float.PositiveInfinity;
+        RaycastHit groundHit = default;
+        bool hasGround = false;
+        for (int i = 0; i < hitCount; i++)
         {
-            return hit.point + Vector3.up * 0.05f;
+            RaycastHit candidate = _groundHits[i];
+            if (!candidate.collider || candidate.distance >= nearestDistance ||
+                candidate.normal.y <= 0.05f)
+            {
+                continue;
+            }
+
+            Transform hitTransform = candidate.collider.transform;
+            if ((planter && hitTransform.IsChildOf(planter.transform)) ||
+                (_bomb && hitTransform.IsChildOf(_bomb.transform)))
+            {
+                continue;
+            }
+
+            nearestDistance = candidate.distance;
+            groundHit = candidate;
+            hasGround = true;
         }
-        return origin;
+
+        if (!hasGround)
+        {
+            return;
+        }
+
+        position = groundHit.point + groundHit.normal * GroundContactOffset;
+        Quaternion surfaceAlignment = Quaternion.FromToRotation(Vector3.up, groundHit.normal);
+        rotation = surfaceAlignment * Quaternion.Euler(0f, yaw, 0f);
     }
 
     private void HandlePickedUp(BombEntity bomb, PlayerInfo carrier)
@@ -408,8 +467,54 @@ public sealed class BombRules : MonoBehaviour
 
     private void HandleExploded(BombEntity bomb)
     {
+        Vector3 explosionPosition = bomb ? bomb.transform.position : transform.position;
+        BombExplosionEffect.Spawn(explosionPosition, _explosionVisualScale);
+        KillActorsInExplosion(explosionPosition);
         BombExploded?.Invoke();
         CompleteRound(_attackerTeam);
+    }
+
+    private void KillActorsInExplosion(Vector3 explosionPosition)
+    {
+        IReadOnlyList<CharacterHealth> actors = CharacterHealth.Actors;
+        float radiusSquared = _explosionKillRadius * _explosionKillRadius;
+        for (int i = actors.Count - 1; i >= 0; i--)
+        {
+            CharacterHealth health = actors[i];
+            if (!health || health.IsDead)
+            {
+                continue;
+            }
+
+            Vector3 delta = health.transform.position - explosionPosition;
+            if (delta.sqrMagnitude > radiusSquared)
+            {
+                continue;
+            }
+
+            PlayerInfo victim = health.PlayerInfo;
+            DamageRequest request = new DamageRequest(health, health.CurrentHealth);
+            request.Instigator = ResolveExplosionInstigator(victim);
+            request.SourceId = ExplosionSourceId;
+            request.SourceName = ExplosionSourceName;
+            request.HitDistance = delta.magnitude;
+            request.HitPoint = explosionPosition;
+            request.HitDirection = delta.sqrMagnitude > 0.0001f
+                ? delta.normalized
+                : Vector3.up;
+            request.BypassArmor = true;
+            CombatDamage.Kill(request);
+        }
+    }
+
+    private PlayerInfo ResolveExplosionInstigator(PlayerInfo victim)
+    {
+        if (!_bombPlanter || !victim || victim == _bombPlanter)
+        {
+            return null;
+        }
+
+        return GetTeam(victim) == GetTeam(_bombPlanter) ? null : _bombPlanter;
     }
 
     private void CompleteRound(int winningTeam)
@@ -426,6 +531,7 @@ public sealed class BombRules : MonoBehaviour
     private void ReleaseBomb()
     {
         RestoreCarrierSpeed();
+        _bombPlanter = null;
         if (!_bomb)
         {
             return;
@@ -470,6 +576,8 @@ public sealed class BombRules : MonoBehaviour
         _plantDuration = Mathf.Max(0.1f, _plantDuration);
         _defuseDuration = Mathf.Max(0.1f, _defuseDuration);
         _fuseDuration = Mathf.Max(1f, _fuseDuration);
+        _explosionKillRadius = Mathf.Max(1f, _explosionKillRadius);
+        _explosionVisualScale = Mathf.Max(1f, _explosionVisualScale);
         _carrierSpeedScale = Mathf.Clamp(_carrierSpeedScale, 0.1f, 1f);
         _targetSiteId = _targetSiteId == null ? string.Empty : _targetSiteId.Trim();
     }

@@ -65,11 +65,20 @@ public static class CombatDamage
         DamageRequest killRequest = new DamageRequest(request);
         killRequest.BaseDamage = killRequest.Target ? killRequest.Target.CurrentHealth : 0f;
         killRequest.BodyDamageFactor = 1f;
+        killRequest.BypassArmor = true;
         return Apply(killRequest);
     }
 
     private static DamageResult Resolve(DamageRequest request, CharacterHealth target)
     {
+        PlayerInfo victim = target.PlayerInfo;
+        MatchManager match = MatchManager.Current;
+        if (match && request.Instigator && victim &&
+            !match.CanDamage(request.Instigator, victim))
+        {
+            return CreateIgnoredResult(request);
+        }
+
         float requestedDamage = Mathf.Max(0f, request.BaseDamage) *
             Mathf.Max(0f, request.BodyDamageFactor);
         if (requestedDamage <= 0f)
@@ -77,7 +86,7 @@ public static class CombatDamage
             return CreateIgnoredResult(request);
         }
 
-        if (target.TryGetComponent(out PlayerArmorCtrl armor))
+        if (!request.BypassArmor && target.TryGetComponent(out PlayerArmorCtrl armor))
         {
             requestedDamage = armor.Mitigate(requestedDamage, request.BodyPart);
         }

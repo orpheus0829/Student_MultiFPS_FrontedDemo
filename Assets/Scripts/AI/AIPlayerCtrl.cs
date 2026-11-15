@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.AI;
 
 [DefaultExecutionOrder(-50)]
 [DisallowMultipleComponent]
@@ -20,6 +21,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 
     private readonly AIDecisionCore _decision = new AIDecisionCore();
     private AICoverEvaluator _coverEvaluator;
+    private NavMeshPath _patrolPath;
     private PlayerActionCtrl _actionCtrl;
     private PlayerMoveCtrl _moveCtrl;
     private PlayerAimCtrl _aimCtrl;
@@ -45,6 +47,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 
     public AIDifficulty Difficulty { get { return _difficulty; } }
     public AIDifficultyProfile Profile { get { return _profile; } }
+    public PlayerInfo Info { get { return _health ? _health.PlayerInfo : null; } }
     public AIBehaviorId CurrentBehavior { get { return _decision.Current; } }
     public AITrackedTarget Target { get { return _world != null ? _world.CurrentTarget : null; } }
     public AIIntent CurrentIntent { get { return _intent; } }
@@ -70,6 +73,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
     {
         // AICoverEvaluator 会创建 NavMeshPath；Unity 禁止在 MonoBehaviour 字段初始化期调用。
         _coverEvaluator = new AICoverEvaluator();
+        _patrolPath = new NavMeshPath();
         TryGetComponent(out _actionCtrl);
         TryGetComponent(out _moveCtrl);
         TryGetComponent(out _aimCtrl);
@@ -118,6 +122,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
             return;
         }
         _world.Sense();
+        _modePatchSession?.Tick();
         RefreshCover();
         bool needsReload = NeedsReload();
         AIBehaviorId previous = _decision.Current;
@@ -140,6 +145,7 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
             _decision.Current, _world, transform, _profile,
             _patrolPoint, _coverPoint, _hasCover);
         ApplyModeObjective(ref _intent);
+        _modePatchSession?.ModifyIntent(ref _intent);
         EnrichCombatIntent(ref _intent);
         ApplyModeInteraction(ref _intent);
         _aimActuator.Tick(_intent, _weaponActionCtrl.CurrentWeaponData);
@@ -217,16 +223,37 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 
     private void ApplyModeObjective(ref AIIntent intent)
     {
-        if (_modePatchSession == null || intent.Target != null && intent.Target.Visible ||
+        if (_modePatchSession == null || intent.Behavior == AIBehaviorId.Retreat ||
+            intent.Target != null && intent.Target.Visible ||
             !_modePatchSession.TryGetObjective(out AIObjective objective))
         {
             return;
         }
+
+        if (objective.Kind == AIObjectiveKind.Regroup &&
+            intent.Behavior != AIBehaviorId.Patrol)
+        {
+            return;
+        }
+
+        Vector3 offset = objective.Position - transform.position;
+        offset.y = 0f;
+        if (offset.sqrMagnitude <= objective.ArrivalRadius * objective.ArrivalRadius)
+        {
+            return;
+        }
+
         intent.HasMoveDestination = true;
         intent.MoveDestination = objective.Position;
-        intent.Sprint = true;
+        intent.Sprint = objective.Sprint &&
+            offset.magnitude > objective.ArrivalRadius + 2f;
         intent.Aim = false;
         intent.Fire = false;
+    }
+
+    public void ReceiveSharedTarget(AITrackedTarget target, float confidence)
+    {
+        _world?.ReceiveSharedTarget(target, confidence);
     }
 
     private void ApplyModeInteraction(ref AIIntent intent)
@@ -353,8 +380,45 @@ public sealed class AIPlayerCtrl : MonoBehaviour, IAIDifficultyControl
 
     private void ChoosePatrolPoint()
     {
-        Vector2 circle = UnityEngine.Random.insideUnitCircle * _patrolRadius;
-        _patrolPoint = transform.position + new Vector3(circle.x, 0f, circle.y);
+        if (!NavMesh.SamplePosition(
+            transform.position,
+            out NavMeshHit origin,
+            4f,
+            NavMesh.AllAreas))
+        {
+            _patrolPoint = transform.position;
+            return;
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            Vector2 circle = UnityEngine.Random.insideUnitCircle * _patrolRadius;
+            Vector3 candidate = transform.position +
+                new Vector3(circle.x, 0f, circle.y);
+            if (!NavMesh.SamplePosition(
+                candidate,
+                out NavMeshHit destination,
+                4f,
+                NavMesh.AllAreas))
+            {
+                continue;
+            }
+            if (!NavMesh.CalculatePath(
+                origin.position,
+                destination.position,
+                NavMesh.AllAreas,
+                _patrolPath) ||
+                _patrolPath.status != NavMeshPathStatus.PathComplete ||
+                _patrolPath.corners.Length <= 1)
+            {
+                continue;
+            }
+
+            _patrolPoint = destination.position;
+            return;
+        }
+
+        _patrolPoint = origin.position;
     }
 
     public int GetTargetSlot(CharacterHealth target)

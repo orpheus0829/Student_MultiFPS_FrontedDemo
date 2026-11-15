@@ -20,7 +20,7 @@ public sealed class AINavigationSurfaceCtrl : MonoBehaviour
 
         if (!_surface.navMeshData)
         {
-            Debug.LogError("AI 复活区没有烘焙 NavMesh 数据，请在场景中重新烘焙导航网格。", this);
+            Debug.LogError("地图导航没有烘焙 NavMesh 数据，请在场景中重新烘焙导航网格。", this);
             enabled = false;
         }
     }

@@ -57,12 +57,16 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1942660574578620649, guid: 809848eefcc98f14091876e28cee069c, type: 3}
+      propertyPath: _controlMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1942660574578620649, guid: 809848eefcc98f14091876e28cee069c, type: 3}
       propertyPath: _aiCount
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1942660574578620649, guid: 809848eefcc98f14091876e28cee069c, type: 3}
       propertyPath: _aiPrefabResourceId
-      value: 
+      value: character.ai_player.prefab
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

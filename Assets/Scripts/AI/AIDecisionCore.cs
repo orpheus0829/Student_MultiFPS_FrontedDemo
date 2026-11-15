@@ -56,7 +56,7 @@ public sealed class AIDecisionCore
             profile.CoverPreference * w.CoverPreference +
             (needsReload ? w.CoverReload : 0f);
         if (target == null || !hasCover) takeCover = 0f;
-        float reposition = target == null ? 0f :
+        float reposition = target == null || !target.Visible ? 0f :
             distanceDeviation * w.RepositionDistance +
             profile.StrafeScale * w.RepositionStrafe +
             profile.FlankChance * w.RepositionFlank;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public enum MatchState
 {
@@ -8,7 +9,8 @@ public enum MatchState
     Preparing = 1,
     InRound = 2,
     RoundOver = 3,
-    MatchOver = 4
+    MatchOver = 4,
+    Countdown = 5
 }
 
 public sealed class MatchManager : BaseMgr<MatchManager>
@@ -37,16 +39,47 @@ public sealed class MatchManager : BaseMgr<MatchManager>
     private BombRules _bombRuntime;
     private BombEconomyService _bombEconomy;
     private float _nextRoundStartTime = -1f;
+    private float _countdownEndTime = -1f;
+    private bool _roundStartRequested;
+    private int _roundIndex;
 
     public static MatchManager Instance
     {
         get { return instance; }
     }
+    public static MatchManager Current { get; private set; }
 
     public IReadOnlyList<MatchParticipant> Roster { get { return _roster; } }
     public MatchState State { get { return _state; } }
     public MatchConfig Config { get { return _config; } }
     public IModeRules Rules { get { return _rules; } }
+    public int RoundIndex { get { return _roundIndex; } }
+    public float CountdownRemaining
+    {
+        get
+        {
+            return _state == MatchState.Countdown
+                ? Mathf.Max(0f, _countdownEndTime - Time.unscaledTime)
+                : 0f;
+        }
+    }
+    public float RoundTimeRemaining
+    {
+        get
+        {
+            if (IsBombPlanted && _bombRuntime.Bomb)
+            {
+                return Mathf.Max(0f, _bombRuntime.Bomb.FuseRemaining);
+            }
+
+            return _rules != null ? Mathf.Max(0f, _rules.RemainingTime) : 0f;
+        }
+    }
+    public bool HasRoundTimeLimit
+    {
+        get { return _rules != null && _rules.HasTimeLimit; }
+    }
+    public bool IsObjectiveTimerActive { get { return IsBombPlanted; } }
     public PlayerInfo BombCarrier
     {
         get { return _bombRuntime ? _bombRuntime.BombCarrier : null; }
@@ -76,7 +109,16 @@ public sealed class MatchManager : BaseMgr<MatchManager>
     protected override void Awake()
     {
         base.Awake();
+        Current = this;
         _state = MatchState.Idle;
+    }
+
+    private void OnDestroy()
+    {
+        if (Current == this)
+        {
+            Current = null;
+        }
     }
 
     private void OnEnable()
@@ -88,6 +130,21 @@ public sealed class MatchManager : BaseMgr<MatchManager>
 
     private void Update()
     {
+        if (_state == MatchState.Preparing && _roundStartRequested)
+        {
+            TryStartCountdown();
+            return;
+        }
+
+        if (_state == MatchState.Countdown)
+        {
+            if (Time.unscaledTime >= _countdownEndTime)
+            {
+                StartRoundGameplay();
+            }
+            return;
+        }
+
         if (_state == MatchState.RoundOver && _nextRoundStartTime >= 0f)
         {
             if (Time.unscaledTime >= _nextRoundStartTime)
@@ -120,6 +177,13 @@ public sealed class MatchManager : BaseMgr<MatchManager>
             Debug.LogError("无法开始对局：缺少有效的模式配置。", this);
             return false;
         }
+        if (config.Map && !config.Map.SupportsMode(config.Mode.Kind))
+        {
+            Debug.LogError(
+                $"地图 {config.Map.DisplayName} 不支持模式 {config.Mode.DisplayName}。",
+                this);
+            return false;
+        }
 
         ResetRuntimeData();
         _config = config;
@@ -129,6 +193,8 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         _rules = CreateRules(config.Mode.Kind, config);
         _rules.OnMatchStart();
         SetupModeRuntime();
+        InjectSpawnData();
+        BindExistingLocalPlayer();
         RosterChanged?.Invoke();
         BeginRound();
         return true;
@@ -136,6 +202,7 @@ public sealed class MatchManager : BaseMgr<MatchManager>
 
     public void StopMatch()
     {
+        SetMovementLocked(false);
         ResetRuntimeData();
         _config = null;
         _rules = null;
@@ -151,18 +218,9 @@ public sealed class MatchManager : BaseMgr<MatchManager>
             return false;
         }
 
-        _assistTracker.Clear();
-        _nextRoundStartTime = -1f;
-        ResetParticipantsForRound();
-        SetRoundRespawnPolicy(false);
-        RefreshAliveStates();
-        _rules.OnRoundStart();
-        if (_bombRuntime)
-        {
-            _bombRuntime.OnRoundStart();
-        }
-        NotifyAiRoundStart();
-        SetState(MatchState.InRound);
+        _roundStartRequested = true;
+        SetMovementLocked(true);
+        TryStartCountdown();
         return true;
     }
 
@@ -185,6 +243,7 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         SetRoundRespawnPolicy(false);
         NotifyAiRoundEnd(winningTeam);
         _bombEconomy?.AwardRound(winningTeam);
+        SetMovementLocked(true);
         SetState(MatchState.RoundOver);
 
         int roundWinScore = _config.Registry.GetInt("score.roundWin", 0);
@@ -232,6 +291,7 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         }
 
         SetState(MatchState.MatchOver);
+        SetMovementLocked(true);
         _nextRoundStartTime = -1f;
         MatchFinished?.Invoke(winningTeam);
     }
@@ -315,6 +375,32 @@ public sealed class MatchManager : BaseMgr<MatchManager>
             firstParticipant.Team == secondParticipant.Team;
     }
 
+    public bool IsEnemy(PlayerInfo first, PlayerInfo second)
+    {
+        MatchParticipant firstParticipant = GetParticipant(first);
+        MatchParticipant secondParticipant = GetParticipant(second);
+        return firstParticipant != null && secondParticipant != null &&
+            firstParticipant != secondParticipant &&
+            firstParticipant.Team != secondParticipant.Team;
+    }
+
+    public bool CanDamage(PlayerInfo instigator, PlayerInfo victim)
+    {
+        if (_state == MatchState.Idle || !instigator || !victim || instigator == victim)
+        {
+            return true;
+        }
+
+        MatchParticipant attacker = GetParticipant(instigator);
+        MatchParticipant target = GetParticipant(victim);
+        if (attacker == null || target == null)
+        {
+            return true;
+        }
+
+        return attacker.Team != target.Team;
+    }
+
     public IReadOnlyList<MatchParticipant> GetParticipantsByTeam(int team)
     {
         if (_participantsByTeam.TryGetValue(team, out List<MatchParticipant> participants))
@@ -323,6 +409,13 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         }
 
         return EmptyParticipants;
+    }
+
+    public bool IsInsideAssignedSpawnZone(PlayerInfo player)
+    {
+        MatchParticipant participant = GetParticipant(player);
+        PlayerSpawnZone zone = FindSpawnZoneForParticipant(participant);
+        return zone && player && zone.Contains(player.transform.position);
     }
 
     public int GetTeamScore(int team)
@@ -393,6 +486,56 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         }
 
         return team >= 0 && !hasTie;
+    }
+
+    public bool TryGetLeadingSoloPlayer(out int team)
+    {
+        team = -1;
+        MatchParticipant leader = null;
+        for (int i = 0; i < _roster.Count; i++)
+        {
+            MatchParticipant candidate = _roster[i];
+            if (!candidate.IsBound)
+            {
+                continue;
+            }
+            if (leader == null || IsRankedAhead(candidate, leader))
+            {
+                leader = candidate;
+            }
+        }
+
+        if (leader == null)
+        {
+            return false;
+        }
+
+        team = leader.Team;
+        return true;
+    }
+
+    private static bool IsRankedAhead(
+        MatchParticipant candidate,
+        MatchParticipant current)
+    {
+        if (candidate.Kills != current.Kills)
+        {
+            return candidate.Kills > current.Kills;
+        }
+        if (candidate.Deaths != current.Deaths)
+        {
+            return candidate.Deaths < current.Deaths;
+        }
+        if (candidate.Assists != current.Assists)
+        {
+            return candidate.Assists > current.Assists;
+        }
+        if (candidate.Score != current.Score)
+        {
+            return candidate.Score > current.Score;
+        }
+
+        return candidate.Slot < current.Slot;
     }
 
     public bool TryGetOnlyLivingTeam(out int team)
@@ -562,6 +705,11 @@ public sealed class MatchManager : BaseMgr<MatchManager>
             }
         }
         ConfigureParticipantForMode(participant);
+        if (_roundStartRequested)
+        {
+            SetParticipantMovementLocked(participant, true);
+            TryStartCountdown();
+        }
 
         RosterChanged?.Invoke();
         ParticipantStatChanged?.Invoke(participant);
@@ -658,6 +806,7 @@ public sealed class MatchManager : BaseMgr<MatchManager>
 
     private void ResetRuntimeData()
     {
+        SetMovementLocked(false);
         ResetParticipantsForRound();
         SetRoundRespawnPolicy(true);
         UnbindSpawnZones();
@@ -685,6 +834,9 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         _teamRoundWins.Clear();
         _isEndingRound = false;
         _nextRoundStartTime = -1f;
+        _countdownEndTime = -1f;
+        _roundStartRequested = false;
+        _roundIndex = 0;
     }
 
     private void BindSpawnZones()
@@ -705,7 +857,13 @@ public sealed class MatchManager : BaseMgr<MatchManager>
     {
         for (int i = 0; i < _spawnZones.Count; i++)
         {
-            if (_spawnZones[i]) _spawnZones[i].Spawned -= HandleSpawned;
+            if (!_spawnZones[i])
+            {
+                continue;
+            }
+
+            _spawnZones[i].Spawned -= HandleSpawned;
+            _spawnZones[i].EndMatchControl();
         }
         _spawnZones.Clear();
     }
@@ -713,6 +871,103 @@ public sealed class MatchManager : BaseMgr<MatchManager>
     private void HandleSpawned(CharacterHealth health, int slot)
     {
         BindParticipant(slot, health);
+    }
+
+    private void InjectSpawnData()
+    {
+        if (_config == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _spawnZones.Count; i++)
+        {
+            if (!_spawnZones[i])
+            {
+                continue;
+            }
+            if (_spawnZones[i].ControlMode == PlayerSpawnControlMode.TestLocal)
+            {
+                _spawnZones[i].SuspendTestMode();
+                continue;
+            }
+            if (_spawnZones[i].ControlMode == PlayerSpawnControlMode.MatchManaged)
+            {
+                _spawnZones[i].BeginMatchControl();
+            }
+        }
+
+        IReadOnlyList<MatchSlotConfig> slots = _config.Slots;
+        for (int i = 0; i < slots.Count; i++)
+        {
+            MatchSlotConfig slot = slots[i];
+            if (slot == null)
+            {
+                continue;
+            }
+
+            PlayerSpawnZone zone = FindAvailableSpawnZone(slot);
+            if (!zone)
+            {
+                Debug.LogWarning($"槽位 {slot.Slot} 没有匹配的正式复活点。", this);
+                continue;
+            }
+
+            zone.InjectSpawn(slot, _config.Mode.Kind);
+        }
+    }
+
+    private PlayerSpawnZone FindAvailableSpawnZone(MatchSlotConfig slot)
+    {
+        bool requiresTeamZone = _config.Mode.Kind != ModeKind.Solo;
+        PlayerSpawnZone fallback = null;
+        for (int i = 0; i < _spawnZones.Count; i++)
+        {
+            PlayerSpawnZone zone = _spawnZones[i];
+            if (!zone || !zone.CanInject(slot, _config.Mode.Kind))
+            {
+                continue;
+            }
+            if (zone.MatchSlotOffset == slot.Slot)
+            {
+                return zone;
+            }
+            if (!fallback)
+            {
+                fallback = zone;
+            }
+        }
+
+        if (fallback)
+        {
+            return fallback;
+        }
+        if (requiresTeamZone)
+        {
+            Debug.LogError(
+                $"槽位 {slot.Slot}（队伍 {slot.Team}）找不到同队的正式团队复活区。" +
+                "团队模式禁止退回玩家区、AI 区或其他队伍的复活区。",
+                this);
+        }
+        return fallback;
+    }
+
+    private void BindExistingLocalPlayer()
+    {
+        if (!LocalPlayerLocator.TryGet(out GameObject localPlayer) ||
+            !localPlayer.TryGetComponent(out CharacterHealth health))
+        {
+            return;
+        }
+
+        if (!BindLocalPlayer(health.PlayerInfo))
+        {
+            return;
+        }
+
+        MatchParticipant participant = GetParticipant(health.PlayerInfo);
+        PlayerSpawnZone zone = FindSpawnZoneForParticipant(participant);
+        zone?.TryPlace(health);
     }
 
     private void SetupModeRuntime()
@@ -775,8 +1030,7 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         for (int i = 0; i < _spawnZones.Count; i++)
         {
             PlayerSpawnZone zone = _spawnZones[i];
-            MatchParticipant participant = GetParticipantBySlot(zone.MatchSlotOffset);
-            if (participant != null && participant.Team == team)
+            if (zone && zone.Mode == PlayerSpawnZoneMode.Team && zone.Team == team)
             {
                 return zone.transform;
             }
@@ -786,6 +1040,45 @@ public sealed class MatchManager : BaseMgr<MatchManager>
 
     private PlayerSpawnZone FindSpawnZoneForParticipant(MatchParticipant participant)
     {
+        if (participant == null)
+        {
+            return null;
+        }
+        for (int i = 0; i < _spawnZones.Count; i++)
+        {
+            PlayerSpawnZone injectedZone = _spawnZones[i];
+            if (!injectedZone || !injectedZone.OwnsMatchSlot(participant.Slot))
+            {
+                continue;
+            }
+            if (_config.Mode.Kind != ModeKind.Solo &&
+                (injectedZone.Mode != PlayerSpawnZoneMode.Team ||
+                injectedZone.Team != participant.Team))
+            {
+                continue;
+            }
+
+            return injectedZone;
+        }
+
+        if (_config.Mode.Kind != ModeKind.Solo)
+        {
+            for (int i = 0; i < _spawnZones.Count; i++)
+            {
+                PlayerSpawnZone teamZone = _spawnZones[i];
+                if (teamZone && teamZone.Mode == PlayerSpawnZoneMode.Team &&
+                    teamZone.Team == participant.Team)
+                {
+                    return teamZone;
+                }
+            }
+
+            Debug.LogError(
+                $"参与者槽位 {participant.Slot}（队伍 {participant.Team}）没有同队复活区。",
+                this);
+            return null;
+        }
+
         PlayerSpawnZoneMode expectedMode = participant.IsAI
             ? PlayerSpawnZoneMode.Ai
             : PlayerSpawnZoneMode.Player;
@@ -799,6 +1092,88 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         }
 
         return null;
+    }
+
+    private void TryStartCountdown()
+    {
+        if (!_roundStartRequested ||
+            (_state != MatchState.Preparing && _state != MatchState.RoundOver) ||
+            !AreAllParticipantsReady())
+        {
+            return;
+        }
+
+        _roundStartRequested = false;
+        _assistTracker.Clear();
+        _nextRoundStartTime = -1f;
+        ResetParticipantsForRound();
+        SetRoundRespawnPolicy(false);
+        RefreshAliveStates();
+        SetMovementLocked(true);
+        _roundIndex++;
+        float duration = Mathf.Max(1f, _config.Registry.GetFloat(
+            "match.startCountdown", 5f));
+        _countdownEndTime = Time.unscaledTime + duration;
+        SetState(MatchState.Countdown);
+    }
+
+    private bool AreAllParticipantsReady()
+    {
+        if (_roster.Count == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _roster.Count; i++)
+        {
+            MatchParticipant participant = _roster[i];
+            if (!participant.IsBound || !participant.Info ||
+                !participant.Info.TryGetComponent(out PlayerCharacterModelCtrl models) ||
+                !models.IsBodyReady)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void StartRoundGameplay()
+    {
+        if (_state != MatchState.Countdown)
+        {
+            return;
+        }
+
+        _countdownEndTime = -1f;
+        _rules.OnRoundStart();
+        if (_bombRuntime)
+        {
+            _bombRuntime.OnRoundStart();
+        }
+        NotifyAiRoundStart();
+        SetMovementLocked(false);
+        SetState(MatchState.InRound);
+        _bombEconomy?.BeginRoundBuyWindow();
+    }
+
+    private void SetMovementLocked(bool locked)
+    {
+        for (int i = 0; i < _roster.Count; i++)
+        {
+            SetParticipantMovementLocked(_roster[i], locked);
+        }
+    }
+
+    private static void SetParticipantMovementLocked(
+        MatchParticipant participant,
+        bool locked)
+    {
+        if (participant != null && participant.Info &&
+            participant.Info.TryGetComponent(out PlayerMoveCtrl move))
+        {
+            move.SetExternalLock(locked);
+        }
     }
 
     private void HandleBombRoundWon(int team)
@@ -834,6 +1209,19 @@ public sealed class MatchManager : BaseMgr<MatchManager>
                 _config.Registry.GetFloat("tdm.respawnDelay", _config.Mode.RespawnDelay));
             life.SetRespawnDelayOverride(respawnDelay);
         }
+        if (!participant.Info.TryGetComponent(
+            out PlayerWeaponWorldInteractionCtrl worldInteraction))
+        {
+            worldInteraction = participant.Info.gameObject.AddComponent<
+                PlayerWeaponWorldInteractionCtrl>();
+        }
+        worldInteraction.Configure(
+            _config.Registry.GetBool(
+                "economy.preventSidearmDrop",
+                _config.Mode.Kind == ModeKind.Bomb),
+            _config.Registry.GetFloat("economy.pickupDistance", 3.2f),
+            _config.Registry.GetFloat("economy.dropForwardSpeed", 2f),
+            _config.Registry.GetFloat("economy.dropUpSpeed", 0.6f));
         if (_bombEconomy)
         {
             if (!participant.Info.TryGetComponent(out BombEconomyPlayerCtrl economyPlayer))
@@ -854,10 +1242,12 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         AIModeContext context = new AIModeContext
         {
             TargetFilter = actor => actor && actor.PlayerInfo &&
-                (string.Equals(_config.Mode.AIPatchId, "solo.self_preservation",
-                    StringComparison.OrdinalIgnoreCase) ||
-                 !IsFriendly(participant.Info, actor.PlayerInfo)),
-            ObjectiveProvider = owner => GetAiObjective(participant)
+                IsEnemy(participant.Info, actor.PlayerInfo),
+            ObjectiveProvider = owner => GetAiObjective(participant),
+            SearchObjectiveProvider = owner => GetAiSearchObjective(participant, owner),
+            NearestAllyProvider = owner => FindNearestLivingAlly(participant),
+            AllyFilter = other => other && other.Info &&
+                IsFriendly(participant.Info, other.Info)
         };
         ai.InstallModePatch(patch, context);
     }
@@ -963,21 +1353,92 @@ public sealed class MatchManager : BaseMgr<MatchManager>
                         : AIObjectiveKind.DefendSite);
             }
         }
-        if ((_config.Mode.AIPatchId ?? string.Empty).StartsWith(
-            "tdm.", StringComparison.OrdinalIgnoreCase))
+        return null;
+    }
+
+    private CharacterHealth FindNearestLivingAlly(MatchParticipant participant)
+    {
+        if (participant == null || !participant.Health)
         {
-            IReadOnlyList<MatchParticipant> team = GetParticipantsByTeam(participant.Team);
-            for (int i = 0; i < team.Count; i++)
+            return null;
+        }
+
+        IReadOnlyList<MatchParticipant> team = GetParticipantsByTeam(participant.Team);
+        CharacterHealth nearest = null;
+        float nearestDistance = float.PositiveInfinity;
+        for (int i = 0; i < team.Count; i++)
+        {
+            if (team[i] == participant || !team[i].Health || !team[i].IsAlive)
             {
-                if (team[i] != participant && team[i].Health && team[i].IsAlive)
-                {
-                    return new AIObjective(
-                        team[i].Health.transform.position,
-                        AIObjectiveKind.Regroup);
-                }
+                continue;
+            }
+
+            float distance = Vector3.Distance(
+                participant.Health.transform.position,
+                team[i].Health.transform.position);
+            if (distance < nearestDistance)
+            {
+                nearest = team[i].Health;
+                nearestDistance = distance;
             }
         }
-        return null;
+
+        return nearest;
+    }
+
+    private AIObjective? GetAiSearchObjective(
+        MatchParticipant participant,
+        AIPlayerCtrl ai)
+    {
+        if (participant == null || !ai || _config == null ||
+            _config.Mode.Kind != ModeKind.TeamDeathmatch)
+        {
+            return null;
+        }
+
+        PlayerSpawnZone enemyZone = null;
+        float nearestDistance = float.PositiveInfinity;
+        for (int i = 0; i < _spawnZones.Count; i++)
+        {
+            PlayerSpawnZone zone = _spawnZones[i];
+            if (!zone || zone.Mode != PlayerSpawnZoneMode.Team ||
+                zone.Team == participant.Team)
+            {
+                continue;
+            }
+
+            float distance = Vector3.SqrMagnitude(
+                ai.transform.position - zone.transform.position);
+            if (distance < nearestDistance)
+            {
+                enemyZone = zone;
+                nearestDistance = distance;
+            }
+        }
+        if (!enemyZone)
+        {
+            return null;
+        }
+
+        int searchStep = Mathf.FloorToInt(Time.time / 8f);
+        float angle = Mathf.Repeat(
+            participant.Slot * 137f + searchStep * 67f,
+            360f);
+        float radius = 5f + Mathf.Abs(participant.Slot % 3) * 2.5f;
+        Vector3 rawPoint = enemyZone.transform.position +
+            Quaternion.Euler(0f, angle, 0f) * Vector3.forward * radius;
+        Vector3 searchPoint = NavMesh.SamplePosition(
+            rawPoint,
+            out NavMeshHit sampled,
+            7f,
+            NavMesh.AllAreas)
+            ? sampled.position
+            : enemyZone.transform.position;
+        return new AIObjective(
+            searchPoint,
+            AIObjectiveKind.Search,
+            2.5f,
+            true);
     }
 
     private void NotifyAiRoundStart()

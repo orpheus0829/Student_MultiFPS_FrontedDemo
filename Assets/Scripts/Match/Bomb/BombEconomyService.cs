@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -10,11 +11,24 @@ public sealed class BombEconomyService : MonoBehaviour
         public readonly string Name;
         public readonly string ResourceId;
         public readonly int Price;
-        public ShopItem(string name, string resourceId, int price)
+        public readonly BombShopItemKind Kind;
+        public readonly BombShopColumn Column;
+        public readonly string ItemId;
+
+        public ShopItem(
+            string itemId,
+            string name,
+            string resourceId,
+            int price,
+            BombShopItemKind kind,
+            BombShopColumn column)
         {
+            ItemId = itemId ?? string.Empty;
             Name = name;
             ResourceId = resourceId;
             Price = Mathf.Max(0, price);
+            Kind = kind;
+            Column = column;
         }
     }
 
@@ -33,10 +47,38 @@ public sealed class BombEconomyService : MonoBehaviour
     private readonly List<ShopItem> _shopItems = new List<ShopItem>();
     private readonly Dictionary<string, int> _killRewardOverrides =
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    private ResourceMgr _resources;
+    private BombShopCatalogSO _catalog;
+    private string _catalogResourceId;
+    private int _buyWindowRoundIndex = -1;
 
     public IReadOnlyList<ShopItem> ShopItems { get { return _shopItems; } }
-    public int ArmorPrice { get { return GetInt("economy.armorPrice", 650); } }
-    public int HelmetPrice { get { return GetInt("economy.helmetPrice", 350); } }
+    public string ArmorCrateResourceId
+    {
+        get { return _catalog ? _catalog.ArmorCrateResourceId : string.Empty; }
+    }
+    public string HelmetCrateResourceId
+    {
+        get { return _catalog ? _catalog.HelmetCrateResourceId : string.Empty; }
+    }
+    public int ArmorPrice
+    {
+        get
+        {
+            return TryGetShopItem(BombShopItemKind.Armor, out ShopItem item)
+                ? item.Price
+                : GetInt("economy.armorPrice", 650);
+        }
+    }
+    public int HelmetPrice
+    {
+        get
+        {
+            return TryGetShopItem(BombShopItemKind.Helmet, out ShopItem item)
+                ? item.Price
+                : GetInt("economy.helmetPrice", 350);
+        }
+    }
     public float PickupDistance
     {
         get { return _registry.GetFloat("economy.pickupDistance", 3.2f); }
@@ -49,15 +91,30 @@ public sealed class BombEconomyService : MonoBehaviour
     {
         get { return _registry.GetFloat("economy.dropUpSpeed", 0.6f); }
     }
+    public float BuyWindowRemaining
+    {
+        get
+        {
+            return IsBuyWindowState()
+                ? Mathf.Max(0f, _buyDeadline - Time.unscaledTime)
+                : 0f;
+        }
+    }
+    public int BuyWindowRoundIndex
+    {
+        get { return _buyWindowRoundIndex; }
+    }
 
     public bool IsBuyWindowOpen
     {
         get
         {
-            return _match && _match.State == MatchState.InRound &&
+            return IsBuyWindowState() &&
                 Time.unscaledTime <= _buyDeadline;
         }
     }
+
+    public event Action CatalogChanged;
 
     public void Initialize(MatchManager match, ModeConfigRegistry registry)
     {
@@ -65,19 +122,26 @@ public sealed class BombEconomyService : MonoBehaviour
         _registry = registry;
         _match.KillAwarded += HandleKillAwarded;
         _match.RoundStateChanged += HandleRoundStateChanged;
-        ParseShopItems(_registry.GetString("economy.shopItems",
-            "AK|weapon.ak.data|2700;AS Val|weapon.as-val.data|2900;" +
-            "MPS5|weapon.mps5.data|1500;PDW90|weapon.pdw90.data|2350;" +
-            "KXG12|weapon.kxg-12.data|2000;Kar98k|weapon.kar98k.data|3200"));
+        BuildFallbackShopItems();
+        _catalogResourceId = _registry.GetString(
+            "economy.shopCatalogResourceId",
+            "economy.bomb.shop_catalog");
+        _ = LoadCatalogAsync();
         ParseKillRewards(_registry.GetString("economy.killRewardOverrides",
             "mps5=600;pdw90=600;kxg-12=900;melee-fist=1500"));
     }
 
     private void OnDestroy()
     {
-        if (!_match) return;
-        _match.KillAwarded -= HandleKillAwarded;
-        _match.RoundStateChanged -= HandleRoundStateChanged;
+        if (_match)
+        {
+            _match.KillAwarded -= HandleKillAwarded;
+            _match.RoundStateChanged -= HandleRoundStateChanged;
+        }
+        if (_resources && _catalog && !string.IsNullOrWhiteSpace(_catalogResourceId))
+        {
+            _resources.Release<BombShopCatalogSO>(_catalogResourceId);
+        }
     }
 
     public Account Bind(MatchParticipant participant)
@@ -108,6 +172,19 @@ public sealed class BombEconomyService : MonoBehaviour
         return true;
     }
 
+    public bool CanOpenShop(MatchParticipant participant)
+    {
+        if (!IsBuyWindowOpen || participant == null || !participant.Info || !_match)
+        {
+            return false;
+        }
+
+        // 倒计时从 5 开始就是全员购买阶段，玩家尚未完全落入复活区包围盒时也应可开店。
+        // 倒计时结束后的追加购买时间才要求玩家仍留在分配到的正式复活区内。
+        return _match.State == MatchState.Countdown ||
+            _match.IsInsideAssignedSpawnZone(participant.Info);
+    }
+
     public void Refund(PlayerInfo player, int amount)
     {
         Award(player, Mathf.Max(0, amount));
@@ -123,6 +200,32 @@ public sealed class BombEconomyService : MonoBehaviour
             Award(participant.Info, participant.Team == winningTeam
                 ? GetInt("economy.roundWinReward", 3250)
                 : GetInt("economy.roundLossReward", 1900));
+        }
+    }
+
+    public void BeginRoundBuyWindow()
+    {
+        if (!_match || _match.RoundIndex == _buyWindowRoundIndex)
+        {
+            return;
+        }
+
+        _buyWindowRoundIndex = _match.RoundIndex;
+        DroppedWeaponEntity.ClearAll();
+        float afterCountdownDuration = Mathf.Max(0f, _registry.GetFloat(
+            "economy.buyAfterCountdownDuration",
+            5f));
+        _buyDeadline = Time.unscaledTime +
+            Mathf.Max(0f, _match.CountdownRemaining) +
+            afterCountdownDuration;
+        IReadOnlyList<MatchParticipant> roster = _match.Roster;
+        for (int i = 0; i < roster.Count; i++)
+        {
+            if (roster[i].Info && roster[i].Info.TryGetComponent(
+                out BombEconomyPlayerCtrl economyPlayer))
+            {
+                economyPlayer.AutoBuyForRound();
+            }
         }
     }
 
@@ -149,21 +252,17 @@ public sealed class BombEconomyService : MonoBehaviour
 
     private void HandleRoundStateChanged(MatchState state)
     {
-        if (state == MatchState.InRound)
+        if (state == MatchState.Countdown)
         {
-            DroppedWeaponEntity.ClearAll();
-            _buyDeadline = Time.unscaledTime +
-                Mathf.Max(1f, _registry.GetFloat("economy.buyDuration", 25f));
-            IReadOnlyList<MatchParticipant> roster = _match.Roster;
-            for (int i = 0; i < roster.Count; i++)
-            {
-                if (roster[i].Info && roster[i].Info.TryGetComponent(
-                    out BombEconomyPlayerCtrl economyPlayer))
-                {
-                    economyPlayer.AutoBuyForRound();
-                }
-            }
+            BeginRoundBuyWindow();
         }
+    }
+
+    private bool IsBuyWindowState()
+    {
+        return _match &&
+            (_match.State == MatchState.Countdown ||
+            _match.State == MatchState.InRound);
     }
 
     private void Award(PlayerInfo player, int amount)
@@ -180,20 +279,84 @@ public sealed class BombEconomyService : MonoBehaviour
         return _registry != null ? _registry.GetInt(key, fallback) : fallback;
     }
 
-    private void ParseShopItems(string serialized)
+    public bool TryGetShopItem(BombShopItemKind kind, out ShopItem item)
+    {
+        for (int i = 0; i < _shopItems.Count; i++)
+        {
+            if (_shopItems[i].Kind == kind)
+            {
+                item = _shopItems[i];
+                return true;
+            }
+        }
+
+        item = default;
+        return false;
+    }
+
+    private async Task LoadCatalogAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_catalogResourceId))
+        {
+            return;
+        }
+
+        try
+        {
+            _resources = ResourceMgr.instance;
+            BombShopCatalogSO catalog =
+                await _resources.LoadAsync<BombShopCatalogSO>(_catalogResourceId);
+            if (!this || !catalog)
+            {
+                if (catalog)
+                {
+                    _resources.Release<BombShopCatalogSO>(_catalogResourceId);
+                }
+                return;
+            }
+
+            _catalog = catalog;
+            _shopItems.Clear();
+            for (int i = 0; i < catalog.Items.Count; i++)
+            {
+                BombShopItemConfig configured = catalog.Items[i];
+                _shopItems.Add(new ShopItem(
+                    configured.ItemId,
+                    configured.DisplayName,
+                    configured.ResourceId,
+                    configured.Price,
+                    configured.Kind,
+                    configured.Column));
+            }
+            CatalogChanged?.Invoke();
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"爆破商店目录加载失败，继续使用内置兜底：{exception.Message}", this);
+        }
+    }
+
+    private void BuildFallbackShopItems()
     {
         _shopItems.Clear();
-        string[] entries = (serialized ?? string.Empty).Split(';');
-        for (int i = 0; i < entries.Length; i++)
-        {
-            string[] fields = entries[i].Split('|');
-            if (fields.Length != 3 || string.IsNullOrWhiteSpace(fields[1]) ||
-                !int.TryParse(fields[2], out int price))
-            {
-                continue;
-            }
-            _shopItems.Add(new ShopItem(fields[0].Trim(), fields[1].Trim(), price));
-        }
+        _shopItems.Add(new ShopItem("m1911", "M1911", "weapon.m1911.data", 500,
+            BombShopItemKind.Sidearm, BombShopColumn.Pistol));
+        _shopItems.Add(new ShopItem("mps5", "MPS5", "weapon.mps5.data", 1500,
+            BombShopItemKind.Primary, BombShopColumn.Light));
+        _shopItems.Add(new ShopItem("kxg12", "KXG12", "weapon.kxg-12.data", 2000,
+            BombShopItemKind.Primary, BombShopColumn.Light));
+        _shopItems.Add(new ShopItem("pdw90", "PDW90", "weapon.pdw90.data", 2350,
+            BombShopItemKind.Primary, BombShopColumn.Medium));
+        _shopItems.Add(new ShopItem("ak", "AK", "weapon.ak.data", 2700,
+            BombShopItemKind.Primary, BombShopColumn.Medium));
+        _shopItems.Add(new ShopItem("as-val", "AS Val", "weapon.as-val.data", 2900,
+            BombShopItemKind.Primary, BombShopColumn.Heavy));
+        _shopItems.Add(new ShopItem("kar98k", "Kar98k", "weapon.kar98k.data", 3200,
+            BombShopItemKind.Primary, BombShopColumn.Heavy));
+        _shopItems.Add(new ShopItem("armor", "胸甲", string.Empty, 650,
+            BombShopItemKind.Armor, BombShopColumn.Protection));
+        _shopItems.Add(new ShopItem("helmet", "头盔", string.Empty, 350,
+            BombShopItemKind.Helmet, BombShopColumn.Protection));
     }
 
     private void ParseKillRewards(string serialized)

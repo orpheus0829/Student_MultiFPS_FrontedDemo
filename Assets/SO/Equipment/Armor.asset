@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5776f7863bb3aad44b46309168ff3b26, type: 3}
+  m_Name: Armor
+  m_EditorClassIdentifier: Assembly-CSharp::BombEquipmentDefinitionSO
+  _equipmentId: equipment.armor
+  _displayName: "\u80F8\u7532"
+  _kind: 0
+  _price: 650
+  _armorCapacity: 100
+  _bodyAbsorption: 0.5
+  _headAbsorption: 0
+  _silhouetteResourceId: ui.equipment.armor.silhouette
+  _crateResourceId: prop.equipment.armor_crate

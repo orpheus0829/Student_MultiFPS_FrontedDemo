@@ -8,12 +8,13 @@ using UnityEngine.UI;
 public sealed class MatchRoundIntroUI : MonoBehaviour
 {
     private const float CountdownEnterDuration = 0.18f;
-    private const float CountdownHoldDuration = 0.42f;
+    private const float CountdownHoldDuration = 0.66f;
     private const float CountdownExitDuration = 0.16f;
     private const float StartEnterDuration = 0.28f;
     private const float StartHoldDuration = 0.85f;
     private const float StartExitDuration = 0.24f;
-    private const float StartTextWithLogoY = -250f;
+    private const float ModeNameY = -230f;
+    private const float StartTextWithLogoY = -294f;
 
     private GameObject _root;
     private CanvasGroup _countdownGroup;
@@ -22,11 +23,11 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
     private CanvasGroup _startGroup;
     private RectTransform _startRoot;
     private RawImage _modeLogo;
+    private TMP_Text _modeNameText;
     private TMP_Text _startText;
     private MatchManager _manager;
     private ResourceMgr _resources;
     private string _loadedLogoId;
-    private int _roundIndex;
     private int _sequenceVersion;
 
     private void Awake()
@@ -59,32 +60,33 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
     {
         if (state == MatchState.Preparing || state == MatchState.Idle)
         {
-            _roundIndex = 0;
             _sequenceVersion++;
             ReleaseLogo();
             HideImmediate();
             return;
         }
 
-        if (state != MatchState.InRound)
+        _sequenceVersion++;
+        HideImmediate();
+        if (state == MatchState.Countdown)
         {
-            _sequenceVersion++;
-            HideImmediate();
+            PlayCountdown(_sequenceVersion);
             return;
         }
 
-        _roundIndex++;
-        PlayRoundIntro(_sequenceVersion + 1, _roundIndex == 1);
+        if (state == MatchState.InRound)
+        {
+            PlayStartSignal(_sequenceVersion, _manager.RoundIndex == 1);
+        }
     }
 
-    private async void PlayRoundIntro(int version, bool showModeLogo)
+    private async void PlayCountdown(int version)
     {
-        _sequenceVersion = version;
         try
         {
             for (int number = 5; number >= 1; number--)
             {
-                if (!CanContinue(version))
+                if (!CanContinue(version, MatchState.Countdown))
                 {
                     return;
                 }
@@ -100,7 +102,10 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
                     1f,
                     CountdownEnterDuration,
                     version);
-                await WaitUnscaled(CountdownHoldDuration, version);
+                await WaitUnscaled(
+                    CountdownHoldDuration,
+                    version,
+                    MatchState.Countdown);
                 await Animate(
                     _countdownGroup,
                     _countdownRoot,
@@ -112,14 +117,30 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
                     version);
                 _countdownGroup.gameObject.SetActive(false);
             }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception, this);
+            HideImmediate();
+        }
+    }
 
-            if (!CanContinue(version))
+    private async void PlayStartSignal(int version, bool showModeLogo)
+    {
+        try
+        {
+            if (!CanContinue(version, MatchState.InRound))
             {
                 return;
             }
 
             await LoadModeLogo(showModeLogo, version);
             _modeLogo.gameObject.SetActive(showModeLogo && _modeLogo.texture);
+            _modeNameText.gameObject.SetActive(showModeLogo);
+            _modeNameText.text = showModeLogo && _manager &&
+                _manager.Config != null && _manager.Config.Mode
+                ? _manager.Config.Mode.DisplayName
+                : string.Empty;
             _startText.rectTransform.anchoredPosition = showModeLogo
                 ? new Vector2(0f, StartTextWithLogoY)
                 : Vector2.zero;
@@ -133,7 +154,7 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
                 1f,
                 StartEnterDuration,
                 version);
-            await WaitUnscaled(StartHoldDuration, version);
+            await WaitUnscaled(StartHoldDuration, version, MatchState.InRound);
             await Animate(
                 _startGroup,
                 _startRoot,
@@ -170,7 +191,7 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
 
         string resourceId = _manager.Config.Mode.LogoResourceId;
         Texture2D texture = await _resources.LoadAsync<Texture2D>(resourceId);
-        if (!CanContinue(version))
+        if (!CanContinue(version, MatchState.InRound))
         {
             _resources.Release<Texture2D>(resourceId);
             return;
@@ -191,7 +212,10 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
         int version)
     {
         float elapsed = 0f;
-        while (elapsed < duration && CanContinue(version))
+        MatchState expectedState = group == _countdownGroup
+            ? MatchState.Countdown
+            : MatchState.InRound;
+        while (elapsed < duration && CanContinue(version, expectedState))
         {
             elapsed += Time.unscaledDeltaTime;
             float progress = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, duration));
@@ -201,7 +225,7 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
             await Task.Yield();
         }
 
-        if (!CanContinue(version))
+        if (!CanContinue(version, expectedState))
         {
             return;
         }
@@ -210,20 +234,23 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
         group.alpha = toAlpha;
     }
 
-    private async Task WaitUnscaled(float duration, int version)
+    private async Task WaitUnscaled(
+        float duration,
+        int version,
+        MatchState expectedState)
     {
         float elapsed = 0f;
-        while (elapsed < duration && CanContinue(version))
+        while (elapsed < duration && CanContinue(version, expectedState))
         {
             elapsed += Time.unscaledDeltaTime;
             await Task.Yield();
         }
     }
 
-    private bool CanContinue(int version)
+    private bool CanContinue(int version, MatchState expectedState)
     {
         return this && isActiveAndEnabled && version == _sequenceVersion &&
-            _manager && _manager.State == MatchState.InRound;
+            _manager && _manager.State == expectedState;
     }
 
     private void ReleaseLogo()
@@ -294,7 +321,7 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
         _startRoot.anchorMin = new Vector2(0.5f, 1f);
         _startRoot.anchorMax = new Vector2(0.5f, 1f);
         _startRoot.pivot = new Vector2(0.5f, 1f);
-        _startRoot.sizeDelta = new Vector2(520f, 360f);
+        _startRoot.sizeDelta = new Vector2(620f, 430f);
         _startRoot.anchoredPosition = new Vector2(0f, -48f);
         _startGroup = start.GetComponent<CanvasGroup>();
         _startGroup.blocksRaycasts = false;
@@ -312,12 +339,28 @@ public sealed class MatchRoundIntroUI : MonoBehaviour
         _modeLogo.color = Color.white;
         _modeLogo.raycastTarget = false;
 
+        _modeNameText = CreateText(
+            "模式名字",
+            start.transform,
+            36f,
+            FontStyles.Bold);
+        RectTransform modeNameRect = _modeNameText.rectTransform;
+        modeNameRect.anchorMin = new Vector2(0.5f, 1f);
+        modeNameRect.anchorMax = new Vector2(0.5f, 1f);
+        modeNameRect.pivot = new Vector2(0.5f, 1f);
+        modeNameRect.sizeDelta = new Vector2(620f, 58f);
+        modeNameRect.anchoredPosition = new Vector2(0f, ModeNameY);
+        _modeNameText.alignment = TextAlignmentOptions.Center;
+        _modeNameText.color = Color.white;
+        _modeNameText.outlineColor = Color.black;
+        _modeNameText.outlineWidth = 0.22f;
+
         _startText = CreateText("战斗开始文字", start.transform, 54f, FontStyles.Bold);
         RectTransform startTextRect = _startText.rectTransform;
         startTextRect.anchorMin = new Vector2(0.5f, 1f);
         startTextRect.anchorMax = new Vector2(0.5f, 1f);
         startTextRect.pivot = new Vector2(0.5f, 1f);
-        startTextRect.sizeDelta = new Vector2(520f, 90f);
+        startTextRect.sizeDelta = new Vector2(620f, 90f);
         startTextRect.anchoredPosition = new Vector2(0f, StartTextWithLogoY);
         _startText.alignment = TextAlignmentOptions.Center;
         _startText.color = Color.white;

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5a376f6629394446b8d11ba5d0a6d0b, type: 3}
+  m_Name: BombShopCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BombShopCatalogSO
+  _items:
+  - _itemId: m1911
+    _displayName: M1911
+    _kind: 0
+    _column: 0
+    _resourceId: weapon.m1911.data
+    _price: 500
+    _sortOrder: 0
+  - _itemId: mps5
+    _displayName: MPS5
+    _kind: 1
+    _column: 1
+    _resourceId: weapon.mps5.data
+    _price: 1500
+    _sortOrder: 0
+  - _itemId: kxg12
+    _displayName: KXG12
+    _kind: 1
+    _column: 1
+    _resourceId: weapon.kxg-12.data
+    _price: 2000
+    _sortOrder: 1
+  - _itemId: pdw90
+    _displayName: PDW90
+    _kind: 1
+    _column: 2
+    _resourceId: weapon.pdw90.data
+    _price: 2350
+    _sortOrder: 0
+  - _itemId: ak
+    _displayName: AK
+    _kind: 1
+    _column: 2
+    _resourceId: weapon.ak.data
+    _price: 2700
+    _sortOrder: 1
+  - _itemId: as-val
+    _displayName: AS Val
+    _kind: 1
+    _column: 3
+    _resourceId: weapon.as-val.data
+    _price: 2900
+    _sortOrder: 0
+  - _itemId: kar98k
+    _displayName: Kar98k
+    _kind: 1
+    _column: 3
+    _resourceId: weapon.kar98k.data
+    _price: 3400
+    _sortOrder: 1
+  - _itemId: armor
+    _displayName: "\u80F8\u7532"
+    _kind: 2
+    _column: 4
+    _resourceId: equipment.armor.data
+    _price: 650
+    _sortOrder: 0
+  - _itemId: helmet
+    _displayName: "\u5934\u76D4"
+    _kind: 3
+    _column: 4
+    _resourceId: equipment.helmet.data
+    _price: 350
+    _sortOrder: 1
+  _armorCrateResourceId: prop.equipment.armor_crate
+  _helmetCrateResourceId: prop.equipment.helmet_crate

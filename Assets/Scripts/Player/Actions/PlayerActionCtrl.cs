@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [DefaultExecutionOrder(-100)]
@@ -19,6 +20,7 @@ public class PlayerActionCtrl : MonoBehaviour
     [SerializeField, InspectorName("镜头运动反馈")] private FirstPersonCameraMotionCtrl _cameraMotionCtrl;
 
     private EventMgr.Subscription _inputSubscription;
+    private readonly HashSet<object> _gameplayInputBlockers = new HashSet<object>();
     private FirstPersonCameraCtrl _cameraCtrl;
     private bool _isFiring;
     private bool _weaponActionBlockedAim;
@@ -252,6 +254,7 @@ public class PlayerActionCtrl : MonoBehaviour
         _isPunching = false;
         _weaponActionBlockedAim = false;
         _wasAirborne = false;
+        _gameplayInputBlockers.Clear();
     }
 
     public void Receive(PlayerInputCommand command)
@@ -260,6 +263,20 @@ public class PlayerActionCtrl : MonoBehaviour
         if (command.Action == GJInputAction.Interact)
         {
             CommandReceived?.Invoke(command);
+            return;
+        }
+
+        // 界面自己锁住移动后仍要能收到关闭命令，否则同一个按键无法收起界面。
+        if (command.Action == GJInputAction.OpenShop ||
+            command.Action == GJInputAction.Scoreboard ||
+            command.Action == GJInputAction.Settings)
+        {
+            CommandReceived?.Invoke(command);
+            return;
+        }
+
+        if (_gameplayInputBlockers.Count > 0)
+        {
             return;
         }
 
@@ -337,6 +354,27 @@ public class PlayerActionCtrl : MonoBehaviour
         }
 
         CommandReceived?.Invoke(command);
+    }
+
+    public void SetGameplayInputBlocked(object owner, bool blocked)
+    {
+        if (owner == null)
+        {
+            return;
+        }
+
+        bool changed = blocked
+            ? _gameplayInputBlockers.Add(owner)
+            : _gameplayInputBlockers.Remove(owner);
+        if (!changed || !blocked)
+        {
+            return;
+        }
+
+        _isFiring = false;
+        _weaponCombatCtrl.ReceiveFireInput(PlayerInputPhase.Canceled);
+        _aimCtrl.ReceiveAimInput(PlayerInputPhase.Canceled);
+        _moveCtrl.SetSprintInput(false);
     }
 
     private bool HandleMovementCommand(PlayerInputCommand command)

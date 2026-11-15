@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ModeDefinitionSO
   _kind: 0
   _modeId: mode.solo
-  _displayName: "\u4E2A\u4EBA\u7ADE\u6280"
+  _displayName: "\u4E2A\u4EBA\u6218"
   _isBuiltIn: 1
   _teamCount: 8
   _teamSize: 1
@@ -26,6 +26,12 @@ MonoBehaviour:
   _logoResourceId: ui.match.mode.solo.logo
   _aiPatchId: solo.self_preservation
   _items:
+  - _key: match.startCountdown
+    _type: 2
+    _number: 5
+    _flag: 0
+    _text: 
+    _isRemovable: 0
   - _key: score.kill
     _type: 1
     _number: 100
@@ -57,6 +63,12 @@ MonoBehaviour:
     _text: 
     _isRemovable: 0
   - _key: rules.type
+    _type: 3
+    _number: 0
+    _flag: 0
+    _text: solo
+    _isRemovable: 0
+  - _key: hud.scoreStyle
     _type: 3
     _number: 0
     _flag: 0

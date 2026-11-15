@@ -32,7 +32,7 @@ public sealed class AIAimActuator
 
     public void Tick(AIIntent intent, WeaponDefinitionSO weapon)
     {
-        if (!intent.Aim || intent.Target == null)
+        if ((!intent.Aim && !intent.Fire) || intent.Target == null)
         {
             _target = null;
             AngularError = 180f;

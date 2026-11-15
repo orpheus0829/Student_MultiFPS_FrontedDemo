@@ -93,6 +93,13 @@ public sealed class AIDifficultyProfile
     public float StickyTargetWeight { get; private set; }
     public float Aggression { get; private set; }
     public float RetreatPreference { get; private set; }
+    public float TeamRegroupDistance { get; private set; }
+    public float TeamArrivalRadius { get; private set; }
+    public float SquadSeparationRadius { get; private set; }
+    public float SquadSeparationWeight { get; private set; }
+    public float IntelShareRange { get; private set; }
+    public float IntelShareInterval { get; private set; }
+    public float IntelShareConfidence { get; private set; }
     public AIUtilityWeights Utility { get; private set; }
 
     public static AIDifficultyProfile Create(AIDifficulty difficulty)
@@ -115,6 +122,8 @@ public sealed class AIDifficultyProfile
             p.StrafeScale = 0.6f; p.CoverPreference = 0.35f;
             p.RetreatHealthRatio = 0.2f; p.ReturnHealthRatio = 0.6f;
             p.Aggression = 1f; p.RetreatPreference = 0.15f;
+            p.TeamRegroupDistance = 30f; p.TeamArrivalRadius = 9f;
+            p.SquadSeparationRadius = 2.5f; p.SquadSeparationWeight = 1.5f;
             p.Utility = new AIUtilityWeights(0.35f, 1.2f, 0.45f);
             return p;
         }
@@ -134,6 +143,10 @@ public sealed class AIDifficultyProfile
             p.CanTacticalSlide = true; p.ThreatWeight = 0.65f;
             p.VulnerabilityWeight = 0.55f; p.Aggression = 0.82f;
             p.RetreatPreference = 1f;
+            p.TeamRegroupDistance = 22f; p.TeamArrivalRadius = 8f;
+            p.SquadSeparationRadius = 4f; p.SquadSeparationWeight = 4.5f;
+            p.IntelShareRange = 42f; p.IntelShareInterval = 0.35f;
+            p.IntelShareConfidence = 0.9f;
             p.Utility = new AIUtilityWeights(1.15f, 0.9f, 1.2f); return p;
         }
         p.Difficulty = AIDifficulty.Normal;
@@ -148,7 +161,12 @@ public sealed class AIDifficultyProfile
         p.RetreatHealthRatio = 0.38f; p.ReturnHealthRatio = 0.75f;
         p.FlankChance = 0.25f; p.CanSwitchWeapon = true; p.CanMelee = true;
         p.CanCombatJump = true; p.ThreatWeight = 0.55f; p.Aggression = 0.9f;
+        p.VulnerabilityWeight = 0.25f;
         p.RetreatPreference = 0.62f;
+        p.TeamRegroupDistance = 26f; p.TeamArrivalRadius = 8f;
+        p.SquadSeparationRadius = 3.25f; p.SquadSeparationWeight = 3f;
+        p.IntelShareRange = 26f; p.IntelShareInterval = 1.1f;
+        p.IntelShareConfidence = 0.65f;
         p.Utility = new AIUtilityWeights(0.8f, 1f, 0.85f); return p;
     }
 }

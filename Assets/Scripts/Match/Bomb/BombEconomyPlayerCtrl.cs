@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [DisallowMultipleComponent]
 public sealed class BombEconomyPlayerCtrl : MonoBehaviour
@@ -9,13 +11,22 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     private BombEconomyService.Account _account;
     private MatchParticipant _participant;
     private PlayerInfo _playerInfo;
+    private PlayerInputCtrl _inputCtrl;
     private PlayerActionCtrl _actionCtrl;
     private PlayerWeaponInventoryCtrl _inventory;
-    private WeaponActionCtrl _weaponAction;
     private WeaponCombatCtrl _combat;
     private PlayerWeaponViewCtrl _view;
     private PlayerArmorCtrl _armor;
-    private Camera _camera;
+    private PlayerWeaponWorldInteractionCtrl _worldInteraction;
+    private PlayerCharacterModelCtrl _models;
+    private PlayerMoveCtrl _moveCtrl;
+    private readonly Dictionary<string, Sprite> _shopSprites =
+        new Dictionary<string, Sprite>(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _shopSpriteResourceIds =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+    private BombShopPreviewStage _previewStage;
+    private string _hoveredItemId;
+    private bool _shopArtLoading;
     private string _pistolResourceId = "weapon.m1911.data";
     private bool _shopOpen;
     private bool _transactionBusy;
@@ -35,15 +46,19 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         _isLocal = participant.IsLocalPlayer;
         _pistolResourceId = string.IsNullOrWhiteSpace(pistolResourceId)
             ? _pistolResourceId : pistolResourceId;
+        TryGetComponent(out _inputCtrl);
         TryGetComponent(out _actionCtrl);
         TryGetComponent(out _inventory);
-        TryGetComponent(out _weaponAction);
         TryGetComponent(out _combat);
         TryGetComponent(out _view);
         TryGetComponent(out _armor);
+        TryGetComponent(out _worldInteraction);
+        TryGetComponent(out _models);
+        TryGetComponent(out _moveCtrl);
         if (!_armor) _armor = gameObject.AddComponent<PlayerArmorCtrl>();
-        _camera = GetComponentInChildren<Camera>(true);
         _account = _service.Bind(participant);
+        _service.CatalogChanged -= HandleCatalogChanged;
+        _service.CatalogChanged += HandleCatalogChanged;
         _initialized = true;
         if (_actionCtrl)
         {
@@ -72,21 +87,33 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     public void Shutdown()
     {
         _initialized = false;
+        if (_service)
+        {
+            _service.CatalogChanged -= HandleCatalogChanged;
+        }
         if (_actionCtrl) _actionCtrl.CommandReceived -= HandleCommand;
         CloseShop();
+        ReleaseShopArt();
     }
 
     public void AutoBuyForRound()
     {
         if (!_participant.IsAI || !_service.IsBuyWindowOpen || _account == null) return;
-        if (_armor.Armor <= 0f && _account.Money >= 650) TryPurchaseArmor();
-        if (!_armor.HasHelmet && _account.Money >= 350) TryPurchaseHelmet();
+        if (_armor.Armor <= 0f && _account.Money >= _service.ArmorPrice)
+        {
+            _ = TryPurchaseEquipmentAsync(BombShopItemKind.Armor);
+        }
+        if (!_armor.HasHelmet && _account.Money >= _service.HelmetPrice)
+        {
+            _ = TryPurchaseEquipmentAsync(BombShopItemKind.Helmet);
+        }
         if (!string.IsNullOrWhiteSpace(_inventory.PrimaryWeaponResourceId)) return;
         for (int i = _service.ShopItems.Count - 1; i >= 0; i--)
         {
-            if (_account.Money >= _service.ShopItems[i].Price)
+            if (_service.ShopItems[i].Kind == BombShopItemKind.Primary &&
+                _account.Money >= _service.ShopItems[i].Price)
             {
-                _ = TryPurchaseAsync(_service.ShopItems[i]);
+                _ = TryPurchaseItemAsync(_service.ShopItems[i]);
                 break;
             }
         }
@@ -94,14 +121,41 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
 
     public bool TryOpenShop()
     {
-        if (!_initialized || !_isLocal || !_service || !_service.IsBuyWindowOpen)
+        if (_shopOpen)
+        {
+            return true;
+        }
+
+        if (!_initialized || !_isLocal || !_service ||
+            !_service.CanOpenShop(_participant))
         {
             return false;
         }
 
         _shopOpen = true;
+        _inputCtrl?.SetGameplayInputBlocked(this, true);
+        _actionCtrl?.SetGameplayInputBlocked(this, true);
+        _actionCtrl?.Receive(new PlayerInputCommand(
+            GJInputAction.Fire,
+            PlayerInputPhase.Canceled));
+        _actionCtrl?.Receive(new PlayerInputCommand(
+            GJInputAction.Aim,
+            PlayerInputPhase.Canceled));
+        _actionCtrl?.Receive(new PlayerInputCommand(
+            GJInputAction.Sprint,
+            PlayerInputPhase.Canceled));
+        _moveCtrl?.SetExternalLock(true);
+        CameraControlAuthority.Acquire(this);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        _previewStage = new BombShopPreviewStage(
+            _models,
+            _inventory,
+            _view,
+            _armor,
+            _service);
+        _previewStage.Open();
+        _ = LoadShopArtAsync();
         return true;
     }
 
@@ -112,12 +166,6 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         {
             case GJInputAction.OpenShop:
                 if (_isLocal) ToggleShop();
-                break;
-            case GJInputAction.DropWeapon:
-                _ = TryDropCurrentAsync();
-                break;
-            case GJInputAction.PickupWeapon:
-                _ = TryPickupAsync();
                 break;
         }
     }
@@ -137,6 +185,13 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     {
         if (!_shopOpen) return;
         _shopOpen = false;
+        _inputCtrl?.SetGameplayInputBlocked(this, false);
+        _actionCtrl?.SetGameplayInputBlocked(this, false);
+        _moveCtrl?.SetExternalLock(false);
+        CameraControlAuthority.Release(this);
+        _previewStage?.Close();
+        _previewStage = null;
+        _hoveredItemId = string.Empty;
         if (_isLocal)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -144,55 +199,122 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         }
     }
 
-    private async Task TryPurchaseAsync(BombEconomyService.ShopItem item)
+    public async Task<bool> TryPurchaseAsync(string itemId)
     {
-        if (_transactionBusy || !_service.TrySpend(_playerInfo, item.Price)) return;
+        if (!_initialized || string.IsNullOrWhiteSpace(itemId))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _service.ShopItems.Count; i++)
+        {
+            BombEconomyService.ShopItem item = _service.ShopItems[i];
+            if (string.Equals(item.ItemId, itemId, StringComparison.OrdinalIgnoreCase))
+            {
+                return await TryPurchaseItemAsync(item);
+            }
+        }
+
+        return false;
+    }
+
+    private async Task<bool> TryPurchaseItemAsync(BombEconomyService.ShopItem item)
+    {
+        if (item.Kind == BombShopItemKind.Armor)
+        {
+            return await TryPurchaseEquipmentAsync(BombShopItemKind.Armor);
+        }
+        if (item.Kind == BombShopItemKind.Helmet)
+        {
+            return await TryPurchaseEquipmentAsync(BombShopItemKind.Helmet);
+        }
+        if (_transactionBusy || !_service.TrySpend(_playerInfo, item.Price))
+        {
+            return false;
+        }
         _transactionBusy = true;
-        bool success = await _inventory.AddOrReplaceWeaponAsync(item.ResourceId, false);
+        bool success = _worldInteraction
+            ? await _worldInteraction.TryAcquireWeaponAsync(item.ResourceId)
+            : await _inventory.AddOrReplaceWeaponAsync(
+                item.ResourceId,
+                item.Kind == BombShopItemKind.Sidearm);
         if (!success) _service.Refund(_playerInfo, item.Price);
         _transactionBusy = false;
+        if (success)
+        {
+            _previewStage?.RefreshDefault();
+        }
+        return success;
     }
 
-    private void TryPurchaseArmor()
+    private async Task<bool> TryPurchaseEquipmentAsync(BombShopItemKind kind)
     {
-        int price = _service.ArmorPrice;
-        if (_transactionBusy || _armor.Armor >= _armor.MaximumArmor ||
-            !_service.TrySpend(_playerInfo, price)) return;
-        _armor.Refill(_armor.MaximumArmor);
-    }
-
-    private void TryPurchaseHelmet()
-    {
-        int price = _service.HelmetPrice;
-        if (_transactionBusy || _armor.HasHelmet ||
-            !_service.TrySpend(_playerInfo, price)) return;
-        _armor.EquipHelmet();
-    }
-
-    private async Task TryDropCurrentAsync()
-    {
-        if (_transactionBusy || !_weaponAction || !_inventory || !_combat || !_view ||
-            _weaponAction.IsBusy || !_weaponAction.CurrentWeaponData) return;
-        WeaponCategory category = _weaponAction.CurrentWeaponData.Basic.Category;
-        if (category == WeaponCategory.Pistol || category == WeaponCategory.Revolver ||
-            category == WeaponCategory.Melee) return;
-
-        string resourceId = _inventory.CurrentWeaponResourceId;
-        Vector3 position = transform.position + Vector3.up * 1.1f + transform.forward * 0.7f;
-        DroppedWeaponEntity dropped = DroppedWeaponEntity.Create(
-            _view, resourceId, _combat.MagazineAmmo, _combat.ReserveAmmo,
-            position, transform.forward * _service.DropForwardSpeed +
-            Vector3.up * _service.DropUpSpeed);
-        if (!dropped) return;
+        if (_transactionBusy || !_service.TryGetShopItem(kind, out BombEconomyService.ShopItem item))
+        {
+            return false;
+        }
+        if (kind == BombShopItemKind.Armor &&
+            _armor.Armor >= _armor.MaximumArmor)
+        {
+            return false;
+        }
+        if (kind == BombShopItemKind.Helmet && _armor.HasHelmet)
+        {
+            return false;
+        }
+        if (!_service.TrySpend(_playerInfo, item.Price))
+        {
+            return false;
+        }
 
         _transactionBusy = true;
-        bool removed = await _inventory.RemoveCurrentPrimaryAsync(_pistolResourceId);
-        _transactionBusy = false;
-        if (!removed && dropped) Destroy(dropped.gameObject);
+        ResourceMgr resources = ResourceMgr.instance;
+        BombEquipmentDefinitionSO equipment = null;
+        try
+        {
+            equipment = await resources.LoadAsync<BombEquipmentDefinitionSO>(
+                item.ResourceId);
+            if (!this || !equipment)
+            {
+                _service.Refund(_playerInfo, item.Price);
+                return false;
+            }
+
+            if (equipment.Kind == BombEquipmentKind.Armor)
+            {
+                _armor.EquipArmor(
+                    equipment.ArmorCapacity,
+                    equipment.BodyAbsorption);
+            }
+            else
+            {
+                _armor.EquipHelmet(equipment.HeadAbsorption);
+            }
+            _previewStage?.RefreshDefault();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"购买装备 {item.Name} 失败：{exception.Message}", this);
+            _service.Refund(_playerInfo, item.Price);
+            return false;
+        }
+        finally
+        {
+            if (equipment)
+            {
+                resources.Release<BombEquipmentDefinitionSO>(item.ResourceId);
+            }
+            _transactionBusy = false;
+        }
     }
 
     public void DropWeaponsOnDeath()
     {
+        if (_armor)
+        {
+            _armor.ClearEquipment();
+        }
         _ = DropPrimaryOnDeathAsync();
     }
 
@@ -209,52 +331,141 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         if (!_inventory || string.IsNullOrWhiteSpace(_inventory.PrimaryWeaponResourceId))
             return;
         string primaryId = _inventory.PrimaryWeaponResourceId;
-        _inventory.ClearPrimaryOwnership();
         Vector3 position = transform.position + Vector3.up * 0.8f;
         if (_inventory.CurrentWeaponResourceId == primaryId && _view &&
             _view.ThirdPersonWeapon)
         {
-            DroppedWeaponEntity.Create(_view, primaryId,
+            DroppedWeaponEntity dropped = DroppedWeaponEntity.Create(
+                _view, primaryId,
                 _combat ? _combat.MagazineAmmo : 0,
                 _combat ? _combat.ReserveAmmo : 0,
                 position, transform.forward * 1.2f + Vector3.up * 0.5f);
+            if (dropped)
+            {
+                _inventory.ClearPrimaryOwnership();
+            }
             return;
         }
 
         ResourceMgr resources = ResourceMgr.instance;
         WeaponDefinitionSO data = await resources.LoadAsync<WeaponDefinitionSO>(primaryId);
         if (!this || !data) return;
-        string modelId = data.Resources.WorldModelPrefabResourceId;
-        GameObject prefab = await resources.LoadAsync<GameObject>(modelId);
-        if (prefab)
+        int magazineAmmo = data.Ammo.MagazineCapacity;
+        int reserveAmmo = data.Ammo.StartingReserveAmmo;
+        if (_combat)
         {
-            DroppedWeaponEntity.CreateFromModel(prefab, primaryId,
-                data.Ammo.MagazineCapacity, data.Ammo.StartingReserveAmmo,
-                position, transform.rotation,
+            _combat.TryGetAmmo(data, out magazineAmmo, out reserveAmmo);
+        }
+        DroppedWeaponEntity resourceDrop =
+            await DroppedWeaponEntity.CreateFromResourceAsync(
+                primaryId,
+                magazineAmmo,
+                reserveAmmo,
+                position,
+                transform.rotation,
                 transform.forward * 1.2f + Vector3.up * 0.5f);
-            resources.Release<GameObject>(modelId);
+        if (this && resourceDrop)
+        {
+            _inventory.ClearPrimaryOwnership();
         }
         resources.Release<WeaponDefinitionSO>(primaryId);
     }
 
-    private async Task TryPickupAsync()
+    private void HandleCatalogChanged()
     {
-        if (_transactionBusy || !_camera || !_inventory) return;
-        Ray ray = new Ray(_camera.transform.position, _camera.transform.forward);
-        if (!Physics.Raycast(ray, out RaycastHit hit, _service.PickupDistance, ~0,
-            QueryTriggerInteraction.Collide)) return;
-        DroppedWeaponEntity dropped = hit.collider.GetComponentInParent<DroppedWeaponEntity>();
-        if (!dropped) return;
-
-        _transactionBusy = true;
-        bool loaded = await _inventory.AddOrReplaceWeaponAsync(
-            dropped.WeaponResourceId, false);
-        if (loaded)
+        if (_shopOpen)
         {
-            _combat.SetCurrentAmmo(dropped.MagazineAmmo, dropped.ReserveAmmo);
-            if (dropped) Destroy(dropped.gameObject);
+            _ = LoadShopArtAsync();
         }
-        _transactionBusy = false;
+    }
+
+    private async Task LoadShopArtAsync()
+    {
+        if (_shopArtLoading || !_service)
+        {
+            return;
+        }
+
+        _shopArtLoading = true;
+        ResourceMgr resources = ResourceMgr.instance;
+        try
+        {
+            for (int i = 0; i < _service.ShopItems.Count; i++)
+            {
+                BombEconomyService.ShopItem item = _service.ShopItems[i];
+                if (_shopSprites.ContainsKey(item.ItemId))
+                {
+                    continue;
+                }
+
+                string silhouetteId = await ResolveSilhouetteIdAsync(resources, item);
+                if (!this || string.IsNullOrWhiteSpace(silhouetteId))
+                {
+                    continue;
+                }
+
+                Sprite sprite = await resources.LoadAsync<Sprite>(silhouetteId);
+                if (!this || !sprite)
+                {
+                    if (sprite)
+                    {
+                        resources.Release<Sprite>(silhouetteId);
+                    }
+                    continue;
+                }
+
+                _shopSprites[item.ItemId] = sprite;
+                _shopSpriteResourceIds[item.ItemId] = silhouetteId;
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning("爆破商店剪影加载失败：" + exception.Message, this);
+        }
+        finally
+        {
+            _shopArtLoading = false;
+        }
+    }
+
+    private static async Task<string> ResolveSilhouetteIdAsync(
+        ResourceMgr resources,
+        BombEconomyService.ShopItem item)
+    {
+        if (item.Kind == BombShopItemKind.Armor ||
+            item.Kind == BombShopItemKind.Helmet)
+        {
+            BombEquipmentDefinitionSO equipment =
+                await resources.LoadAsync<BombEquipmentDefinitionSO>(item.ResourceId);
+            if (!equipment)
+            {
+                return string.Empty;
+            }
+            string silhouetteId = equipment.SilhouetteResourceId;
+            resources.Release<BombEquipmentDefinitionSO>(item.ResourceId);
+            return silhouetteId;
+        }
+
+        WeaponDefinitionSO weapon =
+            await resources.LoadAsync<WeaponDefinitionSO>(item.ResourceId);
+        if (!weapon)
+        {
+            return string.Empty;
+        }
+        string weaponSilhouetteId = weapon.Basic.SilhouetteResourceId;
+        resources.Release<WeaponDefinitionSO>(item.ResourceId);
+        return weaponSilhouetteId;
+    }
+
+    private void ReleaseShopArt()
+    {
+        ResourceMgr resources = ResourceMgr.instance;
+        foreach (KeyValuePair<string, string> entry in _shopSpriteResourceIds)
+        {
+            resources.Release<Sprite>(entry.Value);
+        }
+        _shopSprites.Clear();
+        _shopSpriteResourceIds.Clear();
     }
 
     private void OnGUI()
@@ -269,24 +480,167 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
             return;
         }
 
-        Rect panel = new Rect(Screen.width * 0.5f - 220f,
-            Screen.height * 0.5f - 210f, 440f, 420f);
-        GUI.Box(panel, $"爆破商城   余额 ${_account.Money}");
-        GUILayout.BeginArea(new Rect(panel.x + 24f, panel.y + 42f,
-            panel.width - 48f, panel.height - 58f));
-        GUILayout.Label("主武器");
-        for (int i = 0; i < _service.ShopItems.Count; i++)
+        DrawShop();
+    }
+
+    private void DrawShop()
+    {
+        Rect panel = new Rect(36f, 32f, Screen.width - 72f, Screen.height - 64f);
+        Color previousColor = GUI.color;
+        GUI.color = new Color(0.025f, 0.03f, 0.038f, 0.98f);
+        GUI.Box(panel, GUIContent.none);
+        GUI.color = previousColor;
+
+        GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
         {
-            BombEconomyService.ShopItem item = _service.ShopItems[i];
-            if (GUILayout.Button($"{item.Name}    ${item.Price}", GUILayout.Height(38f)))
-                _ = TryPurchaseAsync(item);
+            fontSize = 28,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleLeft
+        };
+        GUIStyle balanceStyle = new GUIStyle(titleStyle)
+        {
+            alignment = TextAnchor.MiddleRight
+        };
+        GUI.Label(new Rect(panel.x + 24f, panel.y + 12f, 320f, 44f),
+            "赏金爆破 · 装备商店", titleStyle);
+        GUI.Label(new Rect(panel.xMax - 330f, panel.y + 12f, 300f, 44f),
+            $"余额  ${_account.Money}", balanceStyle);
+
+        float contentTop = panel.y + 68f;
+        float contentHeight = panel.height - 116f;
+        float previewWidth = Mathf.Clamp(panel.width * 0.31f, 360f, 560f);
+        Rect previewRect = new Rect(
+            panel.x + 18f,
+            contentTop,
+            previewWidth,
+            contentHeight);
+        GUI.Box(previewRect, GUIContent.none);
+        if (_previewStage != null && _previewStage.Texture)
+        {
+            GUI.DrawTexture(previewRect, _previewStage.Texture, ScaleMode.ScaleToFit, true);
         }
-        GUILayout.Space(10f);
-        if (GUILayout.Button($"护甲 100    ${_service.ArmorPrice}", GUILayout.Height(38f)))
-            TryPurchaseArmor();
-        if (GUILayout.Button($"头盔    ${_service.HelmetPrice}", GUILayout.Height(38f)))
-            TryPurchaseHelmet();
-        GUILayout.Label("B 关闭商城　G 丢弃主武器　F 拾取");
-        GUILayout.EndArea();
+        GUI.Label(new Rect(previewRect.x + 18f, previewRect.yMax - 42f,
+            previewRect.width - 36f, 28f),
+            "人物预览　　　　　　　　　装备箱预览");
+
+        Rect gridRect = new Rect(
+            previewRect.xMax + 18f,
+            contentTop,
+            panel.xMax - previewRect.xMax - 36f,
+            contentHeight);
+        string[] columnNames = { "手枪", "轻型", "中型", "重型", "防护装备" };
+        BombShopColumn[] columns =
+        {
+            BombShopColumn.Pistol,
+            BombShopColumn.Light,
+            BombShopColumn.Medium,
+            BombShopColumn.Heavy,
+            BombShopColumn.Protection
+        };
+        float gap = 10f;
+        float columnWidth = (gridRect.width - gap * (columns.Length - 1)) /
+            columns.Length;
+        BombEconomyService.ShopItem? hovered = null;
+        Vector2 pointerPosition = Event.current.mousePosition;
+        if (Mouse.current != null)
+        {
+            pointerPosition = Mouse.current.position.ReadValue();
+            pointerPosition.y = Screen.height - pointerPosition.y;
+        }
+        for (int columnIndex = 0; columnIndex < columns.Length; columnIndex++)
+        {
+            float x = gridRect.x + columnIndex * (columnWidth + gap);
+            GUIStyle headerStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 20,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter
+            };
+            GUI.Label(new Rect(x, gridRect.y, columnWidth, 34f),
+                columnNames[columnIndex], headerStyle);
+
+            int row = 0;
+            for (int itemIndex = 0; itemIndex < _service.ShopItems.Count; itemIndex++)
+            {
+                BombEconomyService.ShopItem item = _service.ShopItems[itemIndex];
+                if (item.Column != columns[columnIndex])
+                {
+                    continue;
+                }
+
+                Rect itemRect = new Rect(
+                    x,
+                    gridRect.y + 40f + row * 150f,
+                    columnWidth,
+                    138f);
+                bool isHovered = itemRect.Contains(pointerPosition);
+                if (isHovered)
+                {
+                    hovered = item;
+                }
+                DrawShopItem(itemRect, item, isHovered);
+                row++;
+            }
+        }
+
+        string hoveredId = hovered.HasValue ? hovered.Value.ItemId : string.Empty;
+        if (!string.Equals(_hoveredItemId, hoveredId, StringComparison.Ordinal))
+        {
+            _hoveredItemId = hoveredId;
+            if (hovered.HasValue)
+            {
+                _previewStage?.SetHoveredItem(hovered.Value);
+            }
+            else
+            {
+                _previewStage?.RefreshDefault();
+            }
+        }
+
+        GUI.Label(new Rect(panel.x + 24f, panel.yMax - 40f,
+            panel.width - 48f, 28f),
+            "B 关闭商店　　G 丢弃当前武器　　F 拾取地面武器　　爆破模式手枪不可丢弃");
+    }
+
+    private void DrawShopItem(
+        Rect rect,
+        BombEconomyService.ShopItem item,
+        bool isHovered)
+    {
+        Color previousBackground = GUI.backgroundColor;
+        GUI.backgroundColor = isHovered
+            ? new Color(0.95f, 0.66f, 0.18f, 1f)
+            : new Color(0.18f, 0.22f, 0.28f, 1f);
+        if (GUI.Button(rect, GUIContent.none))
+        {
+            _ = TryPurchaseItemAsync(item);
+        }
+        GUI.backgroundColor = previousBackground;
+
+        GUIStyle nameStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 16,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.UpperCenter
+        };
+        GUIStyle priceStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 17,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.LowerCenter
+        };
+        GUI.Label(new Rect(rect.x + 5f, rect.y + 7f, rect.width - 10f, 24f),
+            item.Name, nameStyle);
+        if (_shopSprites.TryGetValue(item.ItemId, out Sprite sprite) && sprite)
+        {
+            GUI.DrawTexture(
+                new Rect(rect.x + 12f, rect.y + 34f, rect.width - 24f, 70f),
+                sprite.texture,
+                ScaleMode.ScaleToFit,
+                true);
+        }
+        GUI.Label(new Rect(rect.x + 5f, rect.yMax - 31f, rect.width - 10f, 24f),
+            "$" + item.Price,
+            priceStyle);
     }
 }

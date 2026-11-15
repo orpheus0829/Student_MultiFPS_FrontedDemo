@@ -87,6 +87,11 @@ public static class GunDemoAddressableConfigurator
             new[] { "type.prefab", "type.match" },
             configuredGuids,
             report);
+        RegisterBombShopResources(
+            settings,
+            groups,
+            configuredGuids,
+            report);
         Register(
             settings,
             groups[LocalCommonGroup],
@@ -111,6 +116,25 @@ public static class GunDemoAddressableConfigurator
             new[] { "type.data", "type.match" },
             configuredGuids,
             report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            MatchContentConfigurator.MapCatalogPath,
+            "map.catalog",
+            new[] { "type.data", "type.map" },
+            configuredGuids,
+            report);
+        for (int mapNumber = 2; mapNumber <= 5; mapNumber++)
+        {
+            Register(
+                settings,
+                groups[LocalCommonGroup],
+                $"Assets/SO/Maps/BattleField{mapNumber}.asset",
+                $"map.battlefield{mapNumber}.data",
+                new[] { "type.data", "type.map" },
+                configuredGuids,
+                report);
+        }
         RegisterMatchLogo(
             settings, groups[LocalCommonGroup], configuredGuids, report,
             "Assets/Resource/UI/Match/Mode_Solo.png", "ui.match.mode.solo.logo");
@@ -120,6 +144,11 @@ public static class GunDemoAddressableConfigurator
         RegisterMatchLogo(
             settings, groups[LocalCommonGroup], configuredGuids, report,
             "Assets/Resource/UI/Match/Mode_Bomb.png", "ui.match.mode.bomb.logo");
+        RegisterInteractionUi(
+            settings,
+            groups[LocalCommonGroup],
+            configuredGuids,
+            report);
         ConfigureSharedAudio(
             settings,
             groups[LocalCommonGroup],
@@ -197,6 +226,38 @@ public static class GunDemoAddressableConfigurator
         report.WeaponCount = weaponGuids.Length;
         report.Passed = report.Problems.Count == 0;
         return report;
+    }
+
+    private static void RegisterInteractionUi(
+        AddressableAssetSettings settings,
+        AddressableAssetGroup group,
+        Dictionary<string, string> configuredGuids,
+        GunDemoAddressableConfigureReport report)
+    {
+        Register(
+            settings,
+            group,
+            "Assets/Resource/UI/Interaction/Tablet_Civilian.png",
+            "ui.interaction.tablet.civilian",
+            new[] { "type.ui", "type.interaction" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            "Assets/Resource/UI/Interaction/Key_Square.png",
+            "ui.interaction.key.square",
+            new[] { "type.ui", "type.interaction" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            "Assets/Resource/UI/Interaction/Key_Wide.png",
+            "ui.interaction.key.wide",
+            new[] { "type.ui", "type.interaction" },
+            configuredGuids,
+            report);
     }
 
     public static void ConfigureFromBatchMode()
@@ -534,6 +595,70 @@ public static class GunDemoAddressableConfigurator
             FeedbackHeadshotKillAudioPath,
             "audio.feedback.headshot-kill",
             new[] { "type.audio", "audio.feedback" },
+            configuredGuids,
+            report);
+    }
+
+    private static void RegisterBombShopResources(
+        AddressableAssetSettings settings,
+        Dictionary<string, AddressableAssetGroup> groups,
+        Dictionary<string, string> configuredGuids,
+        GunDemoAddressableConfigureReport report)
+    {
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombShopContentConfigurator.CatalogPath,
+            "economy.bomb.shop_catalog",
+            new[] { "type.data", "type.match", "type.shop" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombShopContentConfigurator.ArmorDataPath,
+            "equipment.armor.data",
+            new[] { "type.data", "type.equipment" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombShopContentConfigurator.HelmetDataPath,
+            "equipment.helmet.data",
+            new[] { "type.data", "type.equipment" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombShopContentConfigurator.ArmorCratePrefabPath,
+            "prop.equipment.armor_crate",
+            new[] { "type.prefab", "type.equipment" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombShopContentConfigurator.HelmetCratePrefabPath,
+            "prop.equipment.helmet_crate",
+            new[] { "type.prefab", "type.equipment" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[WeaponUiGroup],
+            BombShopContentConfigurator.ArmorSilhouettePath,
+            "ui.equipment.armor.silhouette",
+            new[] { "type.ui", "type.equipment" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[WeaponUiGroup],
+            BombShopContentConfigurator.HelmetSilhouettePath,
+            "ui.equipment.helmet.silhouette",
+            new[] { "type.ui", "type.equipment" },
             configuredGuids,
             report);
     }

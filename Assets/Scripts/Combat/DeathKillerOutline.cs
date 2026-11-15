@@ -9,13 +9,29 @@ public sealed class DeathKillerOutline : MonoBehaviour
     private readonly List<Renderer> _bodyRenderers = new List<Renderer>();
     private Camera _camera;
     private CommandBuffer _commandBuffer;
+    private Material _material;
 
     public static DeathKillerOutline Show(GameObject killer, Camera deathCamera)
     {
-        if (!killer || !deathCamera) return null;
-        DeathKillerOutline outline = killer.GetComponent<DeathKillerOutline>();
-        if (!outline) outline = killer.AddComponent<DeathKillerOutline>();
-        outline.Rebuild(deathCamera);
+        return Show(killer, deathCamera, Color.red, "死亡视角击杀者穿墙红色描边");
+    }
+
+    public static DeathKillerOutline Show(
+        GameObject actor,
+        Camera camera,
+        Color color,
+        string bufferName)
+    {
+        if (!actor || !camera)
+        {
+            return null;
+        }
+        DeathKillerOutline outline = actor.GetComponent<DeathKillerOutline>();
+        if (!outline)
+        {
+            outline = actor.AddComponent<DeathKillerOutline>();
+        }
+        outline.Rebuild(camera, color, bufferName);
         return outline;
     }
 
@@ -27,15 +43,17 @@ public sealed class DeathKillerOutline : MonoBehaviour
 
     private void OnDestroy() { ReleaseBuffer(); }
 
-    private void Rebuild(Camera deathCamera)
+    private void Rebuild(Camera camera, Color color, string bufferName)
     {
         ReleaseBuffer();
-        Material material = Resources.Load<Material>(MaterialResourcePath);
-        if (!material)
+        Material sourceMaterial = Resources.Load<Material>(MaterialResourcePath);
+        if (!sourceMaterial)
         {
             Debug.LogWarning("死亡击杀者描边材质未找到。", this);
             return;
         }
+        _material = new Material(sourceMaterial);
+        _material.SetColor("_OutlineColor", color);
 
         PlayerAnimationCtrl animation = GetComponent<PlayerAnimationCtrl>();
         Transform bodyRoot = animation && animation.ThirdPersonView &&
@@ -58,14 +76,17 @@ public sealed class DeathKillerOutline : MonoBehaviour
             }
         }
 
-        _camera = deathCamera;
-        _commandBuffer = new CommandBuffer { name = "死亡视角击杀者穿墙红色描边" };
+        _camera = camera;
+        _commandBuffer = new CommandBuffer
+        {
+            name = string.IsNullOrWhiteSpace(bufferName) ? "角色描边" : bufferName
+        };
         for (int i = 0; i < _bodyRenderers.Count; i++)
         {
             int count = GetSubMeshCount(_bodyRenderers[i]);
             for (int subMesh = 0; subMesh < count; subMesh++)
             {
-                _commandBuffer.DrawRenderer(_bodyRenderers[i], material, subMesh, 0);
+                _commandBuffer.DrawRenderer(_bodyRenderers[i], _material, subMesh, 0);
             }
         }
         RenderPipelineManager.endCameraRendering += HandleEndCameraRendering;
@@ -88,6 +109,11 @@ public sealed class DeathKillerOutline : MonoBehaviour
         RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
         _commandBuffer?.Release();
         _commandBuffer = null;
+        if (_material)
+        {
+            Destroy(_material);
+            _material = null;
+        }
         _camera = null;
         _bodyRenderers.Clear();
     }

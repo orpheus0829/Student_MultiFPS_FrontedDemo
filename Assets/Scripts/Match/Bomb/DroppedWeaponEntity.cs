@@ -1,14 +1,16 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class DroppedWeaponEntity : MonoBehaviour
+public sealed class DroppedWeaponEntity : MonoBehaviour, IWorldInteraction
 {
     private static readonly List<DroppedWeaponEntity> All =
         new List<DroppedWeaponEntity>();
     [SerializeField] private string _weaponResourceId;
     [SerializeField] private int _magazineAmmo;
     [SerializeField] private int _reserveAmmo;
+    private bool _isBeingPickedUp;
 
     public string WeaponResourceId { get { return _weaponResourceId; } }
     public int MagazineAmmo { get { return _magazineAmmo; } }
@@ -31,6 +33,40 @@ public sealed class DroppedWeaponEntity : MonoBehaviour
             if (All[i]) Destroy(All[i].gameObject);
         }
         All.Clear();
+    }
+
+    public bool CanInteract(GameObject interactor)
+    {
+        return !_isBeingPickedUp && interactor &&
+            interactor.TryGetComponent(out PlayerWeaponWorldInteractionCtrl interactionCtrl) &&
+            !interactionCtrl.IsBusy;
+    }
+
+    public async void Interact(GameObject interactor)
+    {
+        if (!CanInteract(interactor) ||
+            !interactor.TryGetComponent(out PlayerWeaponWorldInteractionCtrl interactionCtrl))
+        {
+            return;
+        }
+
+        _isBeingPickedUp = true;
+        bool acquired = await interactionCtrl.TryAcquireWeaponAsync(
+            _weaponResourceId,
+            _magazineAmmo,
+            _reserveAmmo);
+        if (!this)
+        {
+            return;
+        }
+
+        if (acquired)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _isBeingPickedUp = false;
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -80,29 +116,125 @@ public sealed class DroppedWeaponEntity : MonoBehaviour
         for (int i = 0; i < oldColliders.Length; i++) oldColliders[i].enabled = false;
 
         Renderer[] renderers = dropped.GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0)
+        Bounds bounds = default;
+        bool hasModelBounds = false;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (!IsWeaponModelRenderer(renderer))
+            {
+                continue;
+            }
+
+            if (!hasModelBounds)
+            {
+                bounds = renderer.bounds;
+                hasModelBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        if (!hasModelBounds)
         {
             Destroy(dropped);
             return null;
         }
 
-        Bounds bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
         BoxCollider collider = dropped.AddComponent<BoxCollider>();
         collider.center = dropped.transform.InverseTransformPoint(bounds.center);
         Vector3 scale = dropped.transform.lossyScale;
-        collider.size = new Vector3(
+        Vector3 colliderSize = new Vector3(
             bounds.size.x / Mathf.Max(0.01f, Mathf.Abs(scale.x)),
             bounds.size.y / Mathf.Max(0.01f, Mathf.Abs(scale.y)),
             bounds.size.z / Mathf.Max(0.01f, Mathf.Abs(scale.z)));
+        collider.size = new Vector3(
+            Mathf.Max(0.08f, colliderSize.x),
+            Mathf.Max(0.08f, colliderSize.y),
+            Mathf.Max(0.08f, colliderSize.z));
         Rigidbody body = dropped.AddComponent<Rigidbody>();
         body.mass = 2f;
+        body.useGravity = true;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
         body.AddForce(impulse, ForceMode.VelocityChange);
 
         DroppedWeaponEntity entity = dropped.AddComponent<DroppedWeaponEntity>();
         entity._weaponResourceId = weaponResourceId;
         entity._magazineAmmo = Mathf.Max(0, magazineAmmo);
         entity._reserveAmmo = Mathf.Max(0, reserveAmmo);
+        WorldInteractable interactable = dropped.AddComponent<WorldInteractable>();
+        interactable.Configure(
+            "拾取",
+            GJInputAction.PickupWeapon,
+            entity,
+            3.2f);
         return entity;
+    }
+
+    private static bool IsWeaponModelRenderer(Renderer renderer)
+    {
+        if (!renderer || !renderer.gameObject.activeInHierarchy || !renderer.enabled)
+        {
+            return false;
+        }
+
+        return renderer is MeshRenderer || renderer is SkinnedMeshRenderer;
+    }
+
+    public static async Task<DroppedWeaponEntity> CreateFromResourceAsync(
+        string weaponResourceId,
+        int magazineAmmo,
+        int reserveAmmo,
+        Vector3 position,
+        Quaternion rotation,
+        Vector3 impulse)
+    {
+        if (string.IsNullOrWhiteSpace(weaponResourceId))
+        {
+            return null;
+        }
+
+        ResourceMgr resources = ResourceMgr.instance;
+        WeaponDefinitionSO weaponData = null;
+        GameObject modelPrefab = null;
+        string modelResourceId = string.Empty;
+        try
+        {
+            weaponData = await resources.LoadAsync<WeaponDefinitionSO>(weaponResourceId);
+            if (!weaponData)
+            {
+                return null;
+            }
+
+            modelResourceId = weaponData.Resources.WorldModelPrefabResourceId;
+            modelPrefab = await resources.LoadAsync<GameObject>(modelResourceId);
+            if (!modelPrefab)
+            {
+                return null;
+            }
+
+            return CreateFromModel(
+                modelPrefab,
+                weaponResourceId,
+                magazineAmmo,
+                reserveAmmo,
+                position,
+                rotation,
+                impulse);
+        }
+        finally
+        {
+            if (modelPrefab && !string.IsNullOrWhiteSpace(modelResourceId))
+            {
+                resources.Release<GameObject>(modelResourceId);
+            }
+            if (weaponData)
+            {
+                resources.Release<WeaponDefinitionSO>(weaponResourceId);
+            }
+        }
     }
 }

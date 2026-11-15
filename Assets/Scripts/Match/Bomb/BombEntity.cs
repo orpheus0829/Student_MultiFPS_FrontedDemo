@@ -18,7 +18,10 @@ public sealed class BombEntity : MonoBehaviour
 
     [Header("炸弹")]
     [SerializeField, Min(0.1f), InspectorName("拾取半径")] private float _pickupRadius = 1.8f;
-    [SerializeField, InspectorName("携带偏移")] private Vector3 _carrierOffset = new Vector3(0f, 0.2f, 0f);
+    [SerializeField, InspectorName("携带偏移")] private Vector3 _carrierOffset =
+        new Vector3(0f, 1.05f, -0.22f);
+    [SerializeField, InspectorName("背部携带旋转")] private Vector3 _carriedModelEuler =
+        new Vector3(0f, 0f, 0f);
 
     [Header("安装指示灯")]
     [SerializeField, InspectorName("红色点光源")] private Light _armedLight;
@@ -60,16 +63,11 @@ public sealed class BombEntity : MonoBehaviour
         _renderers = GetComponentsInChildren<Renderer>(true);
         _colliders = GetComponentsInChildren<Collider>(true);
         SetArmedLightActive(false);
-        ApplyWorldVisibility(true);
+        ApplyWorldState(true, true);
     }
 
     private void Update()
     {
-        if (_state == BombEntityState.Carried && _carrier)
-        {
-            transform.position = _carrier.transform.TransformPoint(_carrierOffset);
-        }
-
         if (_state != BombEntityState.Planted || !_fuseRunning)
         {
             return;
@@ -100,10 +98,11 @@ public sealed class BombEntity : MonoBehaviour
         _carrier = carrier;
         _state = BombEntityState.Carried;
         SetArmedLightActive(false);
-        transform.SetParent(carrier.transform, true);
+        transform.SetParent(carrier.transform, false);
         transform.localPosition = _carrierOffset;
+        transform.localRotation = Quaternion.Euler(_carriedModelEuler);
         SubscribeCarrier(carrier);
-        ApplyWorldVisibility(false);
+        ApplyWorldState(true, false);
         PickedUp?.Invoke(this, carrier);
         return true;
     }
@@ -122,12 +121,22 @@ public sealed class BombEntity : MonoBehaviour
         SetArmedLightActive(false);
         transform.SetParent(null, true);
         transform.position = worldPosition;
-        ApplyWorldVisibility(true);
+        ApplyWorldState(true, true);
         Dropped?.Invoke(this, previousCarrier);
         return true;
     }
 
     public bool TryPlant(PlayerInfo planter, BombSite site, Vector3 worldPosition, float fuseDuration)
+    {
+        return TryPlant(planter, site, worldPosition, transform.rotation, fuseDuration);
+    }
+
+    public bool TryPlant(
+        PlayerInfo planter,
+        BombSite site,
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        float fuseDuration)
     {
         if (_state != BombEntityState.Carried || _carrier != planter || !site)
         {
@@ -142,8 +151,8 @@ public sealed class BombEntity : MonoBehaviour
         _fuseRunning = true;
         _lightPulsePhase = MinimumPulsePhase;
         transform.SetParent(null, true);
-        transform.position = worldPosition;
-        ApplyWorldVisibility(true);
+        transform.SetPositionAndRotation(worldPosition, worldRotation);
+        ApplyWorldState(true, true);
         SetArmedLightActive(true);
         Planted?.Invoke(this, site);
         FuseChanged?.Invoke(this, _fuseRemaining);
@@ -262,13 +271,13 @@ public sealed class BombEntity : MonoBehaviour
         }
     }
 
-    private void ApplyWorldVisibility(bool visible)
+    private void ApplyWorldState(bool rendererVisible, bool colliderVisible)
     {
         if (_renderers != null)
         {
             for (int i = 0; i < _renderers.Length; i++)
             {
-                _renderers[i].enabled = visible;
+                _renderers[i].enabled = rendererVisible;
             }
         }
 
@@ -276,7 +285,7 @@ public sealed class BombEntity : MonoBehaviour
         {
             for (int i = 0; i < _colliders.Length; i++)
             {
-                _colliders[i].enabled = visible;
+                _colliders[i].enabled = colliderVisible;
             }
         }
     }

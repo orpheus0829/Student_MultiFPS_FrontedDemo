@@ -1983,6 +1983,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5968208c8dd0b9449a2b08163d12a4fa, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3780233180362563139}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5968208c8dd0b9449a2b08163d12a4fa, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7914285737513111592}
   m_SourcePrefab: {fileID: 100100000, guid: 5968208c8dd0b9449a2b08163d12a4fa, type: 3}
 --- !u!1 &373516595380792085 stripped
 GameObject:
@@ -2337,6 +2340,8 @@ MonoBehaviour:
   _combatCtrl: {fileID: 111100004}
   _weaponViewCtrl: {fileID: 111100008}
   _audioSource: {fileID: 2341247144003853243}
+  _audioMinDistance: 2
+  _audioMaxDistance: 80
 --- !u!114 &3331637031286111285
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2507,6 +2512,22 @@ MonoBehaviour:
   _playerInfo: {fileID: 2675419983097019558}
   _health: {fileID: 5167663255633709143}
   _cameraCtrl: {fileID: 5914566498291943043}
+--- !u!114 &7914285737513111592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 373516595380792085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8b892faeb8880c4e827a8dcdbd6e687, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInteractionCtrl
+  _maximumDistance: 8
+  _raycastLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!4 &1037288004731990447 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5968208c8dd0b9449a2b08163d12a4fa, type: 3}

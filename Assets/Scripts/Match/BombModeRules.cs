@@ -1,11 +1,18 @@
 public sealed class BombModeRules : ModeRulesBase
 {
     private float _remainingTime;
+    private bool _hasTimeLimit;
     private int _objectiveWinner = -1;
 
     public BombModeRules(MatchManager match, MatchConfig config) : base(match, config)
     {
     }
+
+    public override float RemainingTime
+    {
+        get { return UnityEngine.Mathf.Max(0f, _remainingTime); }
+    }
+    public override bool HasTimeLimit { get { return _hasTimeLimit; } }
 
     public override void OnRoundStart()
     {
@@ -13,11 +20,12 @@ public sealed class BombModeRules : ModeRulesBase
         _remainingTime = Config.Registry.GetFloat(
             "bomb.roundTimeLimit",
             Config.Mode ? Config.Mode.RoundTimeLimit : 120f);
+        _hasTimeLimit = _remainingTime > 0f;
     }
 
     public override void Tick(float deltaTime)
     {
-        if (_remainingTime > 0f)
+        if (_hasTimeLimit && !Match.IsBombPlanted && _remainingTime > 0f)
         {
             _remainingTime -= deltaTime;
         }
@@ -48,7 +56,7 @@ public sealed class BombModeRules : ModeRulesBase
             return false;
         }
 
-        if (_remainingTime <= 0f)
+        if (_hasTimeLimit && _remainingTime <= 0f)
         {
             winningTeam = Config.Registry.GetInt("bomb.defenderTeam", 1);
             return true;

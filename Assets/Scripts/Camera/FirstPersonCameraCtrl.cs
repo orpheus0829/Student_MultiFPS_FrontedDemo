@@ -50,6 +50,10 @@ public class FirstPersonCameraCtrl : MonoBehaviour
     private bool _hasCursorControl;
 
     public bool IsThirdPerson => _isThirdPerson;
+    public Camera ViewCamera
+    {
+        get { return _viewCamera; }
+    }
     public event Action<bool> ViewChanged;
 
     private void Awake()
@@ -172,7 +176,8 @@ public class FirstPersonCameraCtrl : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
-        else if (Cursor.lockState != CursorLockMode.Locked &&
+        else if (!CameraControlAuthority.IsControlled &&
+            Cursor.lockState != CursorLockMode.Locked &&
             Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             Cursor.lockState = CursorLockMode.Locked;

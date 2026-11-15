@@ -7,6 +7,12 @@ public sealed class TdmRules : ModeRulesBase
     {
     }
 
+    public override float RemainingTime
+    {
+        get { return UnityEngine.Mathf.Max(0f, _remainingTime); }
+    }
+    public override bool HasTimeLimit { get { return _hasTimeLimit; } }
+
     public override void OnRoundStart()
     {
         _remainingTime = Config.Registry.GetFloat(

@@ -81,7 +81,9 @@ public static class AIBehaviors
         {
             return intent;
         }
-        intent.Aim = target.Visible;
+        bool easy = profile.Difficulty == AIDifficulty.Easy;
+        bool hard = profile.Difficulty == AIDifficulty.Hard;
+        intent.Aim = target.Visible && !easy;
         intent.Fire = target.Visible && behavior == AIBehaviorId.Engage &&
             Time.time - target.VisibleSince >= profile.ReactionTime;
         if (behavior == AIBehaviorId.TakeCover && hasCover)
@@ -90,10 +92,13 @@ public static class AIBehaviors
             {
                 intent.HasMoveDestination = false;
                 intent.ProtectedByCover = true;
+                float cycleDuration = hard ? 1.75f : easy ? 3.4f : 2.4f;
+                float hiddenDuration = hard ? 0.95f : easy ? 1.25f : 1.45f;
                 float coverCycle = Mathf.Repeat(
-                    Time.time + Mathf.Abs(owner.GetInstanceID() % 17) * 0.13f, 2.4f);
-                bool peek = coverCycle >= 1.55f;
-                intent.Aim = peek && target.Visible;
+                    Time.time + Mathf.Abs(owner.GetInstanceID() % 17) * 0.13f,
+                    cycleDuration);
+                bool peek = coverCycle >= hiddenDuration;
+                intent.Aim = peek && target.Visible && !easy;
                 intent.Fire = peek && target.Visible &&
                     Time.time - target.VisibleSince >= profile.ReactionTime;
                 return intent;
@@ -122,21 +127,32 @@ public static class AIBehaviors
             intent.Sprint = true;
             return intent;
         }
+        if (behavior == AIBehaviorId.Engage && easy)
+        {
+            intent.HasMoveDestination = false;
+            intent.Sprint = false;
+            return intent;
+        }
         if (behavior == AIBehaviorId.Reposition)
         {
             float maneuverCycle = Mathf.Repeat(
                 Time.time + Mathf.Abs(owner.GetInstanceID() % 23) * 0.11f, 2.2f);
             bool maneuvering = maneuverCycle < 0.9f;
-            intent.Aim = !maneuvering && target.Visible;
+            intent.Aim = !maneuvering && target.Visible && !easy;
             intent.Fire = !maneuvering && target.Visible &&
                 Time.time - target.VisibleSince >= profile.ReactionTime;
-            intent.Sprint = maneuvering;
+            intent.Sprint = maneuvering && !easy;
         }
         intent.HasMoveDestination = behavior == AIBehaviorId.Reposition ||
             Mathf.Abs(rangeError) > profile.RangeBand;
+        float flankDistance = hard ? 8f : easy ? 2.5f : 5f;
+        Vector3 targetMotion = hard
+            ? Vector3.ProjectOnPlane(target.LastKnownVelocity, Vector3.up) * 0.35f
+            : Vector3.zero;
         intent.MoveDestination = owner.position +
-            side * (sign * 5f * profile.StrafeScale + slotOffset) -
+            side * (sign * flankDistance * profile.StrafeScale + slotOffset) -
             away * Mathf.Clamp(rangeError, -5f, 5f);
+        intent.MoveDestination += targetMotion;
         return intent;
     }
 }

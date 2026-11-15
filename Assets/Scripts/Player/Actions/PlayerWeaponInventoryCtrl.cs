@@ -104,6 +104,31 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         }
     }
 
+    public string GetWeaponResourceId(int slot)
+    {
+        return IsIndexUsable(slot) ? _weaponResourceIds[slot] : string.Empty;
+    }
+
+    public int GetSlotForCategory(WeaponCategory category)
+    {
+        return category == WeaponCategory.Pistol || category == WeaponCategory.Revolver
+            ? 1
+            : 0;
+    }
+
+    public int FindFirstEmptySlot()
+    {
+        int count = Mathf.Min(_slotCount, _weaponResourceIds.Count);
+        for (int i = 0; i < count; i++)
+        {
+            if (!IsIndexUsable(i))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public async Task<bool> ConfigureBombLoadoutAsync(string pistolResourceId)
     {
         if (string.IsNullOrWhiteSpace(pistolResourceId) || !_weaponActionCtrl)
@@ -131,16 +156,29 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         string weaponResourceId,
         bool isSidearm)
     {
-        if (string.IsNullOrWhiteSpace(weaponResourceId) || !_weaponActionCtrl)
+        int slot = isSidearm ? 1 : 0;
+        return await AddOrReplaceWeaponAtAsync(weaponResourceId, slot);
+    }
+
+    public async Task<bool> AddOrReplaceWeaponAtAsync(
+        string weaponResourceId,
+        int slot)
+    {
+        if (string.IsNullOrWhiteSpace(weaponResourceId) || !_weaponActionCtrl ||
+            slot < 0)
         {
             return false;
         }
 
-        int slot = isSidearm ? 1 : 0;
         _slotCount = Mathf.Max(2, _slotCount);
         while (_weaponResourceIds.Count < _slotCount)
         {
             _weaponResourceIds.Add(string.Empty);
+        }
+
+        if (slot >= _weaponResourceIds.Count || slot >= _slotCount)
+        {
+            return false;
         }
 
         string previousResourceId = _weaponResourceIds[slot];
@@ -179,6 +217,40 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 
         _currentIndex = 1;
         ActiveSlotChanged?.Invoke(1, pistolResourceId);
+        return true;
+    }
+
+    public async Task<bool> RemoveCurrentWeaponAsync()
+    {
+        if (!IsIndexUsable(_currentIndex) || GetUsableWeaponCount() <= 1 ||
+            !_weaponActionCtrl)
+        {
+            return false;
+        }
+
+        int removedIndex = _currentIndex;
+        string removedResourceId = _weaponResourceIds[removedIndex];
+        _weaponResourceIds[removedIndex] = string.Empty;
+        int nextIndex = FindNextIndexFrom(removedIndex, 1);
+        if (!IsIndexUsable(nextIndex))
+        {
+            _weaponResourceIds[removedIndex] = removedResourceId;
+            return false;
+        }
+
+        bool loaded = await _weaponActionCtrl.LoadWeaponAsync(
+            _weaponResourceIds[nextIndex]);
+        if (!this || !loaded)
+        {
+            if (this)
+            {
+                _weaponResourceIds[removedIndex] = removedResourceId;
+            }
+            return false;
+        }
+
+        _currentIndex = nextIndex;
+        ActiveSlotChanged?.Invoke(_currentIndex, _weaponResourceIds[_currentIndex]);
         return true;
     }
 

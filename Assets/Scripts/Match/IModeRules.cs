@@ -1,5 +1,7 @@
 public interface IModeRules
 {
+    float RemainingTime { get; }
+    bool HasTimeLimit { get; }
     void OnMatchStart();
     void OnRoundStart();
     void OnRoundEnd(bool attackerWin);
@@ -17,6 +19,9 @@ public abstract class ModeRulesBase : IModeRules
         Match = match;
         Config = config;
     }
+
+    public virtual float RemainingTime { get { return 0f; } }
+    public virtual bool HasTimeLimit { get { return false; } }
 
     public virtual void OnMatchStart()
     {
