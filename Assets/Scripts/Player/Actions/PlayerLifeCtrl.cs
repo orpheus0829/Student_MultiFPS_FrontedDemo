@@ -527,5 +527,6 @@ public sealed class PlayerLifeCtrl : MonoBehaviour
             bounds.size.z / Mathf.Max(0.01f, Mathf.Abs(scale.z)));
         Rigidbody body = _droppedWeapon.AddComponent<Rigidbody>();
         body.mass = 2f;
+        DroppedWeaponEntity.IgnorePlayerCollisions(_droppedWeapon);
     }
 }

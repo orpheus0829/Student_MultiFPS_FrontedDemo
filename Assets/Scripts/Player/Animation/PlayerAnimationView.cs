@@ -523,6 +523,45 @@ public sealed class PlayerAnimationView : MonoBehaviour
         PlayState(_weaponAnimator, _weaponIdleStateName, transitionDuration);
     }
 
+    public void SkipWeaponActionToProgress(
+        WeaponActionDefinition action,
+        bool startedWhileAiming,
+        float normalizedProgress)
+    {
+        if (action == null)
+        {
+            return;
+        }
+
+        EnsureAnimatorBindings();
+        normalizedProgress = Mathf.Clamp01(normalizedProgress);
+        string stateName = _viewType == PlayerViewType.FirstPerson
+            ? action.GetFirstPersonStateName(startedWhileAiming)
+            : action.GetThirdPersonStateName(startedWhileAiming);
+
+        if (_viewType == PlayerViewType.ThirdPerson && _upperBodyWeaponLayerIndex >= 0)
+        {
+            if (!PlayStateAtProgress(
+                _characterAnimator,
+                _upperBodyWeaponLayerIndex,
+                stateName,
+                normalizedProgress))
+            {
+                PlayStateAtProgress(
+                    _characterAnimator,
+                    _upperBodyWeaponLayerIndex,
+                    GetThirdPersonFallbackState(action.ActionType),
+                    normalizedProgress);
+            }
+        }
+        else
+        {
+            PlayStateAtProgress(_characterAnimator, stateName, normalizedProgress);
+        }
+
+        PlayStateAtProgress(_weaponAnimator, stateName, normalizedProgress);
+    }
+
     public void CancelWeaponAction(WeaponActionType actionType)
     {
         if (actionType == WeaponActionType.Inspect)
@@ -544,7 +583,7 @@ public sealed class PlayerAnimationView : MonoBehaviour
             PlayState(_weaponAnimator, _weaponIdleStateName);
             return;
         }
-        if (actionType == WeaponActionType.Inspect || IsPerRoundAction(actionType))
+        if (actionType == WeaponActionType.Inspect || IsReloadAction(actionType))
         {
             ResetTrigger(
                 _characterAnimator,
@@ -582,9 +621,10 @@ public sealed class PlayerAnimationView : MonoBehaviour
             PlayStateImmediately(_weaponAnimator, _weaponIdleStateName);
             return;
         }
-        if (IsPerRoundAction(actionType))
+        if (IsReloadAction(actionType))
         {
-            // 装弹被开火打断时，先清掉 Reload 层的旧姿势，再切入开火状态。
+            // 任意换弹被开火打断时先清掉 Reload 层，下一帧的 Fire 才能完整
+            // 接管双手；否则基础层虽然已经开火，换弹层仍会继续压住手臂。
             PlayStateImmediatelyOnActionLayer(
                 _characterAnimator,
                 WeaponActionStateContract.GetStateName(actionType),
@@ -866,6 +906,56 @@ public sealed class PlayerAnimationView : MonoBehaviour
         }
 
         animator.CrossFadeInFixedTime(fullPathHash, _actionTransitionDuration, layerIndex, 0f);
+        return true;
+    }
+
+    private static bool PlayStateAtProgress(
+        Animator animator,
+        string stateName,
+        float normalizedProgress)
+    {
+        if (!animator || !animator.runtimeAnimatorController ||
+            string.IsNullOrWhiteSpace(stateName))
+        {
+            return false;
+        }
+
+        for (int layer = 0; layer < animator.layerCount; layer++)
+        {
+            if (PlayStateAtProgress(animator, layer, stateName, normalizedProgress))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool PlayStateAtProgress(
+        Animator animator,
+        int layerIndex,
+        string stateName,
+        float normalizedProgress)
+    {
+        if (!animator || !animator.runtimeAnimatorController || layerIndex < 0 ||
+            layerIndex >= animator.layerCount || string.IsNullOrWhiteSpace(stateName))
+        {
+            return false;
+        }
+
+        int stateHash = Animator.StringToHash(stateName);
+        int fullPathHash = Animator.StringToHash(
+            animator.GetLayerName(layerIndex) + "." + stateName);
+        if (!animator.HasState(layerIndex, stateHash) &&
+            !animator.HasState(layerIndex, fullPathHash))
+        {
+            return false;
+        }
+
+        animator.Play(
+            animator.HasState(layerIndex, fullPathHash) ? fullPathHash : stateHash,
+            layerIndex,
+            normalizedProgress);
         return true;
     }
 

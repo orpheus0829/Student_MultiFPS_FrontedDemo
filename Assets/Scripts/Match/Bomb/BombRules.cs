@@ -15,12 +15,15 @@ public sealed class BombRules : MonoBehaviour
     private const float GroundProbeHeight = 2f;
     private const float GroundProbeDistance = 6f;
     private const float GroundContactOffset = 0.002f;
+    private const float BombPlayerClearance = 1.4f;
+    private const float SpawnSearchStep = 0.8f;
+    private const int SpawnSearchRings = 4;
 
     [Header("炸弹生成")]
     [SerializeField, ResourceId(typeof(GameObject)), InspectorName("炸弹资源 ID")]
     private string _bombResourceId = DefaultBombResourceId;
     [SerializeField, InspectorName("匪方出生点")] private Transform _attackerSpawn;
-    [SerializeField, Min(0.1f), InspectorName("自动拾取半径")] private float _pickupRadius = 1.8f;
+    [SerializeField, Min(0.1f), InspectorName("自动拾取半径")] private float _pickupRadius = 0.9f;
     [SerializeField, Min(0.5f), InspectorName("拆除判定半径")] private float _siteRadius = 3f;
     [SerializeField, InspectorName("本回合目标包点 ID")] private string _targetSiteId = string.Empty;
 
@@ -45,6 +48,8 @@ public sealed class BombRules : MonoBehaviour
     private PlayerMoveCtrl _slowedCarrierMoveCtrl;
     private float _carrierSpeedScale = 0.92f;
     private bool _roundActive;
+    private bool _roundPrepared;
+    private bool _bombSpawnPending;
     private int _roundGeneration;
     private float _nextBindingRefreshTime;
 
@@ -66,7 +71,7 @@ public sealed class BombRules : MonoBehaviour
 
     private void Update()
     {
-        if (!_roundActive)
+        if (!_roundPrepared)
         {
             return;
         }
@@ -87,6 +92,7 @@ public sealed class BombRules : MonoBehaviour
     {
         _roundGeneration++;
         _roundActive = false;
+        _roundPrepared = false;
         SetInteractionRules(null);
         ReleaseBomb();
     }
@@ -127,17 +133,24 @@ public sealed class BombRules : MonoBehaviour
         _targetSiteId = registry.GetString("bomb.targetSiteId", _targetSiteId);
     }
 
-    public async void OnRoundStart()
+    public async void OnRoundCountdownStarted()
     {
         int generation = ++_roundGeneration;
-        _roundActive = true;
+        _roundActive = false;
+        _roundPrepared = true;
+        _bombSpawnPending = true;
         ReleaseBomb();
         RefreshInteractionBindings();
-        SetInteractionRules(this);
+        SetInteractionRules(null);
 
-        Vector3 spawnPosition = _attackerSpawn ? _attackerSpawn.position : transform.position;
+        Vector3 spawnOrigin = _attackerSpawn ? _attackerSpawn.position : transform.position;
+        Vector3 spawnPosition = FindAvailableBombSpawn(spawnOrigin);
         BombEntity spawned = await SpawnBomb(spawnPosition);
-        if (generation != _roundGeneration || !this || !_roundActive)
+        if (generation == _roundGeneration)
+        {
+            _bombSpawnPending = false;
+        }
+        if (generation != _roundGeneration || !this || !_roundPrepared)
         {
             ReleaseSpawned(spawned);
             return;
@@ -146,9 +159,22 @@ public sealed class BombRules : MonoBehaviour
         SetBomb(spawned);
     }
 
+    public void OnRoundStart()
+    {
+        _roundPrepared = true;
+        _roundActive = true;
+        RefreshInteractionBindings();
+        SetInteractionRules(this);
+        if (!_bomb && !_bombSpawnPending)
+        {
+            SpawnMissingBomb();
+        }
+    }
+
     public void OnRoundEnd()
     {
         _roundActive = false;
+        _roundPrepared = false;
         _roundGeneration++;
         if (_bomb && _bomb.State == BombEntityState.Carried)
         {
@@ -251,6 +277,25 @@ public sealed class BombRules : MonoBehaviour
         return CreateFallbackBomb(position);
     }
 
+    private async void SpawnMissingBomb()
+    {
+        int generation = _roundGeneration;
+        _bombSpawnPending = true;
+        Vector3 spawnOrigin = _attackerSpawn ? _attackerSpawn.position : transform.position;
+        BombEntity spawned = await SpawnBomb(FindAvailableBombSpawn(spawnOrigin));
+        if (generation == _roundGeneration)
+        {
+            _bombSpawnPending = false;
+        }
+        if (generation != _roundGeneration || !this || !_roundPrepared || _bomb)
+        {
+            ReleaseSpawned(spawned);
+            return;
+        }
+
+        SetBomb(spawned);
+    }
+
     private BombEntity CreateFallbackBomb(Vector3 position)
     {
         GameObject placeholder = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -258,6 +303,57 @@ public sealed class BombRules : MonoBehaviour
         placeholder.transform.position = position;
         placeholder.transform.localScale = new Vector3(0.35f, 0.2f, 0.5f);
         return placeholder.AddComponent<BombEntity>();
+    }
+
+    private Vector3 FindAvailableBombSpawn(Vector3 origin)
+    {
+        if (IsBombSpawnClear(origin))
+        {
+            return origin;
+        }
+
+        for (int ring = 1; ring <= SpawnSearchRings; ring++)
+        {
+            float distance = ring * SpawnSearchStep;
+            int samples = ring * 8;
+            for (int sample = 0; sample < samples; sample++)
+            {
+                float angle = sample * Mathf.PI * 2f / samples;
+                Vector3 candidate = origin + new Vector3(
+                    Mathf.Cos(angle) * distance,
+                    0f,
+                    Mathf.Sin(angle) * distance);
+                if (IsBombSpawnClear(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return origin + Vector3.forward * BombPlayerClearance;
+    }
+
+    private static bool IsBombSpawnClear(Vector3 position)
+    {
+        float clearanceSquared = BombPlayerClearance * BombPlayerClearance;
+        IReadOnlyList<CharacterHealth> actors = CharacterHealth.Actors;
+        for (int i = 0; i < actors.Count; i++)
+        {
+            CharacterHealth health = actors[i];
+            if (!health || health.IsDead)
+            {
+                continue;
+            }
+
+            Vector3 delta = health.transform.position - position;
+            delta.y = 0f;
+            if (delta.sqrMagnitude < clearanceSquared)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void SetBomb(BombEntity bomb)

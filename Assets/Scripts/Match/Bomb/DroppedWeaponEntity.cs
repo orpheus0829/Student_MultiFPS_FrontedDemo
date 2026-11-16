@@ -171,7 +171,48 @@ public sealed class DroppedWeaponEntity : MonoBehaviour, IWorldInteraction
             GJInputAction.PickupWeapon,
             entity,
             3.2f);
+        IgnorePlayerCollisions(dropped);
         return entity;
+    }
+
+    public static void IgnorePlayerCollisions(GameObject droppedWeapon)
+    {
+        if (!droppedWeapon)
+        {
+            return;
+        }
+
+        Collider[] weaponColliders = droppedWeapon.GetComponentsInChildren<Collider>(true);
+        IReadOnlyList<CharacterHealth> actors = CharacterHealth.Actors;
+        for (int actorIndex = 0; actorIndex < actors.Count; actorIndex++)
+        {
+            CharacterHealth health = actors[actorIndex];
+            if (!health)
+            {
+                continue;
+            }
+
+            Collider[] characterColliders = health.GetComponentsInChildren<Collider>(true);
+            for (int weaponIndex = 0; weaponIndex < weaponColliders.Length; weaponIndex++)
+            {
+                Collider weaponCollider = weaponColliders[weaponIndex];
+                if (!weaponCollider)
+                {
+                    continue;
+                }
+
+                for (int characterIndex = 0;
+                    characterIndex < characterColliders.Length;
+                    characterIndex++)
+                {
+                    Collider characterCollider = characterColliders[characterIndex];
+                    if (characterCollider)
+                    {
+                        Physics.IgnoreCollision(weaponCollider, characterCollider, true);
+                    }
+                }
+            }
+        }
     }
 
     private static bool IsWeaponModelRenderer(Renderer renderer)

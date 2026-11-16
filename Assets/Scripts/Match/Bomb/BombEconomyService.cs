@@ -339,19 +339,41 @@ public sealed class BombEconomyService : MonoBehaviour
     private void BuildFallbackShopItems()
     {
         _shopItems.Clear();
+        _shopItems.Add(new ShopItem("x18", "X18", "weapon.x18.data", 400,
+            BombShopItemKind.Sidearm, BombShopColumn.Pistol));
         _shopItems.Add(new ShopItem("m1911", "M1911", "weapon.m1911.data", 500,
+            BombShopItemKind.Sidearm, BombShopColumn.Pistol));
+        _shopItems.Add(new ShopItem("dgl-50", "DGL50", "weapon.dgl-50.data", 750,
+            BombShopItemKind.Sidearm, BombShopColumn.Pistol));
+        _shopItems.Add(new ShopItem("viper-357", "Viper-357", "weapon.viper-357.data", 800,
             BombShopItemKind.Sidearm, BombShopColumn.Pistol));
         _shopItems.Add(new ShopItem("mps5", "MPS5", "weapon.mps5.data", 1500,
             BombShopItemKind.Primary, BombShopColumn.Light));
+        _shopItems.Add(new ShopItem("striker-v", "Striker-V", "weapon.striker-v.data", 1750,
+            BombShopItemKind.Primary, BombShopColumn.Light));
         _shopItems.Add(new ShopItem("kxg12", "KXG12", "weapon.kxg-12.data", 2000,
+            BombShopItemKind.Primary, BombShopColumn.Light));
+        _shopItems.Add(new ShopItem("drake-12", "Drake-12", "weapon.drake-12.data", 2100,
             BombShopItemKind.Primary, BombShopColumn.Light));
         _shopItems.Add(new ShopItem("pdw90", "PDW90", "weapon.pdw90.data", 2350,
             BombShopItemKind.Primary, BombShopColumn.Medium));
+        _shopItems.Add(new ShopItem("mx16a4", "MX16A4", "weapon.mx16a4.data", 2450,
+            BombShopItemKind.Primary, BombShopColumn.Medium));
         _shopItems.Add(new ShopItem("ak", "AK", "weapon.ak.data", 2700,
+            BombShopItemKind.Primary, BombShopColumn.Medium));
+        _shopItems.Add(new ShopItem("g3", "G3", "weapon.g3.data", 2800,
             BombShopItemKind.Primary, BombShopColumn.Medium));
         _shopItems.Add(new ShopItem("as-val", "AS Val", "weapon.as-val.data", 2900,
             BombShopItemKind.Primary, BombShopColumn.Heavy));
-        _shopItems.Add(new ShopItem("kar98k", "Kar98k", "weapon.kar98k.data", 3200,
+        _shopItems.Add(new ShopItem("mk14-ebr", "Mk14 EBR", "weapon.mk14-ebr.data", 3100,
+            BombShopItemKind.Primary, BombShopColumn.Heavy));
+        _shopItems.Add(new ShopItem("mgx5", "MGX5", "weapon.mgx5.data", 3200,
+            BombShopItemKind.Primary, BombShopColumn.Heavy));
+        _shopItems.Add(new ShopItem("svd", "SVD", "weapon.svd.data", 3300,
+            BombShopItemKind.Primary, BombShopColumn.Heavy));
+        _shopItems.Add(new ShopItem("kar98k", "Kar98k", "weapon.kar98k.data", 3400,
+            BombShopItemKind.Primary, BombShopColumn.Heavy));
+        _shopItems.Add(new ShopItem("l96x", "L96X", "weapon.l96x.data", 3900,
             BombShopItemKind.Primary, BombShopColumn.Heavy));
         _shopItems.Add(new ShopItem("armor", "胸甲", string.Empty, 650,
             BombShopItemKind.Armor, BombShopColumn.Protection));

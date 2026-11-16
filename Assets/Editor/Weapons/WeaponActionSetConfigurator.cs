@@ -142,8 +142,7 @@ public static class WeaponActionSetConfigurator
         float holsterDuration = GetFloat(legacy, "_unequipDuration", 0.3f);
         bool canInterruptReload = GetBool(legacy, "_canInterruptReload", true);
         bool hasEmptyReload = GetBool(legacy, "_hasEmptyReloadAnimation", true);
-        bool usesPerRoundReload = weapon.Ammo.ReloadStyle == WeaponReloadStyle.PerRound ||
-            weapon.Ammo.ReloadStyle == WeaponReloadStyle.Revolver;
+        bool usesPerRoundReload = weapon.Ammo.ReloadStyle == WeaponReloadStyle.PerRound;
 
         ConfigureAction(
             actionObject.FindProperty("_fire"),

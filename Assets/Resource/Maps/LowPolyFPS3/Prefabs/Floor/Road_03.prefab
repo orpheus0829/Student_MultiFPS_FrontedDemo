@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2343841142679759484}
   - component: {fileID: 531996846567956150}
   - component: {fileID: 3118302048212943941}
+  - component: {fileID: 3118302048212943942}
   m_Layer: 0
   m_Name: Road_03
   m_TagString: Untagged
@@ -94,5 +95,19 @@ MeshCollider:
   m_Enabled: 1
   serializedVersion: 4
   m_Convex: 0
-  m_CookingOptions: 30
+  m_CookingOptions: 24
   m_Mesh: {fileID: 7039805570434856403, guid: f58e3352da87bb7458378f03f9499770, type: 3}
+--- !u!114 &3118302048212943942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2045465599120785251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7e9d4a84d704662b15b83de5ed7516a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ExactMeshColliderCtrl
+  _openingCenter: {x: -2.74, y: -1.18, z: -3.02}
+  _openingSize: {x: 2.2, y: 2.2, z: 0.24}

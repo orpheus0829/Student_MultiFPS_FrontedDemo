@@ -136,6 +136,7 @@ public sealed class TestHallUI : MonoBehaviour
         PopulatePlayerCounts();
         PopulateDifficulties();
         _modeDropdown.onValueChanged.AddListener(HandleModeChanged);
+        _mapDropdown.onValueChanged.AddListener(HandleMapChanged);
         _playerCountDropdown.onValueChanged.AddListener(HandlePlayerCountChanged);
 
         Button confirmButton = CreateButton(_configurationPanel.transform, "ConfirmButton", "创建并开始游戏");
@@ -199,14 +200,13 @@ public sealed class TestHallUI : MonoBehaviour
     {
         _availableMaps.Clear();
         _mapDropdown.ClearOptions();
-        ModeDefinitionSO mode = GetSelectedMode();
-        if (_mapCatalog && mode)
+        if (_mapCatalog)
         {
             IReadOnlyList<MapDefinitionSO> maps = _mapCatalog.Maps;
             for (int i = 0; i < maps.Count; i++)
             {
                 MapDefinitionSO map = maps[i];
-                if (map && map.SupportsMode(mode.Kind))
+                if (map)
                 {
                     _availableMaps.Add(map);
                 }
@@ -224,6 +224,17 @@ public sealed class TestHallUI : MonoBehaviour
         }
         _mapDropdown.AddOptions(options);
         _mapDropdown.interactable = _availableMaps.Count > 0;
+    }
+
+    private MapDefinitionSO GetSelectedMap()
+    {
+        if (_availableMaps.Count == 0)
+        {
+            return null;
+        }
+
+        int index = Mathf.Clamp(_mapDropdown.value, 0, _availableMaps.Count - 1);
+        return _availableMaps[index];
     }
 
     private void RefreshAIOptions()
@@ -284,7 +295,13 @@ public sealed class TestHallUI : MonoBehaviour
 
     private void HandleModeChanged(int value)
     {
-        RefreshMaps();
+        SelectFirstMapSupportingMode();
+        RefreshTeamOptions();
+    }
+
+    private void HandleMapChanged(int value)
+    {
+        SelectFirstModeSupportedByMap();
         RefreshTeamOptions();
     }
 
@@ -301,12 +318,10 @@ public sealed class TestHallUI : MonoBehaviour
         }
 
         ModeDefinitionSO mode = GetSelectedMode();
-        MapDefinitionSO map = _availableMaps.Count > 0
-            ? _availableMaps[Mathf.Clamp(_mapDropdown.value, 0, _availableMaps.Count - 1)]
-            : null;
-        if (!mode || !map)
+        MapDefinitionSO map = GetSelectedMap();
+        if (!mode || !map || !map.SupportsMode(mode.Kind))
         {
-            _statusText.text = "当前模式没有可用地图，无法开始游戏。";
+            _statusText.text = "该地图不支持当前模式，请重新选择。";
             return;
         }
 
@@ -356,6 +371,53 @@ public sealed class TestHallUI : MonoBehaviour
         }
 
         return slots;
+    }
+
+    private void SelectFirstMapSupportingMode()
+    {
+        ModeDefinitionSO mode = GetSelectedMode();
+        MapDefinitionSO selectedMap = GetSelectedMap();
+        if (!mode || (selectedMap && selectedMap.SupportsMode(mode.Kind)))
+        {
+            return;
+        }
+
+        for (int i = 0; i < _availableMaps.Count; i++)
+        {
+            if (_availableMaps[i] && _availableMaps[i].SupportsMode(mode.Kind))
+            {
+                _mapDropdown.SetValueWithoutNotify(i);
+                _mapDropdown.RefreshShownValue();
+                return;
+            }
+        }
+    }
+
+    private void SelectFirstModeSupportedByMap()
+    {
+        MapDefinitionSO map = GetSelectedMap();
+        ModeDefinitionSO selectedMode = GetSelectedMode();
+        if (!map || (selectedMode && map.SupportsMode(selectedMode.Kind)))
+        {
+            return;
+        }
+
+        int validIndex = 0;
+        for (int i = 0; i < _modes.Count; i++)
+        {
+            ModeDefinitionSO mode = _modes[i];
+            if (!mode)
+            {
+                continue;
+            }
+            if (map.SupportsMode(mode.Kind))
+            {
+                _modeDropdown.SetValueWithoutNotify(validIndex);
+                _modeDropdown.RefreshShownValue();
+                return;
+            }
+            validIndex++;
+        }
     }
 
     private static int GetBalancedAITeam(int aiIndex, int localTeam, int teamCount)
@@ -463,7 +525,8 @@ public sealed class TestHallUI : MonoBehaviour
         label.rectTransform.anchorMax = Vector2.one;
         label.rectTransform.offsetMin = new Vector2(18f, 0f);
         label.rectTransform.offsetMax = new Vector2(-8f, 0f);
-        toggle.graphic = label;
+        // 选项文字不能作为 Toggle 的勾选图形，否则未选中项会被自动隐藏。
+        toggle.graphic = null;
         return toggle;
     }
 

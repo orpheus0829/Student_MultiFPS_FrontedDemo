@@ -415,11 +415,7 @@ public sealed class PlayerWeaponViewCtrl : MonoBehaviour
 
     private void InitializeFirstPersonOptic(WeaponDefinitionSO weaponData)
     {
-        if (_hideFirstPersonPresentation || !weaponData || !_firstPersonWeapon ||
-            !string.Equals(
-                weaponData.Basic.WeaponId,
-                "pdw90",
-                StringComparison.Ordinal))
+        if (_hideFirstPersonPresentation || !weaponData || !_firstPersonWeapon)
         {
             return;
         }

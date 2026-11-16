@@ -268,15 +268,11 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         {
             // 直接以第三人称进入游戏时，第一人称动画图未启动，KINEMATION
             // 不会调用本方法；从当前枪控制器的 Idle 片段取得同一抓握基准。
-            AnimationClip[] clips = sourceAnimator.runtimeAnimatorController.animationClips;
-            for (int i = 0; i < clips.Length; i++)
+            AnimationClip idleClip = WeaponAnimationClipResolver.GetFirstPersonIdle(
+                sourceAnimator.runtimeAnimatorController);
+            if (idleClip)
             {
-                AnimationClip clip = clips[i];
-                if (clip && clip.name.IndexOf("Idle", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    clip.SampleAnimation(sourceAnimator.gameObject, 0f);
-                    break;
-                }
+                idleClip.SampleAnimation(sourceAnimator.gameObject, 0f);
             }
         }
     }

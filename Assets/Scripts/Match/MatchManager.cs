@@ -1114,6 +1114,10 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         float duration = Mathf.Max(1f, _config.Registry.GetFloat(
             "match.startCountdown", 5f));
         _countdownEndTime = Time.unscaledTime + duration;
+        if (_bombRuntime)
+        {
+            _bombRuntime.OnRoundCountdownStarted();
+        }
         SetState(MatchState.Countdown);
     }
 
@@ -1200,6 +1204,12 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         if (participant == null || !participant.Info)
         {
             return;
+        }
+        if (participant.Health)
+        {
+            bool recoveryEnabled = _config.Mode.Kind != ModeKind.Bomb &&
+                _config.Registry.GetBool("combat.healthRecoveryEnabled", true);
+            participant.Health.SetRecoveryEnabled(recoveryEnabled);
         }
         if (participant.Info.TryGetComponent(out PlayerLifeCtrl life))
         {

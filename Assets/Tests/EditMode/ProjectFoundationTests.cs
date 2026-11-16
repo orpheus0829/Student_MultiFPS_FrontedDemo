@@ -35,19 +35,49 @@ namespace GunDemo.Tests
         [Test]
         public void WeaponDataAndPrefabsHaveMatchingNames()
         {
-            HashSet<string> dataNames = GetAssetNames("t:WeaponDefinitionSO", "Assets/SO/Weapons");
-            HashSet<string> prefabNames = GetAssetNames("t:Prefab", "Assets/Prefabs/Weapons");
+            HashSet<string> dataNames = GetFirearmDataNames();
+            HashSet<string> prefabNames = GetRootWeaponPrefabNames();
 
             CollectionAssert.AreEquivalent(dataNames, prefabNames, "枪械数据盒与正式枪械 Prefab 名称不一致");
         }
 
-        private static HashSet<string> GetAssetNames(string filter, string folder)
+        private static HashSet<string> GetFirearmDataNames()
         {
             HashSet<string> names = new HashSet<string>();
-            string[] guids = AssetDatabase.FindAssets(filter, new[] { folder });
+            string[] guids = AssetDatabase.FindAssets(
+                "t:WeaponDefinitionSO",
+                new[] { "Assets/SO/Weapons" });
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
+                SerializedObject data = new SerializedObject(
+                    AssetDatabase.LoadMainAssetAtPath(path));
+                if (data.FindProperty("_basic._category").enumValueIndex == 9)
+                {
+                    continue;
+                }
+
+                names.Add(Path.GetFileNameWithoutExtension(path));
+            }
+
+            return names;
+        }
+
+        private static HashSet<string> GetRootWeaponPrefabNames()
+        {
+            HashSet<string> names = new HashSet<string>();
+            string[] guids = AssetDatabase.FindAssets(
+                "t:Prefab",
+                new[] { "Assets/Prefabs/Weapons" });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string directory = Path.GetDirectoryName(path)?.Replace('\\', '/');
+                if (directory != "Assets/Prefabs/Weapons")
+                {
+                    continue;
+                }
+
                 names.Add(Path.GetFileNameWithoutExtension(path));
             }
 

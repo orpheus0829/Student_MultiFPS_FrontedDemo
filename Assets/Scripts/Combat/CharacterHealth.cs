@@ -14,6 +14,7 @@ public sealed class CharacterHealth : MonoBehaviour
     private FirstPersonCameraMotionCtrl _cameraMotion;
     private float _currentHealth;
     private float _nextRecoveryTime = float.PositiveInfinity;
+    private bool _recoveryEnabled = true;
     private bool _isDead;
     private bool _isResolvingDamage;
 
@@ -45,7 +46,7 @@ public sealed class CharacterHealth : MonoBehaviour
     {
         get
         {
-            return !_isDead && _currentHealth < _maxHealth &&
+            return _recoveryEnabled && !_isDead && _currentHealth < _maxHealth &&
                 Time.time >= _nextRecoveryTime;
         }
     }
@@ -93,7 +94,8 @@ public sealed class CharacterHealth : MonoBehaviour
 
     private void Update()
     {
-        if (_isDead || _isResolvingDamage || _currentHealth >= _maxHealth ||
+        if (!_recoveryEnabled || _isDead || _isResolvingDamage ||
+            _currentHealth >= _maxHealth ||
             Time.time < _nextRecoveryTime)
         {
             return;
@@ -126,6 +128,19 @@ public sealed class CharacterHealth : MonoBehaviour
         HealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
+    public void SetRecoveryEnabled(bool enabledRecovery)
+    {
+        if (_recoveryEnabled == enabledRecovery)
+        {
+            return;
+        }
+
+        _recoveryEnabled = enabledRecovery;
+        _nextRecoveryTime = enabledRecovery && !_isDead && _currentHealth < _maxHealth
+            ? Time.time + RecoveryDelay
+            : float.PositiveInfinity;
+    }
+
     internal float ApplyDamage(
         float damage,
         out bool wasKilled,
@@ -146,7 +161,9 @@ public sealed class CharacterHealth : MonoBehaviour
         {
             _cameraMotion.PlayDamageFeedback(appliedDamage / Mathf.Max(1f, _maxHealth));
         }
-        _nextRecoveryTime = Time.time + RecoveryDelay;
+        _nextRecoveryTime = _recoveryEnabled
+            ? Time.time + RecoveryDelay
+            : float.PositiveInfinity;
         if (_currentHealth <= 0f)
         {
             _isDead = true;

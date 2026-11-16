@@ -4,7 +4,6 @@ using UnityEngine.Rendering.Universal;
 [DisallowMultipleComponent]
 public sealed class Pdw90ScopeView : MonoBehaviour
 {
-    private const int ThirdPersonLayer = 8;
     private const int FirstPersonLayer = 9;
     private static readonly int ScopeTextureId = Shader.PropertyToID("_ScopeTex");
     private static readonly int AimWeightId = Shader.PropertyToID("_AimWeight");
@@ -110,9 +109,9 @@ public sealed class Pdw90ScopeView : MonoBehaviour
         _scopeCamera = cameraObject.AddComponent<Camera>();
         _scopeCamera.CopyFrom(_worldCamera);
         _scopeCamera.targetTexture = _scopeTexture;
-        _scopeCamera.cullingMask &= ~(
-            1 << FirstPersonLayer |
-            1 << ThirdPersonLayer);
+        // 镜内必须保留 ThirdPerson 层，否则其他玩家和 AI 会从瞄具画面中消失。
+        // 本地第一人称手臂与武器只存在于 FirstPerson 层，排除这一层即可避免递归拍到枪身。
+        _scopeCamera.cullingMask &= ~(1 << FirstPersonLayer);
         _scopeCamera.depth = -100f;
         _scopeCamera.aspect = 1f;
         _scopeCamera.enabled = false;
@@ -160,9 +159,7 @@ public sealed class Pdw90ScopeView : MonoBehaviour
         _scopeCamera.fieldOfView = magnifiedHalfFov * 2f * Mathf.Rad2Deg;
         _scopeCamera.nearClipPlane = _worldCamera.nearClipPlane;
         _scopeCamera.farClipPlane = _worldCamera.farClipPlane;
-        _scopeCamera.cullingMask = _worldCamera.cullingMask & ~(
-            1 << FirstPersonLayer |
-            1 << ThirdPersonLayer);
+        _scopeCamera.cullingMask = _worldCamera.cullingMask & ~(1 << FirstPersonLayer);
     }
 
     private void RefreshVisibility()

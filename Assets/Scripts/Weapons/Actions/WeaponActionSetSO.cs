@@ -251,7 +251,13 @@ public sealed class WeaponActionDefinition
         for (int i = 0; i < _markers.Count; i++)
         {
             WeaponActionMarkerData marker = _markers[i];
-            if (marker != null && marker.MarkerType == requiredMarker)
+            bool isIncrementalMagazineReload =
+                (_actionType == WeaponActionType.Reload ||
+                 _actionType == WeaponActionType.EmptyReload) &&
+                marker != null &&
+                marker.MarkerType == WeaponActionMarkerType.InsertRound;
+            if (marker != null &&
+                (marker.MarkerType == requiredMarker || isIncrementalMagazineReload))
             {
                 return;
             }

@@ -19,10 +19,10 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
     [SerializeField, InspectorName("第三人称表现")] private PlayerAnimationView _thirdPersonView;
 
     [Header("第三人称待机俯仰")]
-    [SerializeField, Range(0f, 60f), InspectorName("最大抬头角度")]
-    private float _maximumLookUpAngle = 42f;
-    [SerializeField, Range(0f, 60f), InspectorName("最大低头角度")]
-    private float _maximumLookDownAngle = 32f;
+    [SerializeField, Range(0f, 90f), InspectorName("最大抬头角度")]
+    private float _maximumLookUpAngle = 85f;
+    [SerializeField, Range(0f, 90f), InspectorName("最大低头角度")]
+    private float _maximumLookDownAngle = 85f;
     [SerializeField, Min(0f), InspectorName("俯仰跟随速度")]
     private float _upperBodyPitchSpeed = 10f;
     [SerializeField, Min(0f), InspectorName("待机融合速度")]
@@ -111,6 +111,7 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         if (_weaponActionCtrl)
         {
             _weaponActionCtrl.ActionStarted += HandleWeaponActionStarted;
+            _weaponActionCtrl.ActionProgressSkipped += HandleWeaponActionProgressSkipped;
             _weaponActionCtrl.ActionCompleted += HandleWeaponActionCompleted;
             _weaponActionCtrl.ActionCanceled += HandleWeaponActionCanceled;
         }
@@ -150,6 +151,7 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         if (_weaponActionCtrl)
         {
             _weaponActionCtrl.ActionStarted -= HandleWeaponActionStarted;
+            _weaponActionCtrl.ActionProgressSkipped -= HandleWeaponActionProgressSkipped;
             _weaponActionCtrl.ActionCompleted -= HandleWeaponActionCompleted;
             _weaponActionCtrl.ActionCanceled -= HandleWeaponActionCanceled;
         }
@@ -644,9 +646,8 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
             return false;
         }
 
-        if (_moveCtrl && (!_moveCtrl.IsGrounded || _moveCtrl.IsMoving ||
-            _moveCtrl.MoveInput.sqrMagnitude > 0.01f || _moveCtrl.IsSprinting ||
-            _moveCtrl.IsVaulting || _moveCtrl.IsSliding))
+        if (_moveCtrl && (!_moveCtrl.IsGrounded || _moveCtrl.IsSprinting ||
+            _moveCtrl.IsVaulting))
         {
             return false;
         }
@@ -657,6 +658,14 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         if (currentAction != null && !AllowsStationaryUpperBodyPitch(currentAction.ActionType))
         {
             return false;
+        }
+
+        bool isWalkingOrSliding = _moveCtrl &&
+            (_moveCtrl.IsMoving || _moveCtrl.MoveInput.sqrMagnitude > 0.01f ||
+             _moveCtrl.IsSliding);
+        if (isWalkingOrSliding)
+        {
+            return true;
         }
 
         if (_pitchAnimator.IsInTransition(0))
@@ -759,6 +768,20 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         if (_thirdPersonView)
         {
             _thirdPersonView.CompleteWeaponAction(actionType);
+        }
+    }
+
+    private void HandleWeaponActionProgressSkipped(
+        WeaponActionDefinition action,
+        bool startedWhileAiming,
+        float normalizedProgress)
+    {
+        if (_thirdPersonView)
+        {
+            _thirdPersonView.SkipWeaponActionToProgress(
+                action,
+                startedWhileAiming,
+                normalizedProgress);
         }
     }
 

@@ -14,6 +14,7 @@ public sealed class MatchDebugWindow : EditorWindow
     };
 
     private int _modeIndex;
+    private bool _healthRecoveryEnabled = true;
 
     [MenuItem("工具/Gun Demo/对局/对局调试窗口")]
     private static void Open()
@@ -38,6 +39,21 @@ public sealed class MatchDebugWindow : EditorWindow
             "场景直接 Play 仍保持 Idle 空名册。仅点击下方按钮才开始对局。",
             MessageType.Info);
         _modeIndex = EditorGUILayout.Popup("模式", _modeIndex, ModeNames);
+        bool isBombMode = _modeIndex == (int)ModeKind.Bomb;
+        using (new EditorGUI.DisabledScope(isBombMode))
+        {
+            bool displayedRecovery = EditorGUILayout.Toggle(
+                "呼吸回血",
+                !isBombMode && _healthRecoveryEnabled);
+            if (!isBombMode)
+            {
+                _healthRecoveryEnabled = displayedRecovery;
+            }
+        }
+        if (isBombMode)
+        {
+            EditorGUILayout.HelpBox("赏金爆破固定禁用呼吸回血。", MessageType.None);
+        }
         using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying))
         {
             if (EditorApplication.isPlaying)
@@ -74,10 +90,12 @@ public sealed class MatchDebugWindow : EditorWindow
             return;
         }
 
-        StartConfiguredMatch(mode);
+        StartConfiguredMatch(mode, _healthRecoveryEnabled);
     }
 
-    public static bool StartConfiguredMatch(ModeDefinitionSO mode)
+    public static bool StartConfiguredMatch(
+        ModeDefinitionSO mode,
+        bool healthRecoveryEnabled = true)
     {
         if (!EditorApplication.isPlaying || !mode)
         {
@@ -120,8 +138,12 @@ public sealed class MatchDebugWindow : EditorWindow
                 AIDifficulty.Normal));
         }
 
+        MatchConfig config = new MatchConfig(mode, slots, map);
+        config.Registry.Set(
+            "combat.healthRecoveryEnabled",
+            mode.Kind != ModeKind.Bomb && healthRecoveryEnabled);
         MatchManager manager = MatchManager.Instance;
-        return manager.StartMatch(new MatchConfig(mode, slots, map));
+        return manager.StartMatch(config);
     }
 
     private void HandlePlayModeStateChanged(PlayModeStateChange state)

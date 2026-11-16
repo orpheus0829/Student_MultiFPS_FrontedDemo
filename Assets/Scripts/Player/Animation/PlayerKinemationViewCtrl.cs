@@ -133,6 +133,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             _weaponActionCtrl.WeaponChanged += HandleWeaponChanged;
             _weaponActionCtrl.ActionStarted += HandleActionStarted;
+            _weaponActionCtrl.ActionProgressSkipped += HandleActionProgressSkipped;
             _weaponActionCtrl.ActionCompleted += HandleActionCompleted;
             _weaponActionCtrl.ActionCanceled += HandleActionCanceled;
         }
@@ -273,6 +274,7 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         {
             _weaponActionCtrl.WeaponChanged -= HandleWeaponChanged;
             _weaponActionCtrl.ActionStarted -= HandleActionStarted;
+            _weaponActionCtrl.ActionProgressSkipped -= HandleActionProgressSkipped;
             _weaponActionCtrl.ActionCompleted -= HandleActionCompleted;
             _weaponActionCtrl.ActionCanceled -= HandleActionCanceled;
         }
@@ -702,15 +704,11 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
             _animator.Update(0f);
             // Animator.Update 会保留切枪时的过渡/换弹层姿势，不能用来计算永久的瞄准基准。
             // 与资源自带 Demo 一致，直接采样当前枪械的原始待机片段。
-            AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
-            for (int i = 0; i < clips.Length; i++)
+            AnimationClip idleClip = WeaponAnimationClipResolver.GetFirstPersonIdle(
+                _animator.runtimeAnimatorController);
+            if (idleClip)
             {
-                AnimationClip clip = clips[i];
-                if (clip && clip.name.IndexOf("Idle", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    clip.SampleAnimation(_animator.gameObject, 0f);
-                    return;
-                }
+                idleClip.SampleAnimation(_animator.gameObject, 0f);
             }
         }
         finally
@@ -1166,6 +1164,20 @@ public sealed class PlayerKinemationViewCtrl : MonoBehaviour
         if (_firstPersonView)
         {
             _firstPersonView.CompleteWeaponAction(actionType);
+        }
+    }
+
+    private void HandleActionProgressSkipped(
+        WeaponActionDefinition action,
+        bool startedWhileAiming,
+        float normalizedProgress)
+    {
+        if (_firstPersonView)
+        {
+            _firstPersonView.SkipWeaponActionToProgress(
+                action,
+                startedWhileAiming,
+                normalizedProgress);
         }
     }
 

@@ -25,10 +25,86 @@ Transform:
   m_GameObject: {fileID: 301452573723723760}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
-  m_LocalPosition: {x: 0, y: 0.024134515, z: -0.5081959}
+  m_LocalPosition: {x: 0.000000027595163, y: -0.0058645834, z: 0.6388969}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
+  m_Father: {fileID: 4495546137145490676}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7060646305615592110
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2072833944411477687}
+  - component: {fileID: 8491971937717448227}
+  m_Layer: 0
+  m_Name: LeftHand
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2072833944411477687
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7060646305615592110}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.2428392, y: 0.02753017, z: 0.937672, w: 0.2470677}
+  m_LocalPosition: {x: -0.0438, y: -0.054, z: -0.0328}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7989409699569408467}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8491971937717448227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7060646305615592110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6676bf6bcccae54a9d36e92b4f82129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponThirdPersonGripGizmo
+--- !u!1 &9028589181898731839
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7989409699569408467}
+  m_Layer: 0
+  m_Name: ThirdPersonGrip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7989409699569408467
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9028589181898731839}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2072833944411477687}
   m_Father: {fileID: 4495546137145490676}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9180395743638205367
@@ -43,6 +119,7 @@ GameObject:
   - component: {fileID: 4444897642859945447}
   - component: {fileID: 1335211172243616610}
   - component: {fileID: 2448103181957590215}
+  - component: {fileID: 2448103181957590216}
   m_Layer: 0
   m_Name: MGX5
   m_TagString: Untagged
@@ -65,6 +142,7 @@ Transform:
   m_Children:
   - {fileID: 5011102671896406144}
   - {fileID: 1538708688423907134}
+  - {fileID: 7989409699569408467}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4444897642859945447
@@ -128,6 +206,23 @@ MonoBehaviour:
   - {fileID: 8140010447473504954}
   - {fileID: 8193215946617581154}
   - {fileID: 7066387258349978814}
+--- !u!114 &2448103181957590216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9180395743638205367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51d7e0b07cce4e0f9b5eaa39c9d63d92, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Pdw90ScopeView
+  _lensMaterial: {fileID: 2100000, guid: 0fc481f5aaef4b76878b54ac229831b4, type: 2}
+  _magnification: 2.2
+  _renderTextureSize: 512
+  _lensDiameter: 0.027
+  _lensVisibleAimProgress: 0.65
 --- !u!1001 &4756287370995175275
 PrefabInstance:
   m_ObjectHideFlags: 0

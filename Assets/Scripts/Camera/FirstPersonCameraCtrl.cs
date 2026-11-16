@@ -48,6 +48,11 @@ public class FirstPersonCameraCtrl : MonoBehaviour
     private float _pitch;
     private bool _wasControlled;
     private bool _hasCursorControl;
+    private bool _forcedPitchActive;
+    private bool _forcedPitchReturning;
+    private float _forcedPitchTarget;
+    private float _pitchBeforeForced;
+    private float _forcedPitchSpeed;
 
     public bool IsThirdPerson => _isThirdPerson;
     public Camera ViewCamera
@@ -161,6 +166,8 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         }
 
         _lookInput = Vector2.zero;
+        _forcedPitchActive = false;
+        _forcedPitchReturning = false;
         _motionCtrl?.SetViewOffset(Vector3.zero);
         _isThirdPerson = false;
         if (_viewCamera)
@@ -205,8 +212,25 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         float minPitch = _playerData ? _playerData.MinPitch : -85f;
         float maxPitch = _playerData ? _playerData.MaxPitch : 85f;
 
-        _yaw += _lookInput.x * sensitivity;
-        _pitch = Mathf.Clamp(_pitch - _lookInput.y * sensitivity, minPitch, maxPitch);
+        if (_forcedPitchActive || _forcedPitchReturning)
+        {
+            float targetPitch = _forcedPitchActive
+                ? _forcedPitchTarget
+                : _pitchBeforeForced;
+            float weight = 1f - Mathf.Exp(-_forcedPitchSpeed * Time.deltaTime);
+            _pitch = Mathf.LerpAngle(_pitch, targetPitch, weight);
+            if (_forcedPitchReturning &&
+                Mathf.Abs(Mathf.DeltaAngle(_pitch, targetPitch)) <= 0.1f)
+            {
+                _pitch = targetPitch;
+                _forcedPitchReturning = false;
+            }
+        }
+        else
+        {
+            _yaw += _lookInput.x * sensitivity;
+            _pitch = Mathf.Clamp(_pitch - _lookInput.y * sensitivity, minPitch, maxPitch);
+        }
         if (!_isThirdPerson || (_aimCtrl && _aimCtrl.IsAimRequested) ||
             (_actionCtrl && _actionCtrl.IsFiring))
         {
@@ -255,6 +279,54 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         _pitch = Mathf.Clamp(_pitch - angles.y, minPitch, maxPitch);
     }
 
+    public void BeginForcedPitch(float targetPitch, float lerpSpeed)
+    {
+        float minPitch = _playerData ? _playerData.MinPitch : -85f;
+        float maxPitch = _playerData ? _playerData.MaxPitch : 85f;
+        if (!_forcedPitchActive && !_forcedPitchReturning)
+        {
+            _pitchBeforeForced = _pitch;
+        }
+
+        _forcedPitchTarget = Mathf.Clamp(targetPitch, minPitch, maxPitch);
+        _forcedPitchSpeed = Mathf.Max(0.01f, lerpSpeed);
+        _forcedPitchActive = true;
+        _forcedPitchReturning = false;
+        _lookInput = Vector2.zero;
+    }
+
+    public void EndForcedPitch()
+    {
+        if (!_forcedPitchActive)
+        {
+            return;
+        }
+
+        _forcedPitchActive = false;
+        _forcedPitchReturning = true;
+        _lookInput = Vector2.zero;
+    }
+
+    public void EndForcedPitchImmediate()
+    {
+        if (!_forcedPitchActive && !_forcedPitchReturning)
+        {
+            return;
+        }
+
+        _forcedPitchActive = false;
+        _forcedPitchReturning = false;
+        _pitch = _pitchBeforeForced;
+        _lookInput = Vector2.zero;
+        if (_isThirdPerson)
+        {
+            KeepThirdPersonLookDirection();
+            return;
+        }
+
+        FaceAimDirection();
+    }
+
     public Vector3 GetPlanarLookDirection()
     {
         Vector3 direction = Vector3.ProjectOnPlane(_pitchPivot.forward, Vector3.up);
@@ -286,7 +358,8 @@ public class FirstPersonCameraCtrl : MonoBehaviour
             _lookInput = command.Value;
         }
         else if (command.Action == GJInputAction.ToggleView &&
-            command.Phase == PlayerInputPhase.Started)
+            command.Phase == PlayerInputPhase.Started &&
+            !_forcedPitchActive && !_forcedPitchReturning)
         {
             SetThirdPerson(!_isThirdPerson);
         }

@@ -34,8 +34,8 @@ MonoBehaviour:
       _progress: 0
   _reload:
     _actionType: 2
-    _enabled: 0
-    _duration: 2.45
+    _enabled: 1
+    _duration: 7.3333335
     _canInterrupt: 1
     _interruptStartProgress: 0
     _allowsMovement: 1
@@ -49,12 +49,22 @@ MonoBehaviour:
     _firstPersonAimStateOverride: 
     _thirdPersonAimStateOverride: 
     _markers:
-    - _markerType: 1
-      _progress: 0.75510204
+    - _markerType: 2
+      _progress: 0.34
+    - _markerType: 2
+      _progress: 0.43
+    - _markerType: 2
+      _progress: 0.52
+    - _markerType: 2
+      _progress: 0.61
+    - _markerType: 2
+      _progress: 0.7
+    - _markerType: 2
+      _progress: 0.79
   _emptyReload:
     _actionType: 3
-    _enabled: 0
-    _duration: 2.75
+    _enabled: 1
+    _duration: 7.3333335
     _canInterrupt: 1
     _interruptStartProgress: 0
     _allowsMovement: 1
@@ -68,11 +78,21 @@ MonoBehaviour:
     _firstPersonAimStateOverride: 
     _thirdPersonAimStateOverride: 
     _markers:
-    - _markerType: 1
-      _progress: 0.6727273
+    - _markerType: 2
+      _progress: 0.34
+    - _markerType: 2
+      _progress: 0.43
+    - _markerType: 2
+      _progress: 0.52
+    - _markerType: 2
+      _progress: 0.61
+    - _markerType: 2
+      _progress: 0.7
+    - _markerType: 2
+      _progress: 0.79
   _perRoundStart:
     _actionType: 4
-    _enabled: 1
+    _enabled: 0
     _duration: 0.42
     _canInterrupt: 1
     _interruptStartProgress: 0
@@ -89,7 +109,7 @@ MonoBehaviour:
     _markers: []
   _perRoundInsert:
     _actionType: 5
-    _enabled: 1
+    _enabled: 0
     _duration: 0.42
     _canInterrupt: 1
     _interruptStartProgress: 0
@@ -108,7 +128,7 @@ MonoBehaviour:
       _progress: 0.5
   _perRoundEnd:
     _actionType: 6
-    _enabled: 1
+    _enabled: 0
     _duration: 0.42
     _canInterrupt: 1
     _interruptStartProgress: 0

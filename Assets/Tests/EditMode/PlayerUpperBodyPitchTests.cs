@@ -21,10 +21,10 @@ public sealed class PlayerUpperBodyPitchTests
                 "_maximumLookDownAngle",
                 BindingFlags.NonPublic | BindingFlags.Instance).GetValue(controller);
 
-            Assert.That(lookUp, Is.EqualTo(42f));
-            Assert.That(lookDown, Is.EqualTo(32f));
-            Assert.That(lookUp, Is.InRange(1f, 60f));
-            Assert.That(lookDown, Is.InRange(1f, 60f));
+            Assert.That(lookUp, Is.EqualTo(85f));
+            Assert.That(lookDown, Is.EqualTo(85f));
+            Assert.That(lookUp, Is.InRange(1f, 90f));
+            Assert.That(lookDown, Is.InRange(1f, 90f));
         }
         finally
         {

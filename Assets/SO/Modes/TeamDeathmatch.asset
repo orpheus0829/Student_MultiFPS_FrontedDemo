@@ -32,6 +32,12 @@ MonoBehaviour:
     _flag: 0
     _text: 
     _isRemovable: 0
+  - _key: combat.healthRecoveryEnabled
+    _type: 0
+    _number: 0
+    _flag: 1
+    _text:
+    _isRemovable: 0
   - _key: score.kill
     _type: 1
     _number: 100

@@ -23,6 +23,7 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
     private WorldInteractable _aimedTarget;
     private WorldInteractable _promptTarget;
     private Canvas _promptCanvas;
+    private RectTransform _promptRoot;
     private CanvasGroup _promptGroup;
     private Image _keyImage;
     private TMP_Text _keyText;
@@ -216,11 +217,15 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
         }
 
         SetPromptVisible(true);
-        Transform promptTransform = _promptCanvas.transform;
-        promptTransform.position = _promptTarget.GetPromptPosition(_camera.transform.position);
-        promptTransform.rotation = Quaternion.LookRotation(
-            promptTransform.position - _camera.transform.position,
-            _camera.transform.up);
+        Vector3 worldPosition = _promptTarget.GetPromptPosition(_camera.transform.position);
+        Vector3 screenPosition = _camera.WorldToScreenPoint(worldPosition);
+        RectTransform canvasRect = (RectTransform)_promptCanvas.transform;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenPosition,
+            _camera,
+            out Vector2 localPosition);
+        _promptRoot.anchoredPosition = localPosition;
         _actionText.text = "[" + _promptTarget.InteractionName + "]";
 
         string bindingText = GetBindingText(_promptTarget.InputAction);
@@ -261,17 +266,28 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
         GameObject canvasObject = new GameObject("Interaction Prompt", typeof(RectTransform));
         canvasObject.transform.SetParent(transform, false);
         _promptCanvas = canvasObject.AddComponent<Canvas>();
-        _promptCanvas.renderMode = RenderMode.WorldSpace;
+        _promptCanvas.renderMode = RenderMode.ScreenSpaceCamera;
         _promptCanvas.worldCamera = _camera;
+        _promptCanvas.planeDistance = Mathf.Max(_camera.nearClipPlane + 0.05f, 0.1f);
         _promptCanvas.overrideSorting = true;
-        _promptCanvas.sortingOrder = 200;
+        _promptCanvas.sortingOrder = -100;
         _promptGroup = canvasObject.AddComponent<CanvasGroup>();
         RectTransform canvasRect = (RectTransform)canvasObject.transform;
-        canvasRect.sizeDelta = new Vector2(360f, 88f);
-        canvasRect.localScale = Vector3.one * 0.0024f;
+        canvasRect.anchorMin = Vector2.zero;
+        canvasRect.anchorMax = Vector2.one;
+        canvasRect.offsetMin = Vector2.zero;
+        canvasRect.offsetMax = Vector2.zero;
+
+        GameObject promptObject = new GameObject("Prompt Content", typeof(RectTransform));
+        promptObject.transform.SetParent(canvasObject.transform, false);
+        _promptRoot = (RectTransform)promptObject.transform;
+        _promptRoot.anchorMin = new Vector2(0.5f, 0.5f);
+        _promptRoot.anchorMax = new Vector2(0.5f, 0.5f);
+        _promptRoot.pivot = new Vector2(0.5f, 0.5f);
+        _promptRoot.sizeDelta = new Vector2(360f, 88f);
 
         GameObject keyObject = new GameObject("Key", typeof(RectTransform));
-        keyObject.transform.SetParent(canvasObject.transform, false);
+        keyObject.transform.SetParent(_promptRoot, false);
         _keyImage = keyObject.AddComponent<Image>();
         _keyImage.color = new Color(0.92f, 0.94f, 0.98f, 0.96f);
         RectTransform keyRect = (RectTransform)keyObject.transform;
@@ -290,7 +306,7 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
         _keyText.color = new Color(0.05f, 0.06f, 0.08f, 1f);
         _keyText.fontStyle = FontStyles.Bold;
 
-        _actionText = CreateText(canvasObject.transform, "Action", 32f, TextAlignmentOptions.Left);
+        _actionText = CreateText(_promptRoot, "Action", 32f, TextAlignmentOptions.Left);
         RectTransform actionRect = (RectTransform)_actionText.transform;
         actionRect.anchorMin = new Vector2(0f, 0.5f);
         actionRect.anchorMax = new Vector2(0f, 0.5f);

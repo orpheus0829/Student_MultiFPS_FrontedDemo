@@ -13,13 +13,34 @@ MonoBehaviour:
   m_Name: BombShopCatalog
   m_EditorClassIdentifier: Assembly-CSharp::BombShopCatalogSO
   _items:
+  - _itemId: x18
+    _displayName: X18
+    _kind: 0
+    _column: 0
+    _resourceId: weapon.x18.data
+    _price: 400
+    _sortOrder: 0
   - _itemId: m1911
     _displayName: M1911
     _kind: 0
     _column: 0
     _resourceId: weapon.m1911.data
     _price: 500
-    _sortOrder: 0
+    _sortOrder: 1
+  - _itemId: dgl-50
+    _displayName: DGL50
+    _kind: 0
+    _column: 0
+    _resourceId: weapon.dgl-50.data
+    _price: 750
+    _sortOrder: 2
+  - _itemId: viper-357
+    _displayName: Viper-357
+    _kind: 0
+    _column: 0
+    _resourceId: weapon.viper-357.data
+    _price: 800
+    _sortOrder: 3
   - _itemId: mps5
     _displayName: MPS5
     _kind: 1
@@ -27,13 +48,27 @@ MonoBehaviour:
     _resourceId: weapon.mps5.data
     _price: 1500
     _sortOrder: 0
+  - _itemId: striker-v
+    _displayName: Striker-V
+    _kind: 1
+    _column: 1
+    _resourceId: weapon.striker-v.data
+    _price: 1750
+    _sortOrder: 1
   - _itemId: kxg12
     _displayName: KXG12
     _kind: 1
     _column: 1
     _resourceId: weapon.kxg-12.data
     _price: 2000
-    _sortOrder: 1
+    _sortOrder: 2
+  - _itemId: drake-12
+    _displayName: Drake-12
+    _kind: 1
+    _column: 1
+    _resourceId: weapon.drake-12.data
+    _price: 2100
+    _sortOrder: 3
   - _itemId: pdw90
     _displayName: PDW90
     _kind: 1
@@ -41,13 +76,27 @@ MonoBehaviour:
     _resourceId: weapon.pdw90.data
     _price: 2350
     _sortOrder: 0
+  - _itemId: mx16a4
+    _displayName: MX16A4
+    _kind: 1
+    _column: 2
+    _resourceId: weapon.mx16a4.data
+    _price: 2450
+    _sortOrder: 1
   - _itemId: ak
     _displayName: AK
     _kind: 1
     _column: 2
     _resourceId: weapon.ak.data
     _price: 2700
-    _sortOrder: 1
+    _sortOrder: 2
+  - _itemId: g3
+    _displayName: G3
+    _kind: 1
+    _column: 2
+    _resourceId: weapon.g3.data
+    _price: 2800
+    _sortOrder: 3
   - _itemId: as-val
     _displayName: AS Val
     _kind: 1
@@ -55,13 +104,41 @@ MonoBehaviour:
     _resourceId: weapon.as-val.data
     _price: 2900
     _sortOrder: 0
+  - _itemId: mk14-ebr
+    _displayName: Mk14 EBR
+    _kind: 1
+    _column: 3
+    _resourceId: weapon.mk14-ebr.data
+    _price: 3100
+    _sortOrder: 1
+  - _itemId: mgx5
+    _displayName: MGX5
+    _kind: 1
+    _column: 3
+    _resourceId: weapon.mgx5.data
+    _price: 3200
+    _sortOrder: 2
+  - _itemId: svd
+    _displayName: SVD
+    _kind: 1
+    _column: 3
+    _resourceId: weapon.svd.data
+    _price: 3300
+    _sortOrder: 3
   - _itemId: kar98k
     _displayName: Kar98k
     _kind: 1
     _column: 3
     _resourceId: weapon.kar98k.data
     _price: 3400
-    _sortOrder: 1
+    _sortOrder: 4
+  - _itemId: l96x
+    _displayName: L96X
+    _kind: 1
+    _column: 3
+    _resourceId: weapon.l96x.data
+    _price: 3900
+    _sortOrder: 5
   - _itemId: armor
     _displayName: "\u80F8\u7532"
     _kind: 2

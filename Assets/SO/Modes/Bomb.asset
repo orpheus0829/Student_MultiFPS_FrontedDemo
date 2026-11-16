@@ -32,6 +32,12 @@ MonoBehaviour:
     _flag: 0
     _text: 
     _isRemovable: 0
+  - _key: combat.healthRecoveryEnabled
+    _type: 0
+    _number: 0
+    _flag: 0
+    _text:
+    _isRemovable: 0
   - _key: score.kill
     _type: 1
     _number: 100
@@ -160,7 +166,7 @@ MonoBehaviour:
     _isRemovable: 0
   - _key: bomb.pickupRadius
     _type: 2
-    _number: 1.8
+    _number: 0.9
     _flag: 0
     _text: 
     _isRemovable: 0
@@ -218,9 +224,9 @@ MonoBehaviour:
     _flag: 0
     _text: 
     _isRemovable: 0
-  - _key: economy.buyDuration
+  - _key: economy.buyAfterCountdownDuration
     _type: 2
-    _number: 25
+    _number: 5
     _flag: 0
     _text: 
     _isRemovable: 0

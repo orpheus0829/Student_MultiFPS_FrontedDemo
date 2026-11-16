@@ -28,6 +28,10 @@ public static class MatchContentConfigurator
     {
         "BattleField2", "BattleField3", "BattleField4", "BattleField5"
     };
+    private static readonly string[] AdditionalBattlefieldDisplayNames =
+    {
+        "沙城", "办公中心", "仓库", "火车口"
+    };
 
     [MenuItem("工具/Gun Demo/对局/配置内置模式与爆破资源")]
     public static MatchContentConfigureReport Configure()
@@ -88,6 +92,12 @@ public static class MatchContentConfigurator
         BoxCollider collider = root.AddComponent<BoxCollider>();
         collider.center = bounds.center;
         collider.size = bounds.size;
+        Rigidbody rigidbody = root.AddComponent<Rigidbody>();
+        rigidbody.mass = 2.5f;
+        rigidbody.linearDamping = 0.05f;
+        rigidbody.angularDamping = 0.5f;
+        rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
         GameObject lightObject = new GameObject("ArmedLight");
         lightObject.transform.SetParent(root.transform, false);
@@ -179,6 +189,7 @@ public static class MatchContentConfigurator
             "solo.self_preservation",
             Combine(score,
                 ModeConfigItem.CreateString("rules.type", "solo", false),
+                ModeConfigItem.CreateBool("combat.healthRecoveryEnabled", true, false),
                 ModeConfigItem.CreateString("hud.scoreStyle", "solo", false),
                 ModeConfigItem.CreateBool("match.usesRounds", false, false),
                 ModeConfigItem.CreateBool("match.respawnEnabled", true, false),
@@ -194,6 +205,7 @@ public static class MatchContentConfigurator
             "tdm.teamwork",
             Combine(score,
                 ModeConfigItem.CreateString("rules.type", "tdm", false),
+                ModeConfigItem.CreateBool("combat.healthRecoveryEnabled", true, false),
                 ModeConfigItem.CreateString("hud.scoreStyle", "team", false),
                 ModeConfigItem.CreateBool("match.usesRounds", false, false),
                 ModeConfigItem.CreateBool("match.respawnEnabled", true, false),
@@ -211,6 +223,7 @@ public static class MatchContentConfigurator
             "bomb.team_strategy",
             Combine(score,
                 ModeConfigItem.CreateString("rules.type", "bomb", false),
+                ModeConfigItem.CreateBool("combat.healthRecoveryEnabled", false, false),
                 ModeConfigItem.CreateString("hud.scoreStyle", "rounds", false),
                 ModeConfigItem.CreateBool("features.bombObjective", true, false),
                 ModeConfigItem.CreateBool("features.economy", true, false),
@@ -226,7 +239,7 @@ public static class MatchContentConfigurator
                 ModeConfigItem.CreateNumber("bomb.fuseDuration", 40f, ModeValueType.Float, false),
                 ModeConfigItem.CreateNumber("bomb.explosionKillRadius", 18f, ModeValueType.Float, false),
                 ModeConfigItem.CreateNumber("bomb.explosionVisualScale", 1f, ModeValueType.Float, false),
-                ModeConfigItem.CreateNumber("bomb.pickupRadius", 1.8f, ModeValueType.Float, false),
+                ModeConfigItem.CreateNumber("bomb.pickupRadius", 0.9f, ModeValueType.Float, false),
                 ModeConfigItem.CreateNumber("bomb.siteRadius", 3f, ModeValueType.Float, false),
                 ModeConfigItem.CreateNumber("bomb.roundTimeLimit", 120f, ModeValueType.Float, false),
                 ModeConfigItem.CreateNumber("bomb.roundRestartDelay", 4f, ModeValueType.Float, false),
@@ -312,9 +325,9 @@ public static class MatchContentConfigurator
         }
         battleField1.Configure(
             "map.battlefield1",
+            "小镇",
             "BattleField1",
-            "BattleField1",
-            new[] { ModeKind.TeamDeathmatch, ModeKind.Bomb });
+            new[] { ModeKind.Solo, ModeKind.TeamDeathmatch, ModeKind.Bomb });
         EditorUtility.SetDirty(battleField1);
 
         MapDefinitionSO example =
@@ -350,14 +363,27 @@ public static class MatchContentConfigurator
             }
             map.Configure(
                 "map." + mapName.ToLowerInvariant(),
+                AdditionalBattlefieldDisplayNames[i],
                 mapName,
-                mapName,
-                new[] { ModeKind.TeamDeathmatch, ModeKind.Solo, ModeKind.Bomb });
+                GetAdditionalBattlefieldModes(i));
             EditorUtility.SetDirty(map);
             maps.Add(map);
         }
         catalog.Configure(maps);
         EditorUtility.SetDirty(catalog);
+    }
+
+    private static ModeKind[] GetAdditionalBattlefieldModes(int index)
+    {
+        if (index == 0 || index == 1)
+        {
+            return new[] { ModeKind.TeamDeathmatch, ModeKind.Bomb };
+        }
+        if (index == 2)
+        {
+            return new[] { ModeKind.Solo, ModeKind.TeamDeathmatch };
+        }
+        return new[] { ModeKind.Solo, ModeKind.TeamDeathmatch, ModeKind.Bomb };
     }
 
     private static void EnsureMapScenesInBuildSettings()

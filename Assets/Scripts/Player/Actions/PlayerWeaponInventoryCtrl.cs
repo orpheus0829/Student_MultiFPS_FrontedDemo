@@ -8,17 +8,29 @@ using UnityEngine;
 public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 {
     [Header("枪械栏")]
-    [SerializeField, Min(1), InspectorName("枪械栏容量")] private int _slotCount = 7;
+    [SerializeField, Min(1), InspectorName("枪械栏容量")] private int _slotCount = 19;
     [SerializeField, ResourceId(typeof(WeaponDefinitionSO)), InspectorName("持有枪械数据 ID")]
     private List<string> _weaponResourceIds = new List<string>
     {
         "weapon.ak.data",
         "weapon.as-val.data",
+        "weapon.dgl-50.data",
+        "weapon.drake-12.data",
+        "weapon.g3.data",
+        "weapon.kolibri.data",
+        "weapon.l96x.data",
         "weapon.m1911.data",
         "weapon.kar98k.data",
+        "weapon.mgx5.data",
+        "weapon.mk14-ebr.data",
         "weapon.mps5.data",
+        "weapon.mx16a4.data",
         "weapon.kxg-12.data",
-        "weapon.pdw90.data"
+        "weapon.pdw90.data",
+        "weapon.striker-v.data",
+        "weapon.svd.data",
+        "weapon.viper-357.data",
+        "weapon.x18.data"
     };
 
     [Header("动作执行")]

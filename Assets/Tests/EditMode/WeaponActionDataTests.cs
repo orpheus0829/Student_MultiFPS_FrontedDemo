@@ -108,7 +108,7 @@ namespace GunDemo.Tests
                 "t:WeaponActionSetSO",
                 new[] { "Assets/SO/Weapons/Actions" });
 
-            Assert.That(weaponGuids.Length, Is.EqualTo(19));
+            Assert.That(weaponGuids.Length, Is.EqualTo(20));
             Assert.That(actionGuids.Length, Is.EqualTo(weaponGuids.Length));
 
             for (int i = 0; i < weaponGuids.Length; i++)
@@ -138,21 +138,83 @@ namespace GunDemo.Tests
                     "_fire",
                     0,
                     actionPath);
-                AssertRequiredMarker(
+                AssertReloadMarker(
                     serializedActions,
                     "_reload",
-                    1,
                     actionPath);
-                AssertRequiredMarker(
+                AssertReloadMarker(
                     serializedActions,
                     "_emptyReload",
-                    1,
                     actionPath);
                 AssertRequiredMarker(
                     serializedActions,
                     "_perRoundInsert",
                     2,
                     actionPath);
+            }
+        }
+
+        [Test]
+        public void ViperRevolverReloadInsertsSixRoundsDuringOneFullAnimation()
+        {
+            const string actionPath = "Assets/SO/Weapons/Actions/Viper-357.asset";
+            Object actionSet = AssetDatabase.LoadMainAssetAtPath(actionPath);
+            Assert.That(actionSet, Is.Not.Null);
+            SerializedObject serializedActions = new SerializedObject(actionSet);
+
+            AssertIncrementalCylinderReload(serializedActions, "_reload");
+            AssertIncrementalCylinderReload(serializedActions, "_emptyReload");
+            Assert.That(
+                serializedActions.FindProperty("_perRoundInsert._enabled").boolValue,
+                Is.False,
+                "左轮应在一段完整动画内逐颗补弹，不能重复播放逐发循环状态。");
+        }
+
+        [Test]
+        public void ViperRevolverReloadCanSkipUnusedSlotsToCylinderClosing()
+        {
+            GameObject gameObject = new GameObject("左轮收尾跳转测试");
+            try
+            {
+                System.Type controllerType = System.Type.GetType(
+                    "WeaponActionCtrl, Assembly-CSharp");
+                System.Type actionType = System.Type.GetType(
+                    "WeaponActionType, Assembly-CSharp");
+                Assert.That(controllerType, Is.Not.Null);
+                Assert.That(actionType, Is.Not.Null);
+
+                Component controller = gameObject.AddComponent(controllerType);
+                Object weapon = AssetDatabase.LoadMainAssetAtPath(
+                    "Assets/SO/Weapons/Data/Viper-357.asset");
+                Object actions = AssetDatabase.LoadMainAssetAtPath(
+                    "Assets/SO/Weapons/Actions/Viper-357.asset");
+                controllerType.GetMethod("SetWeaponData").Invoke(
+                    controller, new object[] { weapon, actions });
+
+                object reload = System.Enum.Parse(actionType, "Reload");
+                Assert.That(
+                    controllerType.GetMethod("TryStartAction").Invoke(
+                        controller,
+                        new[] { reload, (object)false }),
+                    Is.True);
+                Assert.That(
+                    controllerType.GetMethod("TrySkipReloadToClosing").Invoke(
+                        controller,
+                        null),
+                    Is.True);
+
+                float progress = (float)controllerType.GetProperty("Progress")
+                    .GetValue(controller);
+                Assert.That(progress, Is.EqualTo(0.79f).Within(0.001f));
+
+                bool[] triggeredMarkers = (bool[])controllerType.GetField(
+                    "_triggeredMarkers",
+                    BindingFlags.Instance | BindingFlags.NonPublic).GetValue(controller);
+                Assert.That(triggeredMarkers, Has.All.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
             }
         }
 
@@ -179,6 +241,55 @@ namespace GunDemo.Tests
             }
 
             Assert.Fail(assetPath + " 的 " + actionPath + " 缺少类型 " + markerType + " 节点");
+        }
+
+        private static void AssertReloadMarker(
+            SerializedObject actionSet,
+            string actionPath,
+            string assetPath)
+        {
+            SerializedProperty action = actionSet.FindProperty(actionPath);
+            if (!action.FindPropertyRelative("_enabled").boolValue)
+            {
+                return;
+            }
+
+            SerializedProperty markers = action.FindPropertyRelative("_markers");
+            for (int i = 0; i < markers.arraySize; i++)
+            {
+                int markerType = markers.GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("_markerType").enumValueIndex;
+                if (markerType == 1 || markerType == 2)
+                {
+                    return;
+                }
+            }
+
+            Assert.Fail(assetPath + " 的" + actionPath + "缺少补弹节点");
+        }
+
+        private static void AssertIncrementalCylinderReload(
+            SerializedObject actionSet,
+            string actionPath)
+        {
+            SerializedProperty action = actionSet.FindProperty(actionPath);
+            Assert.That(action.FindPropertyRelative("_enabled").boolValue, Is.True);
+            Assert.That(action.FindPropertyRelative("_duration").floatValue,
+                Is.EqualTo(7.333333f).Within(0.01f));
+
+            SerializedProperty markers = action.FindPropertyRelative("_markers");
+            Assert.That(markers.arraySize, Is.EqualTo(6));
+            float previousProgress = 0f;
+            for (int i = 0; i < markers.arraySize; i++)
+            {
+                SerializedProperty marker = markers.GetArrayElementAtIndex(i);
+                Assert.That(
+                    marker.FindPropertyRelative("_markerType").enumValueIndex,
+                    Is.EqualTo(2));
+                float progress = marker.FindPropertyRelative("_progress").floatValue;
+                Assert.That(progress, Is.GreaterThan(previousProgress));
+                previousProgress = progress;
+            }
         }
     }
 }

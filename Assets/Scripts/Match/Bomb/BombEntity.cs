@@ -12,9 +12,12 @@ public enum BombEntityState
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(Rigidbody))]
 public sealed class BombEntity : MonoBehaviour
 {
     private const float MinimumPulsePhase = -Mathf.PI * 0.5f;
+    private const int WorldLayer = 0;
+    private const int FirstPersonLayer = 9;
 
     [Header("炸弹")]
     [SerializeField, Min(0.1f), InspectorName("拾取半径")] private float _pickupRadius = 1.8f;
@@ -32,6 +35,7 @@ public sealed class BombEntity : MonoBehaviour
 
     private Renderer[] _renderers;
     private Collider[] _colliders;
+    private Rigidbody _rigidbody;
     private CharacterHealth _carrierHealth;
     private BombEntityState _state = BombEntityState.OnGround;
     private PlayerInfo _carrier;
@@ -39,6 +43,10 @@ public sealed class BombEntity : MonoBehaviour
     private float _fuseRemaining;
     private float _lightPulsePhase;
     private bool _fuseRunning;
+    private bool _firstPersonPlantPresentationActive;
+    private Vector3 _plantPresentationTargetPosition;
+    private Quaternion _plantPresentationTargetRotation;
+    private float _plantPresentationSpeed;
 
     public BombEntityState State { get { return _state; } }
     public PlayerInfo Carrier { get { return _carrier; } }
@@ -62,12 +70,19 @@ public sealed class BombEntity : MonoBehaviour
 
         _renderers = GetComponentsInChildren<Renderer>(true);
         _colliders = GetComponentsInChildren<Collider>(true);
+        if (!TryGetComponent(out _rigidbody))
+        {
+            _rigidbody = gameObject.AddComponent<Rigidbody>();
+        }
+        ConfigureRigidbody();
         SetArmedLightActive(false);
         ApplyWorldState(true, true);
+        ApplyPhysicsState(true);
     }
 
     private void Update()
     {
+        UpdateFirstPersonPlantPresentation();
         if (_state != BombEntityState.Planted || !_fuseRunning)
         {
             return;
@@ -98,11 +113,12 @@ public sealed class BombEntity : MonoBehaviour
         _carrier = carrier;
         _state = BombEntityState.Carried;
         SetArmedLightActive(false);
+        ApplyPhysicsState(false);
         transform.SetParent(carrier.transform, false);
         transform.localPosition = _carrierOffset;
         transform.localRotation = Quaternion.Euler(_carriedModelEuler);
         SubscribeCarrier(carrier);
-        ApplyWorldState(true, false);
+        ApplyWorldState(false, false);
         PickedUp?.Invoke(this, carrier);
         return true;
     }
@@ -121,7 +137,10 @@ public sealed class BombEntity : MonoBehaviour
         SetArmedLightActive(false);
         transform.SetParent(null, true);
         transform.position = worldPosition;
+        SetLayerRecursively(gameObject, WorldLayer);
+        _firstPersonPlantPresentationActive = false;
         ApplyWorldState(true, true);
+        ApplyPhysicsState(true);
         Dropped?.Invoke(this, previousCarrier);
         return true;
     }
@@ -152,6 +171,9 @@ public sealed class BombEntity : MonoBehaviour
         _lightPulsePhase = MinimumPulsePhase;
         transform.SetParent(null, true);
         transform.SetPositionAndRotation(worldPosition, worldRotation);
+        SetLayerRecursively(gameObject, WorldLayer);
+        _firstPersonPlantPresentationActive = false;
+        ApplyPhysicsState(false);
         ApplyWorldState(true, true);
         SetArmedLightActive(true);
         Planted?.Invoke(this, site);
@@ -205,6 +227,50 @@ public sealed class BombEntity : MonoBehaviour
         _pickupRadius = Mathf.Max(0.1f, radius);
     }
 
+    public bool BeginFirstPersonPlantPresentation(
+        Transform cameraTransform,
+        Vector3 targetPosition,
+        Vector3 targetEuler,
+        Vector3 enterOffset,
+        float presentationSpeed)
+    {
+        if (_state != BombEntityState.Carried || !_carrier || !cameraTransform)
+        {
+            return false;
+        }
+
+        _firstPersonPlantPresentationActive = false;
+        ApplyPhysicsState(false);
+        _plantPresentationTargetPosition = targetPosition;
+        _plantPresentationTargetRotation = Quaternion.Euler(targetEuler);
+        _plantPresentationSpeed = Mathf.Max(0.01f, presentationSpeed);
+        Vector3 startPosition = targetPosition + enterOffset;
+        Quaternion startRotation = _plantPresentationTargetRotation *
+            Quaternion.Euler(12f, 0f, 0f);
+        transform.SetParent(cameraTransform, false);
+        transform.SetLocalPositionAndRotation(startPosition, startRotation);
+        SetLayerRecursively(gameObject, FirstPersonLayer);
+        ApplyWorldState(true, false);
+        _firstPersonPlantPresentationActive = true;
+        return true;
+    }
+
+    public void CancelFirstPersonPlantPresentation()
+    {
+        if (_state != BombEntityState.Carried)
+        {
+            _firstPersonPlantPresentationActive = false;
+            return;
+        }
+
+        _firstPersonPlantPresentationActive = false;
+        SetLayerRecursively(gameObject, WorldLayer);
+        transform.SetParent(_carrier ? _carrier.transform : null, false);
+        transform.localPosition = _carrierOffset;
+        transform.localRotation = Quaternion.Euler(_carriedModelEuler);
+        ApplyWorldState(false, false);
+    }
+
     private void SubscribeCarrier(PlayerInfo carrier)
     {
         _carrierHealth = carrier.GetComponent<CharacterHealth>();
@@ -254,6 +320,25 @@ public sealed class BombEntity : MonoBehaviour
             pulse);
     }
 
+    private void UpdateFirstPersonPlantPresentation()
+    {
+        if (!_firstPersonPlantPresentationActive ||
+            _state != BombEntityState.Carried)
+        {
+            return;
+        }
+
+        float weight = 1f - Mathf.Exp(-_plantPresentationSpeed * Time.deltaTime);
+        transform.localPosition = Vector3.Lerp(
+            transform.localPosition,
+            _plantPresentationTargetPosition,
+            weight);
+        transform.localRotation = Quaternion.Slerp(
+            transform.localRotation,
+            _plantPresentationTargetRotation,
+            weight);
+    }
+
     private void SetArmedLightActive(bool active)
     {
         if (!_armedLight)
@@ -287,6 +372,57 @@ public sealed class BombEntity : MonoBehaviour
             {
                 _colliders[i].enabled = colliderVisible;
             }
+        }
+    }
+
+    private void ConfigureRigidbody()
+    {
+        if (!_rigidbody)
+        {
+            return;
+        }
+
+        _rigidbody.mass = 2.5f;
+        _rigidbody.linearDamping = 0.05f;
+        _rigidbody.angularDamping = 0.5f;
+        _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+    }
+
+    private void ApplyPhysicsState(bool dynamic)
+    {
+        if (!_rigidbody)
+        {
+            return;
+        }
+
+        if (dynamic)
+        {
+            _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            _rigidbody.isKinematic = false;
+            _rigidbody.useGravity = true;
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            return;
+        }
+
+        if (!_rigidbody.isKinematic)
+        {
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+        }
+        _rigidbody.interpolation = RigidbodyInterpolation.None;
+        _rigidbody.useGravity = false;
+        _rigidbody.isKinematic = true;
+    }
+
+    private static void SetLayerRecursively(GameObject root, int layer)
+    {
+        root.layer = layer;
+        Transform rootTransform = root.transform;
+        for (int i = 0; i < rootTransform.childCount; i++)
+        {
+            SetLayerRecursively(rootTransform.GetChild(i).gameObject, layer);
         }
     }
 

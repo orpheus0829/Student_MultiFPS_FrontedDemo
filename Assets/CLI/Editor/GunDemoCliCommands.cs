@@ -421,7 +421,10 @@ public static class GunDemoCliCommands
             new[] { WeaponActionSetConfigurator.WeaponActionFolder });
         string[] playerData = AssetDatabase.FindAssets("t:PlayerDataSO", new[] { "Assets/SO" });
         string[] inputCatalogs = AssetDatabase.FindAssets("t:InputActionCatalogSO", new[] { "Assets/SO" });
-        string[] weaponPrefabs = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Weapons" });
+        string[] allWeaponPrefabGuids = AssetDatabase.FindAssets(
+            "t:Prefab",
+            new[] { "Assets/Prefabs/Weapons" });
+        List<string> weaponPrefabs = new List<string>();
         HashSet<string> prefabNames = new HashSet<string>();
         List<string> weaponIds = new List<string>();
         List<string> unused = new List<string>();
@@ -456,11 +459,22 @@ public static class GunDemoCliCommands
             problems.Add("项目缺少 Addressables Settings");
         }
 
-        foreach (string guid in weaponPrefabs)
+        foreach (string guid in allWeaponPrefabGuids)
         {
-            prefabNames.Add(Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid)));
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!string.Equals(
+                Path.GetDirectoryName(path)?.Replace('\\', '/'),
+                "Assets/Prefabs/Weapons",
+                System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            weaponPrefabs.Add(guid);
+            prefabNames.Add(Path.GetFileNameWithoutExtension(path));
         }
 
+        int firearmDataCount = 0;
         foreach (string guid in weaponData)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -469,22 +483,31 @@ public static class GunDemoCliCommands
                 ? data.Basic.WeaponId
                 : Path.GetFileNameWithoutExtension(path);
             weaponIds.Add(id);
-            if (!prefabNames.Contains(Path.GetFileNameWithoutExtension(path)))
+            bool isMelee = data && data.Basic != null &&
+                data.Basic.Category == WeaponCategory.Melee;
+            if (!isMelee)
             {
-                unused.Add(path);
+                firearmDataCount++;
+                if (!prefabNames.Contains(Path.GetFileNameWithoutExtension(path)))
+                {
+                    unused.Add(path);
+                }
             }
 
 
             SerializedObject serializedData = new SerializedObject(data);
             CheckResourceId(serializedData, "_basic._silhouetteResourceId", path, knownAddresses, missingResourceIds);
-            CheckResourceId(serializedData, "_resources._firstPersonPrefabResourceId", path, knownAddresses, missingResourceIds);
-            CheckResourceId(serializedData, "_animation._weaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
             CheckResourceId(serializedData, "_actionSetResourceId", path, knownAddresses, missingResourceIds);
             CheckOptionalResourceId(serializedData, "_basic._iconResourceId", path, knownAddresses, missingResourceIds);
-            CheckOptionalResourceId(serializedData, "_resources._worldModelPrefabResourceId", path, knownAddresses, missingResourceIds);
-            CheckOptionalResourceId(serializedData, "_animation._characterAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
-            CheckOptionalResourceId(serializedData, "_animation._thirdPersonAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
-            CheckOptionalResourceId(serializedData, "_animation._thirdPersonWeaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            if (!isMelee)
+            {
+                CheckResourceId(serializedData, "_resources._firstPersonPrefabResourceId", path, knownAddresses, missingResourceIds);
+                CheckResourceId(serializedData, "_animation._weaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+                CheckOptionalResourceId(serializedData, "_resources._worldModelPrefabResourceId", path, knownAddresses, missingResourceIds);
+                CheckOptionalResourceId(serializedData, "_animation._characterAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+                CheckOptionalResourceId(serializedData, "_animation._thirdPersonAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+                CheckOptionalResourceId(serializedData, "_animation._thirdPersonWeaponAnimatorControllerResourceId", path, knownAddresses, missingResourceIds);
+            }
             CheckOptionalResourceId(serializedData, "_audio._dryFireSoundResourceId", path, knownAddresses, missingResourceIds);
             CheckOptionalResourceId(serializedData, "_audio._equipSoundResourceId", path, knownAddresses, missingResourceIds);
             CheckOptionalResourceId(serializedData, "_audio._unequipSoundResourceId", path, knownAddresses, missingResourceIds);
@@ -499,14 +522,18 @@ public static class GunDemoCliCommands
             CheckResourceIdArray(serializedData, "_audio._reloadSoundResourceIds", path, knownAddresses, missingResourceIds);
             CheckResourceIdArray(serializedData, "_audio._mechanicalSoundResourceIds", path, knownAddresses, missingResourceIds);
 
-            string prefabPath = "Assets/Prefabs/Weapons/" + Path.GetFileNameWithoutExtension(path) + ".prefab";
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            WeaponView weaponView = prefab ? prefab.GetComponent<WeaponView>() : null;
-            if (!weaponView ||
-                string.IsNullOrWhiteSpace(weaponView.WeaponDataResourceId) ||
-                !knownAddresses.Contains(weaponView.WeaponDataResourceId))
+            if (!isMelee)
             {
-                missingResourceIds.Add(prefabPath + " -> WeaponView.WeaponDataResourceId");
+                string prefabPath = "Assets/Prefabs/Weapons/" +
+                    Path.GetFileNameWithoutExtension(path) + ".prefab";
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                WeaponView weaponView = prefab ? prefab.GetComponent<WeaponView>() : null;
+                if (!weaponView ||
+                    string.IsNullOrWhiteSpace(weaponView.WeaponDataResourceId) ||
+                    !knownAddresses.Contains(weaponView.WeaponDataResourceId))
+                {
+                    missingResourceIds.Add(prefabPath + " -> WeaponView.WeaponDataResourceId");
+                }
             }
 
             string actionPath = WeaponActionSetConfigurator.GetActionSetPath(data);
@@ -521,7 +548,7 @@ public static class GunDemoCliCommands
             }
         }
 
-        if (weaponData.Length != weaponPrefabs.Length)
+        if (firearmDataCount != weaponPrefabs.Count)
         {
             problems.Add("枪械数据数量与正式枪械 Prefab 数量不同");
         }
@@ -546,7 +573,7 @@ public static class GunDemoCliCommands
             ScriptableObjectCount = allData.Length,
             WeaponDataCount = weaponData.Length,
             WeaponActionSetCount = weaponActionSets.Length,
-            WeaponPrefabCount = weaponPrefabs.Length,
+            WeaponPrefabCount = weaponPrefabs.Count,
             PlayerDataCount = playerData.Length,
             InputCatalogCount = inputCatalogs.Length,
             HasAddressableSettings = addressableSettings,
@@ -574,14 +601,12 @@ public static class GunDemoCliCommands
             WeaponActionMarkerType.FireShot,
             assetPath,
             problems);
-        ValidateActionMarker(
+        ValidateReloadMarker(
             actionSet.Reload,
-            WeaponActionMarkerType.AmmoCommit,
             assetPath,
             problems);
-        ValidateActionMarker(
+        ValidateReloadMarker(
             actionSet.EmptyReload,
-            WeaponActionMarkerType.AmmoCommit,
             assetPath,
             problems);
         ValidateActionMarker(
@@ -611,6 +636,29 @@ public static class GunDemoCliCommands
         }
 
         problems.Add(assetPath + " 的" + action.ActionType + "缺少" + requiredMarker + "节点");
+    }
+
+    private static void ValidateReloadMarker(
+        WeaponActionDefinition action,
+        string assetPath,
+        List<string> problems)
+    {
+        if (action == null || !action.Enabled)
+        {
+            return;
+        }
+
+        for (int i = 0; i < action.Markers.Count; i++)
+        {
+            WeaponActionMarkerType markerType = action.Markers[i].MarkerType;
+            if (markerType == WeaponActionMarkerType.AmmoCommit ||
+                markerType == WeaponActionMarkerType.InsertRound)
+            {
+                return;
+            }
+        }
+
+        problems.Add(assetPath + " 的" + action.ActionType + "缺少补弹节点");
     }
 
     [CliGroupCommand(Group, "检查正式 Prefab 的丢失脚本和丢失材质", Name = "inspect_prefabs", Tags = new[] { "gundemo/prefabs" })]

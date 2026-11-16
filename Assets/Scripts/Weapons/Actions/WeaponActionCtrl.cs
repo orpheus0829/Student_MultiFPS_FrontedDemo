@@ -26,6 +26,7 @@ public sealed class WeaponActionCtrl : MonoBehaviour
 
     public event Action<WeaponDefinitionSO> WeaponChanged;
     public event Action<WeaponActionDefinition, bool> ActionStarted;
+    public event Action<WeaponActionDefinition, bool, float> ActionProgressSkipped;
     public event Action<WeaponActionType, WeaponActionMarkerType> MarkerReached;
     public event Action<WeaponActionType> ActionCompleted;
     public event Action<WeaponActionType, WeaponActionCancelReason> ActionCanceled;
@@ -140,7 +141,8 @@ public sealed class WeaponActionCtrl : MonoBehaviour
             IReadOnlyList<WeaponActionMarkerData> markers = _currentAction.Markers;
             for (int i = 0; i < markers.Count; i++)
             {
-                if (markers[i].MarkerType == WeaponActionMarkerType.AmmoCommit &&
+                if ((markers[i].MarkerType == WeaponActionMarkerType.AmmoCommit ||
+                     markers[i].MarkerType == WeaponActionMarkerType.InsertRound) &&
                     _triggeredMarkers[i])
                 {
                     return true;
@@ -340,6 +342,47 @@ public sealed class WeaponActionCtrl : MonoBehaviour
 
         ClearCurrentAction();
         ActionCanceled?.Invoke(canceledType, reason);
+        return true;
+    }
+
+    public bool TrySkipReloadToClosing()
+    {
+        if (_currentAction == null ||
+            (_currentAction.ActionType != WeaponActionType.Reload &&
+             _currentAction.ActionType != WeaponActionType.EmptyReload))
+        {
+            return false;
+        }
+
+        IReadOnlyList<WeaponActionMarkerData> markers = _currentAction.Markers;
+        float closingProgress = -1f;
+        for (int i = 0; i < markers.Count; i++)
+        {
+            if (markers[i].MarkerType == WeaponActionMarkerType.InsertRound)
+            {
+                closingProgress = Mathf.Max(closingProgress, markers[i].Progress);
+            }
+        }
+
+        if (closingProgress <= _progress)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < markers.Count; i++)
+        {
+            if (markers[i].Progress <= closingProgress)
+            {
+                _triggeredMarkers[i] = true;
+            }
+        }
+
+        _progress = closingProgress;
+        _elapsed = _currentAction.Duration * closingProgress;
+        ActionProgressSkipped?.Invoke(
+            _currentAction,
+            _startedWhileAiming,
+            closingProgress);
         return true;
     }
 

@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: BattleField5
   m_EditorClassIdentifier: Assembly-CSharp::MapDefinitionSO
   _mapId: map.battlefield5
-  _displayName: BattleField5
+  _displayName: "\u706B\u8F66\u53E3"
   _sceneName: BattleField5
   _supportedModes: 010000000000000002000000

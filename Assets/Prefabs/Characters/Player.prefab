@@ -2070,8 +2070,8 @@ MonoBehaviour:
   _meleeCombatCtrl: {fileID: 3780233180362563139}
   _firstPersonView: {fileID: 6592013405939300546}
   _thirdPersonView: {fileID: 3126009935223978009}
-  _maximumLookUpAngle: 42
-  _maximumLookDownAngle: 32
+  _maximumLookUpAngle: 85
+  _maximumLookDownAngle: 85
   _upperBodyPitchSpeed: 10
   _upperBodyPitchBlendSpeed: 8
   _showMeleeBlade: 1
@@ -2216,15 +2216,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d1f7b5b35864e4ca5e41f38547fe721, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponInventoryCtrl
-  _slotCount: 7
+  _slotCount: 19
   _weaponResourceIds:
   - weapon.ak.data
   - weapon.as-val.data
+  - weapon.dgl-50.data
+  - weapon.drake-12.data
+  - weapon.g3.data
+  - weapon.kolibri.data
+  - weapon.l96x.data
   - weapon.m1911.data
   - weapon.kar98k.data
+  - weapon.mgx5.data
+  - weapon.mk14-ebr.data
   - weapon.mps5.data
+  - weapon.mx16a4.data
   - weapon.kxg-12.data
   - weapon.pdw90.data
+  - weapon.striker-v.data
+  - weapon.svd.data
+  - weapon.viper-357.data
+  - weapon.x18.data
   _weaponActionCtrl: {fileID: 111100003}
   _weaponViewCtrl: {fileID: 111100008}
 --- !u!82 &2341247144003853243

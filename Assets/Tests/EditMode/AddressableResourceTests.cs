@@ -15,9 +15,10 @@ namespace GunDemo.Tests
             string[] guids = AssetDatabase.FindAssets(
                 "t:WeaponDefinitionSO",
                 new[] { "Assets/SO/Weapons/Data" });
-            Assert.That(guids.Length, Is.EqualTo(19));
+            Assert.That(guids.Length, Is.EqualTo(20));
 
             HashSet<string> weaponIds = new HashSet<string>();
+            int firearmCount = 0;
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -26,27 +27,42 @@ namespace GunDemo.Tests
 
                 SerializedObject serializedWeapon = new SerializedObject(weapon);
                 string weaponId = serializedWeapon.FindProperty("_basic._weaponId").stringValue;
+                int category = serializedWeapon
+                    .FindProperty("_basic._category").enumValueIndex;
                 string silhouetteId = serializedWeapon.FindProperty("_basic._silhouetteResourceId").stringValue;
-                string firstPersonPrefabId = serializedWeapon.FindProperty("_resources._firstPersonPrefabResourceId").stringValue;
-                string weaponControllerId = serializedWeapon.FindProperty("_animation._weaponAnimatorControllerResourceId").stringValue;
                 string actionSetId = serializedWeapon.FindProperty("_actionSetResourceId").stringValue;
-                string tracerId = serializedWeapon.FindProperty("_effects._tracerResourceId").stringValue;
-                float projectileSpeed = serializedWeapon.FindProperty("_damage._projectileSpeed").floatValue;
 
                 Assert.That(weaponIds.Add(weaponId), Is.True, "重复枪械 ID: " + weaponId);
                 Assert.That(silhouetteId, Is.Not.Empty, path + " 缺少剪影资源 ID");
-                Assert.That(firstPersonPrefabId, Is.Not.Empty, path + " 缺少第一人称 Prefab ID");
-                Assert.That(weaponControllerId, Is.Not.Empty, path + " 缺少第一人称武器控制器 ID");
                 Assert.That(actionSetId, Is.EqualTo("weapon." + weaponId.Trim().ToLowerInvariant() + ".actions"));
-                Assert.That(tracerId, Is.EqualTo("effect.weapon.bullet_tracer"));
-                Assert.That(projectileSpeed, Is.GreaterThan(0f), path + " 缺少弹丸初速");
 
                 string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
                 AssertAddress(path, "weapon." + weaponId.Trim().ToLowerInvariant() + ".data");
-                AssertAddress("Assets/Resource/UI/WeaponSilhouettes/" + fileName + ".png", silhouetteId);
-                AssertAddress("Assets/Prefabs/Weapons/" + fileName + ".prefab", firstPersonPrefabId);
                 AssertAddress("Assets/SO/Weapons/Actions/" + fileName + ".asset", actionSetId);
+
+                if (category == 9)
+                {
+                    continue;
+                }
+
+                firearmCount++;
+                AssertAddress("Assets/Resource/UI/WeaponSilhouettes/" + fileName + ".png", silhouetteId);
+                string firstPersonPrefabId = serializedWeapon
+                    .FindProperty("_resources._firstPersonPrefabResourceId").stringValue;
+                string weaponControllerId = serializedWeapon
+                    .FindProperty("_animation._weaponAnimatorControllerResourceId").stringValue;
+                string tracerId = serializedWeapon
+                    .FindProperty("_effects._tracerResourceId").stringValue;
+                float projectileSpeed = serializedWeapon
+                    .FindProperty("_damage._projectileSpeed").floatValue;
+                Assert.That(firstPersonPrefabId, Is.Not.Empty, path + " 缺少第一人称 Prefab ID");
+                Assert.That(weaponControllerId, Is.Not.Empty, path + " 缺少第一人称武器控制器 ID");
+                Assert.That(tracerId, Is.EqualTo("effect.weapon.bullet_tracer"));
+                Assert.That(projectileSpeed, Is.GreaterThan(0f), path + " 缺少弹丸初速");
+                AssertAddress("Assets/Prefabs/Weapons/" + fileName + ".prefab", firstPersonPrefabId);
             }
+
+            Assert.That(firearmCount, Is.EqualTo(19));
         }
 
         [Test]

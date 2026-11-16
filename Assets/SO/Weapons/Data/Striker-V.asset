@@ -131,101 +131,101 @@ MonoBehaviour:
   _ik:
     _weaponRotationOffset: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     _weaponPositionOffset: {x: 0, y: 0, z: 0}
-    _useThirdPersonGrip: 0
-    _thirdPersonGripPosition: {x: 0, y: 0, z: 0}
-    _thirdPersonGripRotation: {x: 0, y: 0, z: 0, w: 1}
+    _useThirdPersonGrip: 1
+    _thirdPersonGripPosition: {x: 0.056, y: -0.055, z: 0.066}
+    _thirdPersonGripRotation: {x: 0.6460672, y: 0.3973866, z: 0.27122304, w: 0.5925531}
     _thirdPersonGripScale: {x: 1, y: 1, z: 1}
     _leftClavicleOffset: {x: 0, y: 0, z: 0}
     _rightClavicleOffset: {x: 0, y: 0, z: 0}
     _aimPointOffset: {x: 0, y: 0, z: -0.12}
     _aimPointLocalPosition: {x: 0, y: 0.073, z: -0.101}
-    _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0, w: 1}
+    _sprintRightHandRotationOffset: {x: 0, y: 0, z: 0.1305262, w: 0.9914449}
     _adsBlend: 0.41
     _aimPointPath: 
     _muzzlePointPath: "\u67AA\u53E3"
     _shellEjectionPointPath: 
     _magazinePointPath: 
-    _leftHandIkPointPath: 
+    _leftHandIkPointPath: ThirdPersonGrip/LeftHand
     _thirdPersonFingerPose:
-      _useLeftGripPose: 0
+      _useLeftGripPose: 1
       _leftGripPose:
         _thumb:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
-          _spread: 0
+          _proximal: -0.35
+          _intermediate: -0.3
+          _distal: -0.15
+          _spread: 0.05
         _index:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.55
+          _intermediate: -0.65
+          _distal: -0.4
           _spread: 0
         _middle:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.6
+          _intermediate: -0.7
+          _distal: -0.45
           _spread: 0
         _ring:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.65
+          _intermediate: -0.75
+          _distal: -0.45
           _spread: 0
         _little:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.7
+          _intermediate: -0.75
+          _distal: -0.4
           _spread: 0
-      _useRightGripPose: 0
+      _useRightGripPose: 1
       _rightIdlePose:
         _thumb:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
-          _spread: 0
+          _proximal: -0.3
+          _intermediate: -0.2
+          _distal: -0.1
+          _spread: -0.1
         _index:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.45
+          _intermediate: -0.35
+          _distal: -0.25
           _spread: 0
         _middle:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.75
+          _intermediate: -0.8
+          _distal: -0.55
           _spread: 0
         _ring:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.8
+          _intermediate: -0.85
+          _distal: -0.6
           _spread: 0
         _little:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.85
+          _intermediate: -0.85
+          _distal: -0.6
           _spread: 0
       _rightFirePose:
         _thumb:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
-          _spread: 0
+          _proximal: -0.3
+          _intermediate: -0.2
+          _distal: -0.1
+          _spread: -0.1
         _index:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.4
+          _intermediate: -0.6
+          _distal: -0.5
           _spread: 0
         _middle:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.75
+          _intermediate: -0.8
+          _distal: -0.55
           _spread: 0
         _ring:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.8
+          _intermediate: -0.85
+          _distal: -0.6
           _spread: 0
         _little:
-          _proximal: 0
-          _intermediate: 0
-          _distal: 0
+          _proximal: -0.85
+          _intermediate: -0.85
+          _distal: -0.6
           _spread: 0
   _audio:
     _fireSoundResourceIds:

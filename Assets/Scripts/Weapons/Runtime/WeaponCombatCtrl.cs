@@ -298,8 +298,7 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         }
 
         bool startedWhileAiming = _aimCtrl && _aimCtrl.IsAiming;
-        if (_weaponData.Ammo.ReloadStyle == WeaponReloadStyle.PerRound ||
-            _weaponData.Ammo.ReloadStyle == WeaponReloadStyle.Revolver)
+        if (_weaponData.Ammo.ReloadStyle == WeaponReloadStyle.PerRound)
         {
             return _actionCtrl.TryStartPerRoundReload(startedWhileAiming);
         }
@@ -630,6 +629,13 @@ public sealed class WeaponCombatCtrl : MonoBehaviour
         _ammoState.MagazineAmmo++;
         _ammoState.ReserveAmmo--;
         NotifyAmmoChanged();
+
+        if (!CanInsertRound())
+        {
+            // 左轮使用一段包含六次装填的完整动画。半仓补弹或备弹耗尽时，
+            // 已经没有下一颗可装，玩法与表现应一起跳到合上弹仓的收尾段。
+            _actionCtrl.TrySkipReloadToClosing();
+        }
     }
 
     private void ContinuePerRoundReload()

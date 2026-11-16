@@ -68,7 +68,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfb4bff57cdc1e34e81c7da760852ca1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BombEntity
-  _pickupRadius: 1.8
+  _pickupRadius: 0.9
   _carrierOffset: {x: 0, y: 1.05, z: -0.22}
   _carriedModelEuler: {x: 0, y: 0, z: 0}
   _armedLight: {fileID: 5996053281126686539}
