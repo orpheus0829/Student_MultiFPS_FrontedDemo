@@ -37,6 +37,20 @@ public sealed class WeaponBoneVisibilityCtrl : MonoBehaviour
         _isVisible = value == 1;
     }
 
+    public void HideConfiguredBonesNow()
+    {
+        _isVisible = false;
+        ApplyDefaultVisibility();
+        for (int i = 0; i < _eventBones.Count; i++)
+        {
+            Transform bone = _eventBones[i];
+            if (bone)
+            {
+                bone.localScale = Vector3.zero;
+            }
+        }
+    }
+
     private void ApplyDefaultVisibility()
     {
         for (int i = 0; i < _defaultHiddenBones.Count; i++)

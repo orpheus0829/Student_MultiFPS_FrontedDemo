@@ -30,6 +30,9 @@ public static class GunDemoAddressableConfigurator
     private const string BulletTracerPath =
         "Assets/Prefabs/Effects/Weapons/HovlBulletTracer.prefab";
     private const string BulletTracerAddress = "effect.weapon.bullet_tracer";
+    private const string BombShopHostNotePath =
+        "Assets/Resource/UI/BombShop/Decor/HostNote.jpg";
+    private const string BombShopHostNoteAddress = "ui.bomb_shop.decor.host_note";
     private const string BombPrefabPath = "Assets/Prefabs/Props/Bomb.prefab";
     private const string BombPrefabAddress = "prop.bomb.prefab";
     private const string BombCarryAnimationAddress = "animation.bomb.carry";
@@ -266,6 +269,22 @@ public static class GunDemoAddressableConfigurator
             "Assets/Resource/UI/Interaction/Key_Wide.png",
             "ui.interaction.key.wide",
             new[] { "type.ui", "type.interaction" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            "Assets/Prefabs/UI/BombShop/BombShopTablet.prefab",
+            "ui.bomb_shop.tablet",
+            new[] { "type.ui", "type.prefab", "mode.bomb" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            group,
+            "Assets/Prefabs/Gameplay/BombShop/BombShopWorldStage.prefab",
+            "gameplay.bomb_shop.stage",
+            new[] { "type.prefab", "mode.bomb" },
             configuredGuids,
             report);
     }
@@ -615,6 +634,14 @@ public static class GunDemoAddressableConfigurator
         Dictionary<string, string> configuredGuids,
         GunDemoAddressableConfigureReport report)
     {
+        Register(
+            settings,
+            groups[LocalCommonGroup],
+            BombShopHostNotePath,
+            BombShopHostNoteAddress,
+            new[] { "type.ui", "type.shop", "mode.bomb" },
+            configuredGuids,
+            report);
         Register(
             settings,
             groups[LocalCommonGroup],

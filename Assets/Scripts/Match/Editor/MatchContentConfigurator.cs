@@ -250,8 +250,8 @@ public static class MatchContentConfigurator
                 ModeConfigItem.CreateNumber("economy.startMoney", 800, ModeValueType.Int, false),
                 ModeConfigItem.CreateNumber("economy.maxMoney", 16000, ModeValueType.Int, false),
                 ModeConfigItem.CreateNumber(
-                    "economy.buyAfterCountdownDuration",
-                    5f,
+                    "economy.buyWindowDuration",
+                    20f,
                     ModeValueType.Float,
                     false),
                 ModeConfigItem.CreateString(

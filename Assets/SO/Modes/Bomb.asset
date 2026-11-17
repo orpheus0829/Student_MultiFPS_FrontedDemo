@@ -224,9 +224,9 @@ MonoBehaviour:
     _flag: 0
     _text: 
     _isRemovable: 0
-  - _key: economy.buyAfterCountdownDuration
+  - _key: economy.buyWindowDuration
     _type: 2
-    _number: 5
+    _number: 20
     _flag: 0
     _text: 
     _isRemovable: 0

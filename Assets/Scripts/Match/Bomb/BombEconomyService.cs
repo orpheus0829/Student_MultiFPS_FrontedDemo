@@ -124,6 +124,7 @@ public sealed class BombEconomyService : MonoBehaviour
     }
 
     public event Action CatalogChanged;
+    public event Action<int> BuyWindowOpened;
 
     public void Initialize(MatchManager match, ModeConfigRegistry registry)
     {
@@ -252,12 +253,11 @@ public sealed class BombEconomyService : MonoBehaviour
 
         _buyWindowRoundIndex = _match.RoundIndex;
         DroppedWeaponEntity.ClearAll();
-        float afterCountdownDuration = Mathf.Max(0f, _registry.GetFloat(
-            "economy.buyAfterCountdownDuration",
-            5f));
-        _buyDeadline = Time.unscaledTime +
-            Mathf.Max(0f, _match.CountdownRemaining) +
-            afterCountdownDuration;
+        float buyWindowDuration = Mathf.Max(0f, _registry.GetFloat(
+            "economy.buyWindowDuration",
+            20f));
+        _buyDeadline = Time.unscaledTime + buyWindowDuration;
+        BuyWindowOpened?.Invoke(_buyWindowRoundIndex);
         IReadOnlyList<MatchParticipant> roster = _match.Roster;
         for (int i = 0; i < roster.Count; i++)
         {

@@ -1,117 +1,116 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public sealed class BombShopPreviewStage
 {
     private const int PreviewLayer = 31;
-    private readonly PlayerCharacterModelCtrl _models;
+    private const string StageResourceId = "gameplay.bomb_shop.stage";
+    private const string AkResourceId = "weapon.ak.data";
+    private const string SvdResourceId = "weapon.svd.data";
+    private const string Kar98kResourceId = "weapon.kar98k.data";
+    private const float PistolDisplayScale = 0.7f;
+    private const float OtherWeaponDisplayScale = 1.3f;
+
     private readonly PlayerWeaponInventoryCtrl _inventory;
-    private readonly PlayerWeaponViewCtrl _weaponView;
     private readonly PlayerArmorCtrl _armor;
     private readonly BombEconomyService _service;
 
     private ResourceMgr _resources;
     private GameObject _root;
-    private GameObject _character;
     private GameObject _weapon;
     private GameObject _armorCrate;
     private GameObject _helmetCrate;
-    private Transform _rightHand;
-    private Transform _weaponMount;
+    private Transform _gunPos;
+    private Transform _armorPos;
+    private Transform _helmetPos;
+    private BombShopStageRuntime _runtime;
     private RenderTexture _texture;
-    private readonly List<Mesh> _bakedMeshes = new List<Mesh>();
-    private int _characterVersion;
-    private int _weaponVersion;
-    private int _crateVersion;
+    private int _contentVersion;
 
     public RenderTexture Texture { get { return _texture; } }
 
     public BombShopPreviewStage(
-        PlayerCharacterModelCtrl models,
         PlayerWeaponInventoryCtrl inventory,
-        PlayerWeaponViewCtrl weaponView,
         PlayerArmorCtrl armor,
         BombEconomyService service)
     {
-        _models = models;
         _inventory = inventory;
-        _weaponView = weaponView;
         _armor = armor;
         _service = service;
     }
 
-    public void Open()
+    public async Task<bool> OpenAsync()
     {
         Close();
         _resources = ResourceMgr.instance;
-        _root = new GameObject("爆破商店预览台");
-        _root.transform.position = new Vector3(5000f, 5000f, 5000f);
-
-        _texture = new RenderTexture(900, 900, 24, RenderTextureFormat.ARGB32)
+        try
         {
-            name = "爆破商店角色与装备预览",
+            _root = await _resources.InstantiateAsync(StageResourceId);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning("爆破商店实体监控台加载失败：" + exception.Message);
+            return false;
+        }
+        if (!_root)
+        {
+            return false;
+        }
+
+        _root.name = "本地爆破商店监控台";
+        _root.transform.position = new Vector3(5000f, 5000f, 5000f);
+        PrepareStageEnvironment(_root);
+        SetLayerRecursively(_root, PreviewLayer);
+        Transform camAll = FindChild("CamAll");
+        Transform camWeapon = FindChild("CamWeapon");
+        Transform camDefense = FindChild("CamDefense");
+        _gunPos = FindChild("GunPos");
+        _armorPos = FindChild("DefensePos");
+        _helmetPos = FindChild("HelmatPos");
+        if (!camAll || !camWeapon || !camDefense || !_gunPos ||
+            !_armorPos || !_helmetPos)
+        {
+            Debug.LogError("爆破商店实体监控台缺少机位或展示点。", _root);
+            Close();
+            return false;
+        }
+
+        _texture = new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32)
+        {
+            name = "爆破商店高清监控画面",
             antiAliasing = 2
         };
         _texture.Create();
-
-        GameObject cameraObject = new GameObject("预览相机");
+        GameObject cameraObject = new GameObject("商店监控相机");
+        cameraObject.layer = PreviewLayer;
         cameraObject.transform.SetParent(_root.transform, false);
-        cameraObject.transform.localPosition = new Vector3(0f, 1.05f, 4.2f);
-        cameraObject.transform.LookAt(_root.transform.position + new Vector3(0f, 1.05f, 0f));
         Camera camera = cameraObject.AddComponent<Camera>();
-        camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color(0.018f, 0.023f, 0.03f, 0f);
+        camera.clearFlags = CameraClearFlags.Skybox;
         camera.cullingMask = 1 << PreviewLayer;
-        camera.fieldOfView = 30f;
+        camera.fieldOfView = 55f;
         camera.targetTexture = _texture;
-
-        GameObject keyLightObject = new GameObject("主光");
-        keyLightObject.transform.SetParent(_root.transform, false);
-        keyLightObject.transform.localRotation = Quaternion.Euler(35f, -35f, 0f);
-        Light keyLight = keyLightObject.AddComponent<Light>();
-        keyLight.type = LightType.Directional;
-        keyLight.intensity = 1.35f;
-        keyLight.color = new Color(1f, 0.92f, 0.8f);
-
-        GameObject fillLightObject = new GameObject("补光");
-        fillLightObject.transform.SetParent(_root.transform, false);
-        fillLightObject.transform.localPosition = new Vector3(-2f, 1.8f, 2f);
-        Light fillLight = fillLightObject.AddComponent<Light>();
-        fillLight.type = LightType.Point;
-        fillLight.range = 7f;
-        fillLight.intensity = 2.2f;
-        fillLight.color = new Color(0.28f, 0.5f, 1f);
-
-        _ = CloneCurrentCharacterAsync();
+        _runtime = cameraObject.AddComponent<BombShopStageRuntime>();
+        _runtime.Initialize(camera.transform, camAll, camWeapon, camDefense);
+        await RefreshDefaultAsync();
+        return _root;
     }
 
     public void Close()
     {
-        _weaponVersion++;
-        _crateVersion++;
-        _characterVersion++;
+        _contentVersion++;
         ReleaseInstance(ref _weapon);
         ReleaseInstance(ref _armorCrate);
         ReleaseInstance(ref _helmetCrate);
-        ReleaseInstance(ref _character);
         if (_root)
         {
-            UnityEngine.Object.Destroy(_root);
-        }
-        _root = null;
-        _character = null;
-        _rightHand = null;
-        _weaponMount = null;
-        for (int i = 0; i < _bakedMeshes.Count; i++)
-        {
-            if (_bakedMeshes[i])
+            if (!_resources || !_resources.ReleaseInstance(_root))
             {
-                UnityEngine.Object.Destroy(_bakedMeshes[i]);
+                UnityEngine.Object.Destroy(_root);
             }
         }
-        _bakedMeshes.Clear();
+        _root = null;
+        _runtime = null;
         if (_texture)
         {
             _texture.Release();
@@ -126,17 +125,12 @@ public sealed class BombShopPreviewStage
         {
             return;
         }
-
-        if (item.Kind == BombShopItemKind.Armor ||
-            item.Kind == BombShopItemKind.Helmet)
-        {
-            _ = ShowWeaponAsync(GetDefaultWeaponResourceId());
-            _ = ShowCratesAsync(item.Kind);
-            return;
-        }
-
-        _ = ShowWeaponAsync(item.ResourceId);
-        _ = ShowCratesAsync(null);
+        _runtime.RequestView(
+            item.Kind == BombShopItemKind.Armor ||
+            item.Kind == BombShopItemKind.Helmet
+                ? BombShopStageView.Defense
+                : BombShopStageView.Weapon);
+        _ = ShowHoveredItemAsync(item);
     }
 
     public void RefreshDefault()
@@ -145,404 +139,299 @@ public sealed class BombShopPreviewStage
         {
             return;
         }
-
-        _ = ShowWeaponAsync(GetDefaultWeaponResourceId());
-        _ = ShowCratesAsync(null);
+        _runtime.RequestView(BombShopStageView.All);
+        _ = RefreshDefaultAsync();
     }
 
-    private async Task CloneCurrentCharacterAsync()
+    private async Task ShowHoveredItemAsync(BombEconomyService.ShopItem item)
     {
-        int version = ++_characterVersion;
-        string bodyResourceId = _models
-            ? _models.GetCurrentBodyResourceId()
-            : string.Empty;
-        if (!_root)
+        int version = ++_contentVersion;
+        if (item.Kind == BombShopItemKind.Armor)
         {
-            return;
+            await ShowEquipmentAsync(true, false, version, true);
         }
-        if (string.IsNullOrWhiteSpace(bodyResourceId))
+        else if (item.Kind == BombShopItemKind.Helmet)
         {
-            CloneCurrentCharacterSnapshot();
-            RefreshDefault();
-            return;
-        }
-
-        GameObject character = null;
-        try
-        {
-            character = await _resources.InstantiateAsync(
-                bodyResourceId,
-                _root.transform,
-                false);
-        }
-        catch (Exception exception)
-        {
-            Debug.LogWarning("商店角色预览加载失败：" + exception.Message);
-            return;
-        }
-        if (!character)
-        {
-            return;
-        }
-        if (version != _characterVersion || !_root)
-        {
-            _resources.ReleaseInstance(character);
-            return;
-        }
-
-        _character = character;
-        _character.name = "当前角色模型预览";
-        DisableGameplayComponents(_character);
-        SetLayerRecursively(_character, PreviewLayer);
-
-        Animator animator = _character.GetComponentInChildren<Animator>(true);
-        if (!animator)
-        {
-            ReleaseInstance(ref _character);
-            return;
-        }
-        animator.applyRootMotion = false;
-        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-        Animator sourceAnimator = _models ? _models.CurrentBodyAnimator : null;
-        if (sourceAnimator && sourceAnimator.runtimeAnimatorController)
-        {
-            animator.runtimeAnimatorController = sourceAnimator.runtimeAnimatorController;
-            ApplyArmedIdlePose(animator);
-        }
-        _rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-        CreateWeaponMount(sourceAnimator);
-
-        FrameCharacter(animator);
-        RefreshDefault();
-    }
-
-    private void CloneCurrentCharacterSnapshot()
-    {
-        Animator source = _models ? _models.CurrentBodyAnimator : null;
-        if (!source)
-        {
-            return;
-        }
-
-        _character = new GameObject("当前角色模型预览");
-        _character.transform.SetParent(_root.transform, false);
-        Renderer[] renderers = _models.GetCurrentBodyRenderers();
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            Renderer sourceRenderer = renderers[i];
-            if (!sourceRenderer)
-            {
-                continue;
-            }
-
-            Mesh mesh = null;
-            if (sourceRenderer is SkinnedMeshRenderer skinned)
-            {
-                mesh = new Mesh
-                {
-                    name = sourceRenderer.name + " 商店预览快照"
-                };
-                skinned.BakeMesh(mesh);
-            }
-            else if (sourceRenderer.TryGetComponent(out MeshFilter sourceFilter))
-            {
-                mesh = sourceFilter.sharedMesh;
-            }
-            if (!mesh)
-            {
-                continue;
-            }
-
-            GameObject part = new GameObject(sourceRenderer.name);
-            part.transform.SetParent(_character.transform, false);
-            CopyRelativeTransform(source.transform, sourceRenderer.transform, part.transform);
-            MeshFilter filter = part.AddComponent<MeshFilter>();
-            filter.sharedMesh = mesh;
-            MeshRenderer renderer = part.AddComponent<MeshRenderer>();
-            renderer.sharedMaterials = sourceRenderer.sharedMaterials;
-            if (sourceRenderer is SkinnedMeshRenderer)
-            {
-                _bakedMeshes.Add(mesh);
-            }
-        }
-
-        Transform sourceHand = source.GetBoneTransform(HumanBodyBones.RightHand);
-        if (sourceHand)
-        {
-            GameObject hand = new GameObject("右手武器预览点");
-            hand.transform.SetParent(_character.transform, false);
-            CopyRelativeTransform(source.transform, sourceHand, hand.transform);
-            _rightHand = hand.transform;
-            CreateWeaponMount(source);
-        }
-        SetLayerRecursively(_character, PreviewLayer);
-        FrameCharacter(source);
-    }
-
-    private void FrameCharacter(Animator poseAnimator)
-    {
-        if (!_character)
-        {
-            return;
-        }
-
-        _character.transform.localPosition = Vector3.zero;
-        _character.transform.localRotation = Quaternion.identity;
-        _character.transform.localScale = Vector3.one;
-        FaceCharacterTowardCamera(poseAnimator);
-
-        Bounds bounds = CalculateVisualBounds(_character);
-        float height = Mathf.Max(0.1f, bounds.size.y);
-        float scale = 1.85f / height;
-        _character.transform.localScale = Vector3.one * scale;
-        bounds = CalculateVisualBounds(_character);
-        Vector3 localCenter = _root.transform.InverseTransformPoint(bounds.center);
-        float localBottom = _root.transform.InverseTransformPoint(bounds.min).y;
-        _character.transform.localPosition += new Vector3(
-            -0.55f - localCenter.x,
-            -localBottom,
-            -localCenter.z);
-    }
-
-    private void FaceCharacterTowardCamera(Animator poseAnimator)
-    {
-        if (!poseAnimator || !poseAnimator.isHuman)
-        {
-            return;
-        }
-
-        Vector3 localForward = poseAnimator.transform.IsChildOf(_character.transform)
-            ? _character.transform.InverseTransformDirection(poseAnimator.transform.forward)
-            : Vector3.forward;
-        localForward.y = 0f;
-        if (localForward.sqrMagnitude <= 0.0001f)
-        {
-            return;
-        }
-
-        _character.transform.localRotation = Quaternion.FromToRotation(
-            localForward.normalized,
-            Vector3.forward);
-    }
-
-    private void CreateWeaponMount(Animator sourceAnimator)
-    {
-        if (!_rightHand)
-        {
-            return;
-        }
-
-        GameObject mountObject = new GameObject("第三人称握枪挂点");
-        _weaponMount = mountObject.transform;
-        _weaponMount.SetParent(_rightHand, false);
-
-        GameObject sourceWeapon = _weaponView ? _weaponView.ThirdPersonWeapon : null;
-        Transform sourceMount = sourceWeapon ? sourceWeapon.transform.parent : null;
-        Transform sourceHand = sourceAnimator && sourceAnimator.isHuman
-            ? sourceAnimator.GetBoneTransform(HumanBodyBones.RightHand)
-            : null;
-        if (!sourceMount || !sourceHand || sourceMount.parent != sourceHand)
-        {
-            return;
-        }
-
-        _weaponMount.localPosition = sourceMount.localPosition;
-        _weaponMount.localRotation = sourceMount.localRotation;
-        _weaponMount.localScale = sourceMount.localScale;
-    }
-
-    private static void ApplyArmedIdlePose(Animator animator)
-    {
-        if (!animator || !animator.runtimeAnimatorController)
-        {
-            return;
-        }
-
-        animator.enabled = true;
-        animator.Rebind();
-        SetNeutralAnimatorParameters(animator);
-        for (int layer = 1; layer < animator.layerCount; layer++)
-        {
-            animator.SetLayerWeight(layer, 0f);
-        }
-
-        int idleHash = Animator.StringToHash("Base Layer.Idle");
-        if (animator.HasState(0, idleHash))
-        {
-            animator.Play(idleHash, 0, 0.35f);
+            await ShowEquipmentAsync(false, true, version, true);
         }
         else
         {
-            animator.Play(Animator.StringToHash("Idle"), 0, 0.35f);
-        }
-        animator.Update(0f);
-        animator.speed = 0f;
-    }
-
-    private static void SetNeutralAnimatorParameters(Animator animator)
-    {
-        AnimatorControllerParameter[] parameters = animator.parameters;
-        for (int i = 0; i < parameters.Length; i++)
-        {
-            AnimatorControllerParameter parameter = parameters[i];
-            switch (parameter.type)
+            await ShowWeaponAsync(item.ResourceId, version);
+            if (version == _contentVersion)
             {
-                case AnimatorControllerParameterType.Float:
-                    animator.SetFloat(parameter.nameHash, 0f);
-                    break;
-                case AnimatorControllerParameterType.Bool:
-                    animator.SetBool(parameter.nameHash, false);
-                    break;
-                case AnimatorControllerParameterType.Int:
-                    animator.SetInteger(parameter.nameHash, 0);
-                    break;
-                case AnimatorControllerParameterType.Trigger:
-                    animator.ResetTrigger(parameter.nameHash);
-                    break;
+                ReleaseInstance(ref _armorCrate);
+                ReleaseInstance(ref _helmetCrate);
             }
         }
     }
 
-    private static void CopyRelativeTransform(
-        Transform root,
-        Transform source,
-        Transform target)
+    private async Task RefreshDefaultAsync()
     {
-        target.localPosition = root.InverseTransformPoint(source.position);
-        target.localRotation = Quaternion.Inverse(root.rotation) * source.rotation;
-        Vector3 rootScale = root.lossyScale;
-        Vector3 sourceScale = source.lossyScale;
-        target.localScale = new Vector3(
-            rootScale.x == 0f ? 1f : sourceScale.x / rootScale.x,
-            rootScale.y == 0f ? 1f : sourceScale.y / rootScale.y,
-            rootScale.z == 0f ? 1f : sourceScale.z / rootScale.z);
-    }
-
-    private async Task ShowWeaponAsync(string weaponResourceId)
-    {
-        int version = ++_weaponVersion;
-        ReleaseInstance(ref _weapon);
-        if (string.IsNullOrWhiteSpace(weaponResourceId) || !_weaponMount)
+        int version = ++_contentVersion;
+        await ShowWeaponAsync(GetDefaultWeaponResourceId(), version);
+        if (version != _contentVersion)
         {
             return;
         }
+        await ShowEquipmentAsync(
+            _armor && _armor.Armor > 0f,
+            _armor && _armor.HasHelmet,
+            version,
+            false);
+    }
 
-        WeaponDefinitionSO weaponData = null;
+    private async Task ShowWeaponAsync(string resourceId, int version)
+    {
+        ReleaseInstance(ref _weapon);
+        if (string.IsNullOrWhiteSpace(resourceId) || !_gunPos)
+        {
+            return;
+        }
+        WeaponDefinitionSO data = null;
         try
         {
-            weaponData = await _resources.LoadAsync<WeaponDefinitionSO>(weaponResourceId);
-            if (!weaponData || version != _weaponVersion || !_root)
+            data = await _resources.LoadAsync<WeaponDefinitionSO>(resourceId);
+            if (!data || version != _contentVersion || !_root)
             {
                 return;
             }
-
-            string modelResourceId = weaponData.Resources.WorldModelPrefabResourceId;
             GameObject instance = await _resources.InstantiateAsync(
-                modelResourceId,
-                _weaponMount,
+                data.Resources.WorldModelPrefabResourceId,
+                _gunPos,
                 false);
             if (!instance)
             {
                 return;
             }
-            if (version != _weaponVersion || !_root)
+            if (version != _contentVersion || !_root)
             {
                 _resources.ReleaseInstance(instance);
                 return;
             }
-
             _weapon = instance;
-            WeaponIkData pose = weaponData.Ik;
-            _weapon.transform.localPosition = pose.UseThirdPersonGrip
-                ? pose.ThirdPersonGripPosition
-                : pose.WeaponPositionOffset;
-            _weapon.transform.localRotation = pose.UseThirdPersonGrip
-                ? pose.ThirdPersonGripRotation
-                : pose.WeaponRotationOffset;
-            _weapon.transform.localScale = pose.UseThirdPersonGrip
-                ? pose.ThirdPersonGripScale
-                : Vector3.one;
-            SetLayerRecursively(_weapon, PreviewLayer);
-            DisableGameplayComponents(_weapon);
-            InitializeWeaponIdle(_weapon.GetComponentInChildren<Animator>(true));
+            Quaternion displayRotation = Quaternion.identity;
+            bool needsUprightSideways = string.Equals(
+                    resourceId, AkResourceId, StringComparison.Ordinal) ||
+                string.Equals(resourceId, SvdResourceId, StringComparison.Ordinal);
+            if (needsUprightSideways)
+            {
+                displayRotation = Quaternion.Euler(-90f, 90f, -90f);
+            }
+            if (string.Equals(resourceId, Kar98kResourceId, StringComparison.Ordinal))
+            {
+                HideKar98kDisplayAmmo(_weapon);
+            }
+            float displayScale = data.Basic.Category == WeaponCategory.Pistol
+                ? PistolDisplayScale
+                : OtherWeaponDisplayScale;
+            PrepareDisplayObject(
+                _weapon,
+                _gunPos,
+                0.86f * displayScale,
+                displayRotation);
         }
         catch (Exception exception)
         {
-            Debug.LogWarning("商店武器预览加载失败：" + exception.Message);
+            Debug.LogWarning("商店监控武器展示失败：" + exception.Message);
         }
         finally
         {
-            if (weaponData)
+            if (data)
             {
-                _resources.Release<WeaponDefinitionSO>(weaponResourceId);
+                _resources.Release<WeaponDefinitionSO>(resourceId);
             }
         }
     }
 
-    private async Task ShowCratesAsync(BombShopItemKind? hoveredEquipment)
+    private async Task ShowEquipmentAsync(
+        bool showArmor,
+        bool showHelmet,
+        int version,
+        bool clearWeapon)
     {
-        int version = ++_crateVersion;
         ReleaseInstance(ref _armorCrate);
         ReleaseInstance(ref _helmetCrate);
-
-        bool showArmor = hoveredEquipment == BombShopItemKind.Armor ||
-            (!hoveredEquipment.HasValue && _armor && _armor.Armor > 0f);
-        bool showHelmet = hoveredEquipment == BombShopItemKind.Helmet ||
-            (!hoveredEquipment.HasValue && _armor && _armor.HasHelmet);
-
+        if (clearWeapon)
+        {
+            ReleaseInstance(ref _weapon);
+        }
         if (showArmor)
         {
-            _armorCrate = await CreateCrateAsync(
+            _armorCrate = await CreateDisplayAsync(
                 _service.ArmorCrateResourceId,
-                new Vector3(0.73f, 0.02f, 0.08f),
-                Quaternion.Euler(0f, -16f, 0f),
+                _armorPos,
+                0.58f,
                 version);
         }
-        if (showHelmet)
+        if (showHelmet && version == _contentVersion)
         {
-            Vector3 position = showArmor
-                ? new Vector3(0.88f, 0.24f, 0.02f)
-                : new Vector3(0.78f, 0.02f, 0.05f);
-            Quaternion rotation = showArmor
-                ? Quaternion.Euler(-8f, 20f, 7f)
-                : Quaternion.Euler(0f, 12f, 0f);
-            _helmetCrate = await CreateCrateAsync(
+            _helmetCrate = await CreateDisplayAsync(
                 _service.HelmetCrateResourceId,
-                position,
-                rotation,
+                _helmetPos,
+                0.5f,
                 version);
         }
     }
 
-    private async Task<GameObject> CreateCrateAsync(
+    private async Task<GameObject> CreateDisplayAsync(
         string resourceId,
-        Vector3 localPosition,
-        Quaternion localRotation,
+        Transform parent,
+        float targetSize,
         int version)
     {
-        if (string.IsNullOrWhiteSpace(resourceId) || !_root)
+        if (string.IsNullOrWhiteSpace(resourceId) || !parent)
         {
             return null;
         }
-
-        GameObject instance = await _resources.InstantiateAsync(resourceId, _root.transform, false);
+        GameObject instance = await _resources.InstantiateAsync(
+            resourceId,
+            parent,
+            false);
         if (!instance)
         {
             return null;
         }
-        if (version != _crateVersion || !_root)
+        if (version != _contentVersion || !_root)
         {
             _resources.ReleaseInstance(instance);
             return null;
         }
-
-        instance.transform.localPosition = localPosition;
-        instance.transform.localRotation = localRotation;
-        instance.transform.localScale = Vector3.one;
-        SetLayerRecursively(instance, PreviewLayer);
-        DisableGameplayComponents(instance);
-        NormalizeAndPlaceCrate(instance, localPosition);
+        PrepareDisplayObject(instance, parent, targetSize);
         return instance;
+    }
+
+    private void PrepareDisplayObject(
+        GameObject instance,
+        Transform anchor,
+        float targetSize,
+        Quaternion displayRotation = default)
+    {
+        DisableStagePhysics(instance);
+        SetLayerRecursively(instance, PreviewLayer);
+        instance.transform.localPosition = Vector3.zero;
+        instance.transform.localRotation = displayRotation == default
+            ? Quaternion.identity
+            : displayRotation;
+        instance.transform.localScale = Vector3.one;
+        Renderer primaryRenderer = FindPrimaryRenderer(instance);
+        Bounds bounds = primaryRenderer
+            ? primaryRenderer.bounds
+            : CalculateBounds(instance);
+        float size = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+        if (size > 0.0001f)
+        {
+            instance.transform.localScale *= targetSize / size;
+        }
+        instance.transform.position = anchor.position;
+        instance.transform.SetParent(anchor.root, true);
+        BoxCollider collider = CreatePrimaryVisualCollider(instance, primaryRenderer);
+        Physics.SyncTransforms();
+        Vector3 position = instance.transform.position;
+        position.y += anchor.position.y + 0.08f - collider.bounds.min.y;
+        instance.transform.position = position;
+        Physics.SyncTransforms();
+        bounds = collider.bounds;
+        Rigidbody rigidbody = instance.GetComponent<Rigidbody>();
+        if (!rigidbody)
+        {
+            rigidbody = instance.AddComponent<Rigidbody>();
+        }
+        rigidbody.isKinematic = false;
+        rigidbody.detectCollisions = true;
+        rigidbody.useGravity = true;
+        rigidbody.mass = Mathf.Clamp(bounds.size.magnitude, 0.4f, 4f);
+        rigidbody.linearDamping = 0.25f;
+        rigidbody.angularDamping = 0.8f;
+        rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+    }
+
+    private static Renderer FindPrimaryRenderer(GameObject root)
+    {
+        Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+        Renderer primary = null;
+        float largestVolume = 0f;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (!renderer || !renderer.enabled ||
+                !(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer))
+            {
+                continue;
+            }
+            Vector3 size = renderer.bounds.size;
+            float volume = size.x * size.y * size.z;
+            if (volume <= largestVolume)
+            {
+                continue;
+            }
+            largestVolume = volume;
+            primary = renderer;
+        }
+        return primary;
+    }
+
+    private static void HideKar98kDisplayAmmo(GameObject root)
+    {
+        WeaponBoneVisibilityCtrl[] visibilityCtrls =
+            root.GetComponentsInChildren<WeaponBoneVisibilityCtrl>(true);
+        for (int i = 0; i < visibilityCtrls.Length; i++)
+        {
+            visibilityCtrls[i].HideConfiguredBonesNow();
+        }
+
+        Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform child = transforms[i];
+            if (child == root.transform ||
+                !child.name.StartsWith("Cartridge", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            child.localScale = Vector3.zero;
+            Renderer[] renderers = child.GetComponentsInChildren<Renderer>(true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                renderers[rendererIndex].enabled = false;
+            }
+            child.gameObject.SetActive(false);
+        }
+    }
+
+    private static BoxCollider CreatePrimaryVisualCollider(
+        GameObject root,
+        Renderer primaryRenderer)
+    {
+        if (primaryRenderer)
+        {
+            Mesh mesh = null;
+            if (primaryRenderer is SkinnedMeshRenderer skinned)
+            {
+                mesh = skinned.sharedMesh;
+            }
+            else if (primaryRenderer.TryGetComponent(out MeshFilter filter))
+            {
+                mesh = filter.sharedMesh;
+            }
+            if (mesh)
+            {
+                BoxCollider visualCollider =
+                    primaryRenderer.gameObject.AddComponent<BoxCollider>();
+                visualCollider.center = mesh.bounds.center;
+                visualCollider.size = mesh.bounds.size;
+                return visualCollider;
+            }
+        }
+
+        BoxCollider fallback = root.AddComponent<BoxCollider>();
+        Bounds bounds = CalculateBounds(root);
+        fallback.center = root.transform.InverseTransformPoint(bounds.center);
+        Vector3 scale = root.transform.lossyScale;
+        fallback.size = new Vector3(
+            bounds.size.x / Mathf.Max(0.0001f, Mathf.Abs(scale.x)),
+            bounds.size.y / Mathf.Max(0.0001f, Mathf.Abs(scale.y)),
+            bounds.size.z / Mathf.Max(0.0001f, Mathf.Abs(scale.z)));
+        return fallback;
     }
 
     private string GetDefaultWeaponResourceId()
@@ -551,61 +440,22 @@ public sealed class BombShopPreviewStage
         {
             return "weapon.m1911.data";
         }
-
-        string primary = _inventory.PrimaryWeaponResourceId;
-        return !string.IsNullOrWhiteSpace(primary)
-            ? primary
+        return !string.IsNullOrWhiteSpace(_inventory.PrimaryWeaponResourceId)
+            ? _inventory.PrimaryWeaponResourceId
             : _inventory.GetWeaponResourceId(1);
     }
 
-    private void NormalizeAndPlaceCrate(GameObject crate, Vector3 anchor)
+    private Transform FindChild(string childName)
     {
-        Bounds bounds = CalculateVisualBounds(crate);
-        float longestSide = Mathf.Max(bounds.size.x, bounds.size.z);
-        float height = bounds.size.y;
-        float referenceSize = Mathf.Max(longestSide, height);
-        if (referenceSize <= 0.001f)
+        Transform[] transforms = _root.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < transforms.Length; i++)
         {
-            return;
-        }
-
-        const float CratePreviewSize = 0.62f;
-        crate.transform.localScale *= CratePreviewSize / referenceSize;
-        bounds = CalculateVisualBounds(crate);
-        Vector3 center = _root.transform.InverseTransformPoint(bounds.center);
-        float bottom = _root.transform.InverseTransformPoint(bounds.min).y;
-        crate.transform.localPosition += new Vector3(
-            anchor.x - center.x,
-            anchor.y - bottom,
-            anchor.z - center.z);
-    }
-
-    private static void InitializeWeaponIdle(Animator animator)
-    {
-        if (!animator || !animator.runtimeAnimatorController)
-        {
-            return;
-        }
-
-        animator.enabled = true;
-        animator.Rebind();
-        int idleHash = Animator.StringToHash("Idle");
-        for (int layer = 0; layer < animator.layerCount; layer++)
-        {
-            int fullPathHash = Animator.StringToHash(
-                animator.GetLayerName(layer) + ".Idle");
-            if (animator.HasState(layer, fullPathHash))
+            if (string.Equals(transforms[i].name, childName, StringComparison.Ordinal))
             {
-                animator.Play(fullPathHash, layer, 0f);
-                break;
-            }
-            if (animator.HasState(layer, idleHash))
-            {
-                animator.Play(idleHash, layer, 0f);
-                break;
+                return transforms[i];
             }
         }
-        animator.Update(0f);
+        return null;
     }
 
     private void ReleaseInstance(ref GameObject instance)
@@ -621,17 +471,43 @@ public sealed class BombShopPreviewStage
         instance = null;
     }
 
-    private static void DisableGameplayComponents(GameObject root)
+    private static void DisableStagePhysics(GameObject root)
     {
-        MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
-        for (int i = 0; i < behaviours.Length; i++)
+        Animator[] animators = root.GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < animators.Length; i++)
         {
-            behaviours[i].enabled = false;
+            animators[i].enabled = false;
         }
         Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
         for (int i = 0; i < colliders.Length; i++)
         {
             colliders[i].enabled = false;
+        }
+        Rigidbody[] rigidbodies = root.GetComponentsInChildren<Rigidbody>(true);
+        for (int i = 0; i < rigidbodies.Length; i++)
+        {
+            rigidbodies[i].isKinematic = true;
+            rigidbodies[i].detectCollisions = false;
+        }
+    }
+
+    private static void PrepareStageEnvironment(GameObject root)
+    {
+        Animator[] animators = root.GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < animators.Length; i++)
+        {
+            animators[i].enabled = false;
+        }
+        Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            colliders[i].enabled = true;
+        }
+        Rigidbody[] rigidbodies = root.GetComponentsInChildren<Rigidbody>(true);
+        for (int i = 0; i < rigidbodies.Length; i++)
+        {
+            rigidbodies[i].isKinematic = true;
+            rigidbodies[i].detectCollisions = true;
         }
     }
 
@@ -644,31 +520,27 @@ public sealed class BombShopPreviewStage
         }
     }
 
-    private static Bounds CalculateVisualBounds(GameObject root)
+    private static Bounds CalculateBounds(GameObject root)
     {
         Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-        bool hasBounds = false;
         Bounds bounds = new Bounds(root.transform.position, Vector3.zero);
+        bool initialized = false;
         for (int i = 0; i < renderers.Length; i++)
         {
-            Renderer renderer = renderers[i];
-            if (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer))
+            if (!renderers[i].enabled)
             {
                 continue;
             }
-
-            if (!hasBounds)
+            if (!initialized)
             {
-                bounds = renderer.bounds;
-                hasBounds = true;
-                continue;
+                bounds = renderers[i].bounds;
+                initialized = true;
             }
-            bounds.Encapsulate(renderer.bounds);
+            else
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
         }
-
-        return hasBounds
-            ? bounds
-            : new Bounds(root.transform.position, Vector3.one);
+        return bounds;
     }
-
 }

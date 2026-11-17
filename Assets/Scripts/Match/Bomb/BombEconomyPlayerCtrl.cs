@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class BombEconomyPlayerCtrl : MonoBehaviour
 {
+    private const string TabletResourceId = "ui.bomb_shop.tablet";
     private const int EcoReserve = 1400;
     private const int RushReserve = 650;
     private const int RushProtectionReserve = 250;
@@ -31,8 +32,10 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     private readonly Dictionary<string, string> _shopSpriteResourceIds =
         new Dictionary<string, string>(StringComparer.Ordinal);
     private BombShopPreviewStage _previewStage;
+    private GameObject _tabletInstance;
+    private BombShopTabletView _tabletView;
+    private Task _shopArtLoadingTask;
     private string _hoveredItemId;
-    private bool _shopArtLoading;
     private string _pistolResourceId = "weapon.m1911.data";
     private bool _shopOpen;
     private bool _transactionBusy;
@@ -42,6 +45,8 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     private bool _initialized;
     private bool _isLocal;
     private int _lastAutoBuyRound = int.MinValue;
+    private int _lastAutoOpenedRound = int.MinValue;
+    private int _loadingPlayedRound = int.MinValue;
 
     public bool IsActive { get { return _initialized && _service; } }
 
@@ -67,16 +72,29 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         TryGetComponent(out _moveCtrl);
         if (!_armor) _armor = gameObject.AddComponent<PlayerArmorCtrl>();
         _account = _service.Bind(participant);
+        if (_account != null)
+        {
+            _account.Changed -= HandleMoneyChanged;
+            _account.Changed += HandleMoneyChanged;
+        }
         _service.CatalogChanged -= HandleCatalogChanged;
         _service.CatalogChanged += HandleCatalogChanged;
+        _service.BuyWindowOpened -= HandleBuyWindowOpened;
+        _service.BuyWindowOpened += HandleBuyWindowOpened;
         _loadoutReady = false;
         _autoBuyRequested = false;
         _lastAutoBuyRound = int.MinValue;
+        _lastAutoOpenedRound = int.MinValue;
+        _loadingPlayedRound = int.MinValue;
         _initialized = true;
         if (_actionCtrl)
         {
             _actionCtrl.CommandReceived -= HandleCommand;
             _actionCtrl.CommandReceived += HandleCommand;
+        }
+        if (_isLocal && _service.IsBuyWindowOpen)
+        {
+            HandleBuyWindowOpened(_service.BuyWindowRoundIndex);
         }
         _ = InitializeLoadoutAsync();
     }
@@ -111,10 +129,16 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         if (_service)
         {
             _service.CatalogChanged -= HandleCatalogChanged;
+            _service.BuyWindowOpened -= HandleBuyWindowOpened;
+        }
+        if (_account != null)
+        {
+            _account.Changed -= HandleMoneyChanged;
         }
         if (_actionCtrl) _actionCtrl.CommandReceived -= HandleCommand;
         CloseShop();
         ReleaseShopArt();
+        ReleasePresentation();
     }
 
     public void AutoBuyForRound()
@@ -443,14 +467,7 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         CameraControlAuthority.Acquire(this);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        _previewStage = new BombShopPreviewStage(
-            _models,
-            _inventory,
-            _view,
-            _armor,
-            _service);
-        _previewStage.Open();
-        _ = LoadShopArtAsync();
+        _ = OpenPresentationAsync();
         return true;
     }
 
@@ -484,8 +501,10 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         _actionCtrl?.SetGameplayInputBlocked(this, false);
         _moveCtrl?.SetExternalLock(false);
         CameraControlAuthority.Release(this);
-        _previewStage?.Close();
-        _previewStage = null;
+        if (_tabletView)
+        {
+            _tabletView.Close(false);
+        }
         _hoveredItemId = string.Empty;
         if (_isLocal)
         {
@@ -689,25 +708,175 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         }
     }
 
-    private async Task LoadShopArtAsync()
+    private void HandleMoneyChanged(int money)
     {
-        if (_shopArtLoading || !_service)
+        _tabletView?.SetBalance(money);
+    }
+
+    private void HandleBuyWindowOpened(int roundIndex)
+    {
+        if (!_isLocal || roundIndex == _lastAutoOpenedRound)
         {
             return;
         }
-
-        _shopArtLoading = true;
-        ResourceMgr resources = ResourceMgr.instance;
-        try
+        if (TryOpenShop())
         {
-            for (int i = 0; i < _service.ShopItems.Count; i++)
-            {
-                BombEconomyService.ShopItem item = _service.ShopItems[i];
-                if (_shopSprites.ContainsKey(item.ItemId))
-                {
-                    continue;
-                }
+            _lastAutoOpenedRound = roundIndex;
+        }
+    }
 
+    private async Task OpenPresentationAsync()
+    {
+        int roundIndex = _service ? _service.BuyWindowRoundIndex : -1;
+        bool showLoading = roundIndex != _loadingPlayedRound;
+        if (showLoading)
+        {
+            _loadingPlayedRound = roundIndex;
+        }
+
+        if (!_tabletView)
+        {
+            try
+            {
+                _tabletInstance = await ResourceMgr.instance.InstantiateAsync(
+                    TabletResourceId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("爆破商店平板加载失败：" + exception.Message, this);
+                CloseShop();
+                return;
+            }
+            if (!this || !_tabletInstance || !_shopOpen)
+            {
+                if (_tabletInstance)
+                {
+                    ResourceMgr.instance.ReleaseInstance(_tabletInstance);
+                    _tabletInstance = null;
+                }
+                return;
+            }
+            _tabletView = _tabletInstance.GetComponent<BombShopTabletView>();
+            if (!_tabletView)
+            {
+                Debug.LogError("爆破商店平板 Prefab 缺少 BombShopTabletView。", this);
+                CloseShop();
+                return;
+            }
+            _tabletView.ItemHovered += HandleItemHovered;
+            _tabletView.ItemHoverExited += HandleItemExited;
+            _tabletView.ItemClicked += HandleItemClicked;
+        }
+
+        _tabletView.SetBalance(_account.Money);
+        _tabletView.BindItems(_service.ShopItems, _shopSprites);
+        _tabletView.Open(showLoading);
+        Task artLoading = LoadShopArtAsync();
+        if (_previewStage != null && _previewStage.Texture)
+        {
+            _previewStage.RefreshDefault();
+            _tabletView.SetMonitorTexture(_previewStage.Texture);
+            await artLoading;
+            if (this && _tabletView)
+            {
+                _tabletView.BindItems(_service.ShopItems, _shopSprites);
+            }
+            return;
+        }
+
+        _previewStage = new BombShopPreviewStage(_inventory, _armor, _service);
+        bool opened = await _previewStage.OpenAsync();
+        if (!this || !_shopOpen || !opened)
+        {
+            _previewStage?.Close();
+            _previewStage = null;
+            return;
+        }
+        _tabletView.SetMonitorTexture(_previewStage.Texture);
+        await artLoading;
+        if (this && _tabletView)
+        {
+            _tabletView.BindItems(_service.ShopItems, _shopSprites);
+        }
+    }
+
+    private void HandleItemHovered(string itemId)
+    {
+        for (int i = 0; i < _service.ShopItems.Count; i++)
+        {
+            BombEconomyService.ShopItem item = _service.ShopItems[i];
+            if (string.Equals(item.ItemId, itemId, StringComparison.Ordinal))
+            {
+                _previewStage?.SetHoveredItem(item);
+                return;
+            }
+        }
+    }
+
+    private void HandleItemExited()
+    {
+        _previewStage?.RefreshDefault();
+    }
+
+    private void HandleItemClicked(string itemId)
+    {
+        _ = PurchaseFromTabletAsync(itemId);
+    }
+
+    private async Task PurchaseFromTabletAsync(string itemId)
+    {
+        await TryPurchaseAsync(itemId);
+        if (!this || !_tabletView)
+        {
+            return;
+        }
+        _tabletView.SetBalance(_account.Money);
+        _previewStage?.RefreshDefault();
+    }
+
+    private void ReleasePresentation()
+    {
+        _previewStage?.Close();
+        _previewStage = null;
+        if (_tabletView)
+        {
+            _tabletView.ItemHovered -= HandleItemHovered;
+            _tabletView.ItemHoverExited -= HandleItemExited;
+            _tabletView.ItemClicked -= HandleItemClicked;
+        }
+        _tabletView = null;
+        if (_tabletInstance)
+        {
+            ResourceMgr.instance.ReleaseInstance(_tabletInstance);
+            _tabletInstance = null;
+        }
+    }
+
+    private Task LoadShopArtAsync()
+    {
+        if (!_service)
+        {
+            return Task.CompletedTask;
+        }
+        if (_shopArtLoadingTask == null || _shopArtLoadingTask.IsCompleted)
+        {
+            _shopArtLoadingTask = LoadShopArtInternalAsync();
+        }
+        return _shopArtLoadingTask;
+    }
+
+    private async Task LoadShopArtInternalAsync()
+    {
+        ResourceMgr resources = ResourceMgr.instance;
+        for (int i = 0; i < _service.ShopItems.Count; i++)
+        {
+            BombEconomyService.ShopItem item = _service.ShopItems[i];
+            if (_shopSprites.ContainsKey(item.ItemId))
+            {
+                continue;
+            }
+            try
+            {
                 string silhouetteId = await ResolveSilhouetteIdAsync(resources, item);
                 if (!this || string.IsNullOrWhiteSpace(silhouetteId))
                 {
@@ -727,14 +896,20 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
                 _shopSprites[item.ItemId] = sprite;
                 _shopSpriteResourceIds[item.ItemId] = silhouetteId;
             }
+            catch (Exception exception)
+            {
+                if (this)
+                {
+                    Debug.LogWarning(
+                        "爆破商店剪影加载失败（" + item.ItemId + "）：" +
+                        exception.Message,
+                        this);
+                }
+            }
         }
-        catch (Exception exception)
+        if (this && _shopOpen && _tabletView && _service)
         {
-            Debug.LogWarning("爆破商店剪影加载失败：" + exception.Message, this);
-        }
-        finally
-        {
-            _shopArtLoading = false;
+            _tabletView.BindItems(_service.ShopItems, _shopSprites);
         }
     }
 
@@ -742,6 +917,21 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         ResourceMgr resources,
         BombEconomyService.ShopItem item)
     {
+        if (item.Kind == BombShopItemKind.Armor)
+        {
+            return "ui.equipment.armor.silhouette";
+        }
+        if (item.Kind == BombShopItemKind.Helmet)
+        {
+            return "ui.equipment.helmet.silhouette";
+        }
+        if (item.ResourceId.StartsWith("weapon.", StringComparison.Ordinal) &&
+            item.ResourceId.EndsWith(".data", StringComparison.Ordinal))
+        {
+            return item.ResourceId.Substring(
+                0,
+                item.ResourceId.Length - ".data".Length) + ".silhouette";
+        }
         if (item.Kind == BombShopItemKind.Armor ||
             item.Kind == BombShopItemKind.Helmet)
         {
@@ -780,17 +970,11 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!_isLocal || !_initialized || _account == null) return;
-        GUI.Label(new Rect(20f, Screen.height - 70f, 260f, 28f),
-            $"金钱 ${_account.Money}   护甲 {Mathf.RoundToInt(_armor.Armor)}   头盔 {(_armor.HasHelmet ? "有" : "无")}");
-        if (!_shopOpen) return;
+        if (!_isLocal || !_initialized || !_shopOpen) return;
         if (!_service.IsBuyWindowOpen)
         {
             CloseShop();
-            return;
         }
-
-        DrawShop();
     }
 
     private void DrawShop()

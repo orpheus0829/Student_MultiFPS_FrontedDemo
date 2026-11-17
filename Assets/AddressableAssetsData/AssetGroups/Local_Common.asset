@@ -44,6 +44,13 @@ MonoBehaviour:
     - type.data
     - type.equipment
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 31fac8aa8dc397241bfda584381a3e6e
+    m_Address: gameplay.bomb_shop.stage
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mode.bomb
+    - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 34020825b9413c64f9b6a322a44e4f08
     m_Address: map.battlefield2.data
     m_ReadOnly: 0
@@ -64,6 +71,14 @@ MonoBehaviour:
     m_SerializedLabels:
     - type.match
     - type.prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 47ab7e300ff35834594b9ca344ae434d
+    m_Address: ui.bomb_shop.tablet
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mode.bomb
+    - type.prefab
+    - type.ui
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 50cbcb7f626e1d34184ec2713ca317aa
     m_Address: prop.equipment.helmet_crate
@@ -142,6 +157,14 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - type.interaction
+    - type.ui
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ad73125d08c23e648a6cb374d00dc71c
+    m_Address: ui.bomb_shop.decor.host_note
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mode.bomb
+    - type.shop
     - type.ui
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b8888888888888888888888888888888
