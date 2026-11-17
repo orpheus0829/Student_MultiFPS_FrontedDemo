@@ -56,6 +56,9 @@ public sealed class PlayerAnimationView : MonoBehaviour
     private float _animatorSpeedBeforePunch;
     private bool _hasPunchCullingOverride;
     private bool _hasPunchSpeedOverride;
+    private bool _isBombCarryActive;
+    private bool _isBombPlanting;
+    private bool _restoreStandingPoseAfterPlant;
 
     private void Awake()
     {
@@ -185,6 +188,33 @@ public sealed class PlayerAnimationView : MonoBehaviour
         _usesProceduralAutomaticFirePose = enabled;
     }
 
+    public void SetBombCarryPresentation(bool carrying, bool planting)
+    {
+        bool wasPlanting = _isBombPlanting;
+        _isBombCarryActive = carrying;
+        _isBombPlanting = carrying && planting;
+        ApplyBombPresentationParameters();
+        if (wasPlanting && !_isBombPlanting)
+        {
+            RestoreStandingPoseAfterPlant();
+        }
+    }
+
+    private void RestoreStandingPoseAfterPlant()
+    {
+        if (_viewType != PlayerViewType.ThirdPerson || !_characterAnimator)
+        {
+            return;
+        }
+
+        // Animator 的状态机可能已经报告 Idle，但 Humanoid 骨骼仍保留上一帧的蹲姿。
+        // 因此取消或完成下包时不能只检查状态名，必须立即重新采样站立姿势，
+        // 并在下一次正常动画帧后再兜底一次。
+        _characterAnimator.Play(PlayerAnimatorContract.Idle, 0, 0f);
+        _characterAnimator.Update(0f);
+        _restoreStandingPoseAfterPlant = true;
+    }
+
     private void OnEnable()
     {
         RefreshAnimatorBindings();
@@ -268,6 +298,8 @@ public sealed class PlayerAnimationView : MonoBehaviour
             _characterParameters,
             PlayerAnimatorContract.Sliding,
             isSliding);
+        ApplyBombPresentationParameters();
+        RestoreStandingPoseAfterPlantFrame();
 
         ApplyFloat(
             _weaponAnimator,
@@ -278,6 +310,24 @@ public sealed class PlayerAnimationView : MonoBehaviour
             (isVaulting || !isGrounded);
         UpdateUpperBodyWeaponLayer();
         RestoreThirdPersonVisualHeight();
+    }
+
+    private void RestoreStandingPoseAfterPlantFrame()
+    {
+        if (!_restoreStandingPoseAfterPlant || _viewType != PlayerViewType.ThirdPerson ||
+            !_characterAnimator)
+        {
+            return;
+        }
+
+        _restoreStandingPoseAfterPlant = false;
+        if (_isBombPlanting)
+        {
+            return;
+        }
+
+        _characterAnimator.Play(PlayerAnimatorContract.Idle, 0, 0f);
+        _characterAnimator.Update(0f);
     }
 
     public void SetWeaponAnimator(Animator weaponAnimator)
@@ -302,6 +352,9 @@ public sealed class PlayerAnimationView : MonoBehaviour
         _upperBodyWeaponWeight = 0f;
         _upperBodyActionType = WeaponActionType.None;
         _isFullBodyMotion = false;
+        _isBombCarryActive = false;
+        _isBombPlanting = false;
+        _restoreStandingPoseAfterPlant = false;
         RefreshAnimatorBindings();
         PlayStateImmediately(_characterAnimator, _characterIdleStateName);
         _characterAnimator.Update(0f);
@@ -682,6 +735,27 @@ public sealed class PlayerAnimationView : MonoBehaviour
             _characterAnimator,
             _characterParameters,
             PlayerAnimatorContract.Slide);
+        ApplyBombPresentationParameters();
+    }
+
+    private void ApplyBombPresentationParameters()
+    {
+        if (_viewType != PlayerViewType.ThirdPerson)
+        {
+            return;
+        }
+
+        EnsureAnimatorBindings();
+        ApplyBool(
+            _characterAnimator,
+            _characterParameters,
+            PlayerAnimatorContract.BombCarry,
+            _isBombCarryActive);
+        ApplyBool(
+            _characterAnimator,
+            _characterParameters,
+            PlayerAnimatorContract.BombPlanting,
+            _isBombPlanting);
     }
 
     public void RefreshAnimatorBindings()

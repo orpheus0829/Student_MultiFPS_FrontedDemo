@@ -5,8 +5,10 @@ public sealed class AINoiseEmitter : MonoBehaviour
 {
     private const float SprintNoiseRadius = 14f;
     private const float SlideNoiseRadius = 20f;
+    private const float WalkNoiseRadius = 6f;
     private const float SprintStepInterval = 0.34f;
     private const float SlideNoiseInterval = 0.55f;
+    private const float WalkStepInterval = 0.48f;
 
     private WeaponCombatCtrl _combat;
     private PlayerWeaponViewCtrl _weaponView;
@@ -43,6 +45,11 @@ public sealed class AINoiseEmitter : MonoBehaviour
         {
             AINoiseBus.Emit(transform.position, SprintNoiseRadius, 1.25f, transform);
             _nextMovementNoiseTime = Time.time + SprintStepInterval;
+        }
+        else if (_move.IsMoving && _move.IsGrounded)
+        {
+            AINoiseBus.Emit(transform.position, WalkNoiseRadius, 0.8f, transform);
+            _nextMovementNoiseTime = Time.time + WalkStepInterval;
         }
     }
 

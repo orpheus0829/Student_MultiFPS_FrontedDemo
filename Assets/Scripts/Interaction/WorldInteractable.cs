@@ -87,6 +87,18 @@ public sealed class WorldInteractable : MonoBehaviour
         return _interaction != null && _interaction.CanInteract(interactor);
     }
 
+    public bool TryGetInteraction<T>(out T interaction)
+        where T : class, IWorldInteraction
+    {
+        if (_interaction == null)
+        {
+            ResolveInteraction();
+        }
+
+        interaction = _interaction as T;
+        return interaction != null;
+    }
+
     public void Execute(GameObject interactor)
     {
         if (!CanInteract(interactor))

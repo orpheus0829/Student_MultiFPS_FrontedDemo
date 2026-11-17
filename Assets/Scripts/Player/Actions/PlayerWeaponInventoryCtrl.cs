@@ -7,6 +7,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 {
+    public const string BombSlotResourceId = "objective.c4.slot";
+
     [Header("枪械栏")]
     [SerializeField, Min(1), InspectorName("枪械栏容量")] private int _slotCount = 19;
     [SerializeField, ResourceId(typeof(WeaponDefinitionSO)), InspectorName("持有枪械数据 ID")]
@@ -47,6 +49,7 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
     private bool _isSwitching;
 
     public event Action<int, string> ActiveSlotChanged;
+    public event Action<bool> BombSelectionChanged;
 
     public int SlotCount
     {
@@ -106,6 +109,22 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         }
     }
 
+    public bool HasBombSlot
+    {
+        get
+        {
+            return FindBombSlotIndex() >= 0;
+        }
+    }
+
+    public bool IsBombSelected
+    {
+        get
+        {
+            return IsBombSlotIndex(_currentIndex);
+        }
+    }
+
     public string PrimaryWeaponResourceId
     {
         get
@@ -161,6 +180,62 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 
         _currentIndex = 1;
         ActiveSlotChanged?.Invoke(_currentIndex, pistolResourceId);
+        return true;
+    }
+
+    public bool AddBombSlot()
+    {
+        if (HasBombSlot)
+        {
+            return true;
+        }
+
+        _weaponResourceIds.Add(BombSlotResourceId);
+        _slotCount = Mathf.Max(_slotCount, _weaponResourceIds.Count);
+        return true;
+    }
+
+    public bool TrySelectBomb()
+    {
+        int bombSlot = FindBombSlotIndex();
+        return bombSlot >= 0 && TryEquipIndex(bombSlot);
+    }
+
+    public async Task<bool> RemoveBombSlotAsync()
+    {
+        int bombSlot = FindBombSlotIndex();
+        if (bombSlot < 0)
+        {
+            return true;
+        }
+
+        bool wasSelected = bombSlot == _currentIndex;
+        _weaponResourceIds[bombSlot] = string.Empty;
+        if (!wasSelected)
+        {
+            return true;
+        }
+
+        _switchVersion++;
+        ReleasePreparedData();
+        FinishSwitch(false);
+        int nextIndex = FindNextIndexFrom(bombSlot, 1);
+        if (!IsIndexUsable(nextIndex) || !_weaponActionCtrl)
+        {
+            return false;
+        }
+
+        bool loaded = await _weaponActionCtrl.LoadWeaponAsync(
+            _weaponResourceIds[nextIndex]);
+        if (!this || !loaded)
+        {
+            return false;
+        }
+
+        _currentIndex = nextIndex;
+        _weaponViewCtrl?.SetWeaponModelsVisible(true);
+        BombSelectionChanged?.Invoke(false);
+        ActiveSlotChanged?.Invoke(_currentIndex, _weaponResourceIds[_currentIndex]);
         return true;
     }
 
@@ -234,7 +309,8 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 
     public async Task<bool> RemoveCurrentWeaponAsync()
     {
-        if (!IsIndexUsable(_currentIndex) || GetUsableWeaponCount() <= 1 ||
+        if (IsBombSelected || !IsIndexUsable(_currentIndex) ||
+            GetUsableWeaponCount() <= 1 ||
             !_weaponActionCtrl)
         {
             return false;
@@ -346,6 +422,12 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         int switchVersion = ++_switchVersion;
         _prepareTask = PrepareSwitchAsync(_weaponResourceIds[index], switchVersion);
 
+        if (IsBombSelected)
+        {
+            _ = ChangeWeaponAsync();
+            return true;
+        }
+
         if (!_weaponActionCtrl.TryStartAction(WeaponActionType.Holster))
         {
             _ = ChangeWeaponAsync();
@@ -378,6 +460,17 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
             return;
         }
 
+        if (IsBombSlotResource(resourceId))
+        {
+            _currentIndex = targetIndex;
+            _pendingIndex = -1;
+            _weaponViewCtrl?.SetWeaponModelsVisible(false);
+            BombSelectionChanged?.Invoke(true);
+            ActiveSlotChanged?.Invoke(_currentIndex, resourceId);
+            FinishSwitch(true);
+            return;
+        }
+
         bool loaded = await _weaponActionCtrl.LoadWeaponAsync(resourceId);
         ReleasePreparedData();
         if (!this || !isActiveAndEnabled || switchVersion != _switchVersion)
@@ -393,6 +486,8 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 
         _currentIndex = targetIndex;
         _pendingIndex = -1;
+        _weaponViewCtrl?.SetWeaponModelsVisible(true);
+        BombSelectionChanged?.Invoke(false);
         ActiveSlotChanged?.Invoke(_currentIndex, resourceId);
     }
 
@@ -424,6 +519,11 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
 
     private async Task<bool> PrepareSwitchAsync(string weaponResourceId, int switchVersion)
     {
+        if (IsBombSlotResource(weaponResourceId))
+        {
+            return IsPreparationCurrent(switchVersion);
+        }
+
         _resourceMgr = ResourceMgr.instance;
         try
         {
@@ -533,6 +633,34 @@ public sealed class PlayerWeaponInventoryCtrl : MonoBehaviour
         }
 
         return -1;
+    }
+
+    private int FindBombSlotIndex()
+    {
+        int count = Mathf.Min(_slotCount, _weaponResourceIds.Count);
+        for (int i = 0; i < count; i++)
+        {
+            if (IsBombSlotIndex(i))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private bool IsBombSlotIndex(int index)
+    {
+        return index >= 0 && index < _weaponResourceIds.Count &&
+            IsBombSlotResource(_weaponResourceIds[index]);
+    }
+
+    private static bool IsBombSlotResource(string resourceId)
+    {
+        return string.Equals(
+            resourceId,
+            BombSlotResourceId,
+            StringComparison.Ordinal);
     }
 
     private int GetUsableWeaponCount()

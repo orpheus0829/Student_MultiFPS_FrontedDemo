@@ -7,6 +7,12 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class BombEconomyPlayerCtrl : MonoBehaviour
 {
+    private const int EcoReserve = 1400;
+    private const int RushReserve = 650;
+    private const int RushProtectionReserve = 250;
+    private const int DefaultReserve = 800;
+    private const int DefaultProtectionReserve = 450;
+
     private BombEconomyService _service;
     private BombEconomyService.Account _account;
     private MatchParticipant _participant;
@@ -30,8 +36,12 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     private string _pistolResourceId = "weapon.m1911.data";
     private bool _shopOpen;
     private bool _transactionBusy;
+    private bool _autoBuyBusy;
+    private bool _autoBuyRequested;
+    private bool _loadoutReady;
     private bool _initialized;
     private bool _isLocal;
+    private int _lastAutoBuyRound = int.MinValue;
 
     public bool IsActive { get { return _initialized && _service; } }
 
@@ -59,6 +69,9 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         _account = _service.Bind(participant);
         _service.CatalogChanged -= HandleCatalogChanged;
         _service.CatalogChanged += HandleCatalogChanged;
+        _loadoutReady = false;
+        _autoBuyRequested = false;
+        _lastAutoBuyRound = int.MinValue;
         _initialized = true;
         if (_actionCtrl)
         {
@@ -70,9 +83,15 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
 
     private async Task InitializeLoadoutAsync()
     {
-        if (!_inventory) return;
-        await _inventory.ConfigureBombLoadoutAsync(_pistolResourceId);
-        if (this && _participant != null && _participant.IsAI)
+        if (!_inventory)
+        {
+            return;
+        }
+
+        _loadoutReady = await _inventory.ConfigureBombLoadoutAsync(
+            _pistolResourceId);
+        if (this && _loadoutReady && _participant != null &&
+            _participant.IsAI)
         {
             AutoBuyForRound();
         }
@@ -87,6 +106,8 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
     public void Shutdown()
     {
         _initialized = false;
+        _autoBuyRequested = false;
+        _loadoutReady = false;
         if (_service)
         {
             _service.CatalogChanged -= HandleCatalogChanged;
@@ -98,24 +119,298 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
 
     public void AutoBuyForRound()
     {
-        if (!_participant.IsAI || !_service.IsBuyWindowOpen || _account == null) return;
-        if (_armor.Armor <= 0f && _account.Money >= _service.ArmorPrice)
+        if (!_initialized || _participant == null || !_participant.IsAI ||
+            !_service || !_service.IsBuyWindowOpen || _account == null)
         {
-            _ = TryPurchaseEquipmentAsync(BombShopItemKind.Armor);
+            return;
         }
-        if (!_armor.HasHelmet && _account.Money >= _service.HelmetPrice)
+
+        if (!_loadoutReady || _autoBuyBusy)
         {
-            _ = TryPurchaseEquipmentAsync(BombShopItemKind.Helmet);
+            _autoBuyRequested = true;
+            return;
         }
-        if (!string.IsNullOrWhiteSpace(_inventory.PrimaryWeaponResourceId)) return;
-        for (int i = _service.ShopItems.Count - 1; i >= 0; i--)
+
+        if (_lastAutoBuyRound == _service.BuyWindowRoundIndex)
         {
-            if (_service.ShopItems[i].Kind == BombShopItemKind.Primary &&
-                _account.Money >= _service.ShopItems[i].Price)
+            return;
+        }
+
+        _ = AutoBuyForRoundAsync();
+    }
+
+    private async Task AutoBuyForRoundAsync()
+    {
+        _autoBuyBusy = true;
+        _autoBuyRequested = false;
+        int round = _service.BuyWindowRoundIndex;
+        try
+        {
+            AITacticalRole role = AITacticalCoordinator.GetRole(
+                _participant.Slot);
+            AIBombRoundPlan plan = AITacticalCoordinator.EnsureBombPlan(
+                _participant.Team,
+                round,
+                _service.GetTeamMoneyRatio(_participant.Team),
+                _participant.Team == _service.AttackerTeam);
+
+            if (plan == AIBombRoundPlan.Eco)
             {
-                _ = TryPurchaseItemAsync(_service.ShopItems[i]);
-                break;
+                await BuyEcoLoadoutAsync(role, round);
             }
+            else if (plan == AIBombRoundPlan.RushA ||
+                plan == AIBombRoundPlan.RushB)
+            {
+                await BuyRushLoadoutAsync(role, round);
+            }
+            else
+            {
+                await BuyDefaultLoadoutAsync(role, round);
+            }
+
+            if (this)
+            {
+                _lastAutoBuyRound = round;
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning(
+                $"AI 自动购买失败：{exception.Message}",
+                this);
+        }
+        finally
+        {
+            _autoBuyBusy = false;
+            if (this && _autoBuyRequested)
+            {
+                AutoBuyForRound();
+            }
+        }
+    }
+
+    private async Task BuyEcoLoadoutAsync(AITacticalRole role, int round)
+    {
+        int reserve = EcoReserve + Mathf.Abs(_participant.Slot % 3) * 150;
+        bool hasPrimary = !string.IsNullOrWhiteSpace(
+            _inventory.PrimaryWeaponResourceId);
+        if (hasPrimary)
+        {
+            await TryBuyEquipmentWithinBudgetAsync(
+                BombShopItemKind.Armor,
+                reserve);
+            return;
+        }
+
+        if (role == AITacticalRole.Entry || role == AITacticalRole.Scout ||
+            role == AITacticalRole.Lurker)
+        {
+            await TryBuySidearmWithinBudgetAsync(reserve, role, round);
+        }
+        else if (role == AITacticalRole.Support)
+        {
+            await TryBuyEquipmentWithinBudgetAsync(
+                BombShopItemKind.Armor,
+                reserve);
+        }
+    }
+
+    private async Task BuyRushLoadoutAsync(AITacticalRole role, int round)
+    {
+        await TryBuyPrimaryWithinBudgetAsync(
+            BombShopColumn.Light,
+            RushReserve,
+            role,
+            round);
+        await TryBuyEquipmentWithinBudgetAsync(
+            BombShopItemKind.Armor,
+            RushProtectionReserve);
+        await TryBuyEquipmentWithinBudgetAsync(
+            BombShopItemKind.Helmet,
+            RushProtectionReserve);
+    }
+
+    private async Task BuyDefaultLoadoutAsync(AITacticalRole role, int round)
+    {
+        BombShopColumn preferredColumn = GetPreferredColumn(role);
+        int reserve = DefaultReserve;
+        int protectionReserve = DefaultProtectionReserve;
+        if (role == AITacticalRole.Anchor || role == AITacticalRole.Lurker)
+        {
+            reserve += 200;
+            protectionReserve += 200;
+        }
+
+        await TryBuyPrimaryWithinBudgetAsync(
+            preferredColumn,
+            reserve,
+            role,
+            round);
+        await TryBuyEquipmentWithinBudgetAsync(
+            BombShopItemKind.Armor,
+            protectionReserve);
+        await TryBuyEquipmentWithinBudgetAsync(
+            BombShopItemKind.Helmet,
+            protectionReserve);
+    }
+
+    private async Task<bool> TryBuyPrimaryWithinBudgetAsync(
+        BombShopColumn preferredColumn,
+        int reserve,
+        AITacticalRole role,
+        int round)
+    {
+        if (!string.IsNullOrWhiteSpace(_inventory.PrimaryWeaponResourceId))
+        {
+            return true;
+        }
+
+        int spendingBudget = _account.Money - reserve;
+        int columnIndex = (int)preferredColumn;
+        while (columnIndex >= (int)BombShopColumn.Light)
+        {
+            BombShopColumn column = (BombShopColumn)columnIndex;
+            if (TrySelectShopItem(
+                    BombShopItemKind.Primary,
+                    column,
+                    spendingBudget,
+                    role,
+                    round,
+                    string.Empty,
+                    out BombEconomyService.ShopItem item))
+            {
+                return await TryPurchaseItemAsync(item);
+            }
+
+            columnIndex--;
+        }
+
+        return false;
+    }
+
+    private async Task<bool> TryBuySidearmWithinBudgetAsync(
+        int reserve,
+        AITacticalRole role,
+        int round)
+    {
+        string currentSidearm = _inventory.GetWeaponResourceId(1);
+        if (!TrySelectShopItem(
+                BombShopItemKind.Sidearm,
+                BombShopColumn.Pistol,
+                _account.Money - reserve,
+                role,
+                round,
+                currentSidearm,
+                out BombEconomyService.ShopItem item))
+        {
+            return false;
+        }
+
+        return await TryPurchaseItemAsync(item);
+    }
+
+    private async Task<bool> TryBuyEquipmentWithinBudgetAsync(
+        BombShopItemKind kind,
+        int reserve)
+    {
+        if (!_service.TryGetShopItem(
+                kind,
+                out BombEconomyService.ShopItem item) ||
+            _account.Money - item.Price < reserve)
+        {
+            return false;
+        }
+
+        return await TryPurchaseEquipmentAsync(kind);
+    }
+
+    private bool TrySelectShopItem(
+        BombShopItemKind kind,
+        BombShopColumn column,
+        int spendingBudget,
+        AITacticalRole role,
+        int round,
+        string excludedResourceId,
+        out BombEconomyService.ShopItem selected)
+    {
+        int candidateCount = 0;
+        for (int i = 0; i < _service.ShopItems.Count; i++)
+        {
+            BombEconomyService.ShopItem item = _service.ShopItems[i];
+            if (IsPurchaseCandidate(
+                    item,
+                    kind,
+                    column,
+                    spendingBudget,
+                    excludedResourceId))
+            {
+                candidateCount++;
+            }
+        }
+
+        if (candidateCount <= 0)
+        {
+            selected = default;
+            return false;
+        }
+
+        int seed = _participant.Slot * 31 + round * 17 + (int)role * 13;
+        int selectedIndex = Mathf.Abs(seed % candidateCount);
+        for (int i = 0; i < _service.ShopItems.Count; i++)
+        {
+            BombEconomyService.ShopItem item = _service.ShopItems[i];
+            if (!IsPurchaseCandidate(
+                    item,
+                    kind,
+                    column,
+                    spendingBudget,
+                    excludedResourceId))
+            {
+                continue;
+            }
+
+            if (selectedIndex == 0)
+            {
+                selected = item;
+                return true;
+            }
+
+            selectedIndex--;
+        }
+
+        selected = default;
+        return false;
+    }
+
+    private static bool IsPurchaseCandidate(
+        BombEconomyService.ShopItem item,
+        BombShopItemKind kind,
+        BombShopColumn column,
+        int spendingBudget,
+        string excludedResourceId)
+    {
+        return item.Kind == kind &&
+            item.Column == column &&
+            item.Price <= spendingBudget &&
+            !string.Equals(
+                item.ResourceId,
+                excludedResourceId,
+                StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static BombShopColumn GetPreferredColumn(AITacticalRole role)
+    {
+        switch (role)
+        {
+            case AITacticalRole.Entry:
+                return BombShopColumn.Light;
+            case AITacticalRole.Anchor:
+            case AITacticalRole.Scout:
+                return BombShopColumn.Heavy;
+            case AITacticalRole.Support:
+            case AITacticalRole.Lurker:
+            default:
+                return BombShopColumn.Medium;
         }
     }
 
@@ -232,19 +527,34 @@ public sealed class BombEconomyPlayerCtrl : MonoBehaviour
         {
             return false;
         }
+
         _transactionBusy = true;
-        bool success = _worldInteraction
-            ? await _worldInteraction.TryAcquireWeaponAsync(item.ResourceId)
-            : await _inventory.AddOrReplaceWeaponAsync(
-                item.ResourceId,
-                item.Kind == BombShopItemKind.Sidearm);
-        if (!success) _service.Refund(_playerInfo, item.Price);
-        _transactionBusy = false;
-        if (success)
+        try
         {
+            bool success = _worldInteraction
+                ? await _worldInteraction.TryAcquireWeaponAsync(item.ResourceId)
+                : await _inventory.AddOrReplaceWeaponAsync(
+                    item.ResourceId,
+                    item.Kind == BombShopItemKind.Sidearm);
+            if (!success)
+            {
+                _service.Refund(_playerInfo, item.Price);
+                return false;
+            }
+
             _previewStage?.RefreshDefault();
+            return true;
         }
-        return success;
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"购买武器 {item.Name} 失败：{exception.Message}", this);
+            _service.Refund(_playerInfo, item.Price);
+            return false;
+        }
+        finally
+        {
+            _transactionBusy = false;
+        }
     }
 
     private async Task<bool> TryPurchaseEquipmentAsync(BombShopItemKind kind)

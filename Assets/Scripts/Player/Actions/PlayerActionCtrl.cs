@@ -287,6 +287,11 @@ public class PlayerActionCtrl : MonoBehaviour
 
         if (command.Action == GJInputAction.Aim)
         {
+            if (_weaponInventoryCtrl.IsBombSelected)
+            {
+                _aimCtrl.ReceiveAimInput(PlayerInputPhase.Canceled);
+                return;
+            }
             if (_isPunching)
             {
                 if (command.Phase == PlayerInputPhase.Canceled)
@@ -306,6 +311,22 @@ public class PlayerActionCtrl : MonoBehaviour
                 return;
             }
             HandleWeaponCycleCommand(command);
+            return;
+        }
+
+        if (_weaponInventoryCtrl.IsBombSelected && command.Action == GJInputAction.Fire)
+        {
+            _isFiring = false;
+            _weaponCombatCtrl.ReceiveFireInput(PlayerInputPhase.Canceled);
+            CommandReceived?.Invoke(command);
+            return;
+        }
+
+        if (_weaponInventoryCtrl.IsBombSelected &&
+            (command.Action == GJInputAction.Reload ||
+             command.Action == GJInputAction.Inspect ||
+             command.Action == GJInputAction.Punch))
+        {
             return;
         }
 

@@ -32,6 +32,7 @@ public static class GunDemoAddressableConfigurator
     private const string BulletTracerAddress = "effect.weapon.bullet_tracer";
     private const string BombPrefabPath = "Assets/Prefabs/Props/Bomb.prefab";
     private const string BombPrefabAddress = "prop.bomb.prefab";
+    private const string BombCarryAnimationAddress = "animation.bomb.carry";
     private const string BulletImpactPrefabPath =
         "Assets/Prefabs/Effects/BulletImpacts/BulletImpactDecal.prefab";
     private const string BulletImpactTextureFolder =
@@ -64,6 +65,7 @@ public static class GunDemoAddressableConfigurator
         GunDemoAddressableConfigureReport report = new GunDemoAddressableConfigureReport();
         report.MigratedFieldCount += actionReport.MigratedFieldCount;
         report.Problems.AddRange(actionReport.Problems);
+        report.Problems.AddRange(BombCarryAnimationConfigurator.Configure());
         Dictionary<string, string> configuredGuids = new Dictionary<string, string>();
         ConfigureSharedEffects(settings, groups[EffectsGroup], configuredGuids, report);
         ConfigureKinemationRecoil(
@@ -85,6 +87,14 @@ public static class GunDemoAddressableConfigurator
             BombPrefabPath,
             BombPrefabAddress,
             new[] { "type.prefab", "type.match" },
+            configuredGuids,
+            report);
+        Register(
+            settings,
+            groups[CharactersGroup],
+            BombCarryAnimationConfigurator.CarryAnimationPath,
+            BombCarryAnimationAddress,
+            new[] { "type.animation", "type.match" },
             configuredGuids,
             report);
         RegisterBombShopResources(

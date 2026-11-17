@@ -51,6 +51,11 @@ public sealed class CharacterHealth : MonoBehaviour
         }
     }
 
+    public bool RecoveryEnabled
+    {
+        get { return _recoveryEnabled; }
+    }
+
     public PlayerInfo PlayerInfo
     {
         get

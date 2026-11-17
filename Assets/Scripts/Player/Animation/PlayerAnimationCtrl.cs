@@ -63,6 +63,14 @@ public sealed class PlayerAnimationCtrl : MonoBehaviour
         }
     }
 
+    public void SetBombCarryState(bool carrying, bool planting)
+    {
+        if (_thirdPersonView)
+        {
+            _thirdPersonView.SetBombCarryPresentation(carrying, planting);
+        }
+    }
+
     private void Awake()
     {
         if (!_moveCtrl)

@@ -1,13 +1,18 @@
 using System;
 using UnityEngine;
+using UnityEngine.AI;
 
 public sealed class AIMotionActuator
 {
+    private const float SlideClearanceDistance = 2.8f;
+
     private readonly Action<GJInputAction, PlayerInputPhase, Vector2> _send;
     private readonly Transform _owner;
     private readonly FirstPersonCameraCtrl _camera;
     private readonly PlayerMoveCtrl _move;
     private readonly AIPathNavigator _navigator = new AIPathNavigator();
+    private readonly RaycastHit[] _slideHits = new RaycastHit[12];
+    private readonly CharacterController _characterController;
     private Vector3 _destination;
     private Vector3 _lastSamplePosition;
     private float _nextStuckSample;
@@ -29,6 +34,7 @@ public sealed class AIMotionActuator
         _owner = owner;
         _camera = camera;
         _move = move;
+        _characterController = owner.GetComponent<CharacterController>();
         _lastSamplePosition = owner.position;
     }
 
@@ -56,7 +62,7 @@ public sealed class AIMotionActuator
         Vector2 input = new Vector2(Vector3.Dot(world, right), Vector3.Dot(world, forward));
         _send(GJInputAction.Move, PlayerInputPhase.Performed, Vector2.ClampMagnitude(input, 1f));
         SetSprinting(intent.Sprint && !intent.Aim && !intent.Fire);
-        TryMobility(intent, profile);
+        TryMobility(intent, profile, world);
         TickStuckRecovery(profile);
     }
 
@@ -64,6 +70,7 @@ public sealed class AIMotionActuator
     {
         _send(GJInputAction.Move, PlayerInputPhase.Performed, Vector2.zero);
         SetSprinting(false);
+        _hasDestination = false;
     }
 
     private void TickStuckRecovery(AIDifficultyProfile profile)
@@ -84,7 +91,10 @@ public sealed class AIMotionActuator
         }
     }
 
-    private void TryMobility(AIIntent intent, AIDifficultyProfile profile)
+    private void TryMobility(
+        AIIntent intent,
+        AIDifficultyProfile profile,
+        Vector3 movementDirection)
     {
         if (Time.time < _nextMobilityTime || !_move.IsGrounded || intent.Aim || intent.Fire)
         {
@@ -93,7 +103,8 @@ public sealed class AIMotionActuator
         float distance = Vector3.Distance(_owner.position, _destination);
         if (profile.CanTacticalSlide && _sprintHeld && distance > 5f &&
             (intent.Behavior == AIBehaviorId.Retreat ||
-             intent.Behavior == AIBehaviorId.Reposition))
+             intent.Behavior == AIBehaviorId.Reposition) &&
+            CanSlideSafely(movementDirection))
         {
             _nextMobilityTime = Time.time + 2.2f;
             _send(GJInputAction.Slide, PlayerInputPhase.Started, Vector2.zero);
@@ -106,6 +117,54 @@ public sealed class AIMotionActuator
                 (profile.Difficulty == AIDifficulty.Hard ? 2.4f : 4.5f);
             _send(GJInputAction.JumpVault, PlayerInputPhase.Started, Vector2.zero);
         }
+    }
+
+    private bool CanSlideSafely(Vector3 movementDirection)
+    {
+        movementDirection.y = 0f;
+        if (!_characterController || movementDirection.sqrMagnitude < 0.01f)
+        {
+            return false;
+        }
+
+        Vector3 direction = movementDirection.normalized;
+        Vector3 start = _owner.position;
+        if (NavMesh.Raycast(
+            start,
+            start + direction * SlideClearanceDistance,
+            out _,
+            NavMesh.AllAreas))
+        {
+            return false;
+        }
+
+        Bounds bounds = _characterController.bounds;
+        float radius = Mathf.Max(0.1f, _characterController.radius * 0.82f);
+        float slideHeight = Mathf.Max(radius * 2f, bounds.size.y * 0.55f);
+        float segment = Mathf.Max(0f, slideHeight * 0.5f - radius);
+        Vector3 bottom = bounds.center - Vector3.up * segment;
+        Vector3 top = bounds.center + Vector3.up * segment;
+        int count = Physics.CapsuleCastNonAlloc(
+            bottom,
+            top,
+            radius,
+            direction,
+            _slideHits,
+            SlideClearanceDistance,
+            Physics.AllLayers,
+            QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
+        {
+            Transform hit = _slideHits[i].transform;
+            if (!hit || hit == _owner || hit.IsChildOf(_owner))
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     private void SetSprinting(bool active)

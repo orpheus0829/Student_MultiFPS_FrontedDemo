@@ -27,6 +27,22 @@ public sealed class DoorRotationInteraction : MonoBehaviour, IWorldInteraction
     private Collider[] _doorColliders;
     private readonly List<IgnoredPlayer> _ignoredPlayers = new List<IgnoredPlayer>();
 
+    public bool IsOpen
+    {
+        get
+        {
+            return _isOpen;
+        }
+    }
+
+    public bool IsRotating
+    {
+        get
+        {
+            return _rotationProgress < 1f;
+        }
+    }
+
     private void Awake()
     {
         if (!_doorBody)

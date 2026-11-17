@@ -249,6 +249,21 @@ public sealed class BombRules : MonoBehaviour
         return CanDefuse(defuser) && _bomb.TryDefuse(defuser);
     }
 
+    public bool TryDrop(PlayerInfo carrier)
+    {
+        if (!_roundActive || !_bomb || _bomb.State != BombEntityState.Carried ||
+            _bomb.Carrier != carrier || !IsAlive(carrier))
+        {
+            return false;
+        }
+
+        Vector3 forward = carrier.transform.forward;
+        Vector3 position = carrier.transform.position + Vector3.up * 1.05f +
+            forward * 0.7f;
+        Vector3 impulse = forward * 2.25f + Vector3.up * 0.7f;
+        return _bomb.TryDrop(position, impulse);
+    }
+
     private async Task<BombEntity> SpawnBomb(Vector3 position)
     {
         GameObject instance = null;

@@ -7,9 +7,12 @@ public sealed class AIAimActuator
     private AIDifficultyProfile _profile;
     private AITrackedTarget _target;
     private Vector3 _aimDirection;
-    private Vector2 _noiseSeed;
+    private Vector2 _trackingBias;
+    private Vector2 _burstOffset;
     private float _acquiredTime;
+    private float _nextBurstSampleTime;
     private float _headAimValue;
+    private int _burstSequence;
 
     public float AngularError { get; private set; }
 
@@ -22,7 +25,6 @@ public sealed class AIAimActuator
         _owner = owner;
         _profile = profile;
         _aimDirection = owner.forward;
-        _noiseSeed = new Vector2(owner.GetInstanceID() * 0.013f, owner.GetInstanceID() * 0.031f);
     }
 
     public void SetProfile(AIDifficultyProfile profile)
@@ -42,9 +44,14 @@ public sealed class AIAimActuator
         {
             _target = intent.Target;
             _acquiredTime = Time.time;
-            uint hash = (uint)(_owner.GetInstanceID() * 397) ^
-                (uint)_target.Actor.GetInstanceID();
+            _nextBurstSampleTime = 0f;
+            int targetId = _target.Actor ? _target.Actor.GetInstanceID() : 0;
+            uint hash = (uint)(_owner.GetInstanceID() * 397) ^ (uint)targetId;
             _headAimValue = (hash & 0x00ffffffu) / 16777215f;
+            _trackingBias = new Vector2(
+                HashSigned(hash ^ 0x9e3779b9u),
+                HashSigned(hash ^ 0x85ebca6bu));
+            _burstSequence = 0;
         }
         Vector3 origin = _camera.GetCenterAimRay().origin;
         float height = ShouldAimHead(_target) ? 1.6f : 1.15f;
@@ -57,10 +64,20 @@ public sealed class AIAimActuator
         float settle = Mathf.Clamp01((Time.time - _acquiredTime) /
             Mathf.Max(0.01f, _profile.AimSettleTime));
         float error = Mathf.Lerp(_profile.AimErrorInitial, _profile.AimErrorSettled, settle);
-        float nx = Mathf.PerlinNoise(_noiseSeed.x, Time.time * 0.75f) * 2f - 1f;
-        float ny = Mathf.PerlinNoise(_noiseSeed.y, Time.time * 0.65f) * 2f - 1f;
+        RefreshBurstOffset(intent);
+        float pressureResistance = _profile.Difficulty == AIDifficulty.Hard
+            ? 0.55f
+            : _profile.Difficulty == AIDifficulty.Normal ? 0.85f : 1.25f;
+        float pressureError = intent.CombatPressure * pressureResistance * 3.5f;
+        error += pressureError;
+        if (intent.CombatTactic == AICombatTactic.Suppress)
+        {
+            error += _profile.Difficulty == AIDifficulty.Hard ? 0.8f : 1.6f;
+        }
         float compensation = 1f - Mathf.Clamp01(_profile.RecoilCompensation) * 0.65f;
-        Vector3 desired = Quaternion.Euler(ny * error * compensation, nx * error, 0f) *
+        float horizontalError = (_trackingBias.x + _burstOffset.x) * error;
+        float verticalError = (_trackingBias.y + _burstOffset.y) * error * compensation;
+        Vector3 desired = Quaternion.Euler(verticalError, horizontalError, 0f) *
             (point - origin).normalized;
         _aimDirection = Vector3.RotateTowards(
             _aimDirection,
@@ -71,9 +88,50 @@ public sealed class AIAimActuator
         _camera.SetAimDirection(_aimDirection);
     }
 
+    private void RefreshBurstOffset(AIIntent intent)
+    {
+        if (!intent.Fire)
+        {
+            _nextBurstSampleTime = 0f;
+            _burstOffset = Vector2.zero;
+            return;
+        }
+
+        if (Time.time < _nextBurstSampleTime)
+        {
+            return;
+        }
+
+        float interval = _profile.Difficulty == AIDifficulty.Hard
+            ? 0.5f
+            : _profile.Difficulty == AIDifficulty.Normal ? 0.68f : 0.9f;
+        _nextBurstSampleTime = Time.time + interval;
+        _burstSequence++;
+        int targetId = _target != null && _target.Actor
+            ? _target.Actor.GetInstanceID()
+            : 0;
+        uint hash = (uint)(_owner.GetInstanceID() * 397) ^
+            (uint)(targetId * 7919) ^ (uint)(_burstSequence * 104729);
+        float x = HashSigned(hash ^ 0xc2b2ae35u);
+        float y = HashSigned(hash ^ 0x27d4eb2fu);
+        float scale = _profile.Difficulty == AIDifficulty.Hard
+            ? 0.12f
+            : _profile.Difficulty == AIDifficulty.Normal ? 0.22f : 0.38f;
+        _burstOffset = new Vector2(x, y) * scale;
+    }
+
     private bool ShouldAimHead(AITrackedTarget target)
     {
-        return (target.VisiblePoints & AIBodyPointMask.Head) != 0 &&
+        return target.Visible &&
+            (target.VisiblePoints & AIBodyPointMask.Head) != 0 &&
             _headAimValue < _profile.HeadshotChance;
+    }
+
+    private static float HashSigned(uint value)
+    {
+        value ^= value >> 16;
+        value *= 2246822519u;
+        value ^= value >> 13;
+        return ((value & 0x00ffffffu) / 16777215f) * 2f - 1f;
     }
 }

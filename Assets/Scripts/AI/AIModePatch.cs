@@ -8,7 +8,8 @@ public enum AIObjectiveKind
     AttackSite = 2,
     DefendSite = 3,
     Bomb = 4,
-    Search = 5
+    Search = 5,
+    RecoverBomb = 6
 }
 
 public readonly struct AIObjective
@@ -17,9 +18,11 @@ public readonly struct AIObjective
     public AIObjectiveKind Kind { get; }
     public float ArrivalRadius { get; }
     public bool Sprint { get; }
+    public bool AllowInteraction { get; }
+    public bool ForceCommit { get; }
 
     public AIObjective(Vector3 position, AIObjectiveKind kind)
-        : this(position, kind, 2f, true)
+        : this(position, kind, 2f, true, false, false)
     {
     }
 
@@ -28,11 +31,40 @@ public readonly struct AIObjective
         AIObjectiveKind kind,
         float arrivalRadius,
         bool sprint)
+        : this(position, kind, arrivalRadius, sprint, false, false)
+    {
+    }
+
+    public AIObjective(
+        Vector3 position,
+        AIObjectiveKind kind,
+        float arrivalRadius,
+        bool sprint,
+        bool allowInteraction)
+        : this(
+            position,
+            kind,
+            arrivalRadius,
+            sprint,
+            allowInteraction,
+            false)
+    {
+    }
+
+    public AIObjective(
+        Vector3 position,
+        AIObjectiveKind kind,
+        float arrivalRadius,
+        bool sprint,
+        bool allowInteraction,
+        bool forceCommit)
     {
         Position = position;
         Kind = kind;
         ArrivalRadius = Mathf.Max(0.5f, arrivalRadius);
         Sprint = sprint;
+        AllowInteraction = allowInteraction;
+        ForceCommit = forceCommit;
     }
 }
 
@@ -60,13 +92,44 @@ public struct AIUtilityBias
     }
 }
 
+public readonly struct AICombatStanding
+{
+    public int Kills { get; }
+    public int Deaths { get; }
+    public int Assists { get; }
+    public int Score { get; }
+    public int LeaderKills { get; }
+
+    public AICombatStanding(
+        int kills,
+        int deaths,
+        int assists,
+        int score,
+        int leaderKills)
+    {
+        Kills = kills;
+        Deaths = deaths;
+        Assists = assists;
+        Score = score;
+        LeaderKills = leaderKills;
+    }
+}
+
 public sealed class AIModeContext
 {
+    public int Team { get; set; }
+    public int Slot { get; set; }
     public Func<CharacterHealth, bool> TargetFilter { get; set; }
     public Func<AIPlayerCtrl, AIObjective?> ObjectiveProvider { get; set; }
     public Func<AIPlayerCtrl, AIObjective?> SearchObjectiveProvider { get; set; }
     public Func<AIPlayerCtrl, CharacterHealth> NearestAllyProvider { get; set; }
     public Func<AIPlayerCtrl, bool> AllyFilter { get; set; }
+    public Func<AIPlayerCtrl, AICombatStanding> StandingProvider { get; set; }
+    public Func<int, float> TeamEconomyProvider { get; set; }
+    public Func<BombEntity> BombProvider { get; set; }
+    public Func<PlayerInfo> BombCarrierProvider { get; set; }
+    public Func<int> AttackerTeamProvider { get; set; }
+    public Func<float> BombDefuseDurationProvider { get; set; }
 }
 
 public interface IAIModePatch
@@ -93,7 +156,9 @@ public abstract class AIModePatchBase : IAIModePatch
     protected abstract AIUtilityBias Bias { get; }
     protected virtual bool UsesTeamTactics { get { return false; } }
 
-    public IAIModePatchSession CreateSession(AIPlayerCtrl ai, AIModeContext context)
+    public virtual IAIModePatchSession CreateSession(
+        AIPlayerCtrl ai,
+        AIModeContext context)
     {
         return new Session(
             ai,
@@ -174,7 +239,13 @@ public abstract class AIModePatchBase : IAIModePatch
         public void ModifyIntent(ref AIIntent intent)
         {
             if (!_usesTeamTactics || !intent.HasMoveDestination ||
-                _ai.Profile.SquadSeparationRadius <= 0f)
+                _ai.Profile.SquadSeparationRadius <= 0f ||
+                intent.Target != null ||
+                intent.CombatTactic == AICombatTactic.ShortStrafe ||
+                intent.CombatTactic == AICombatTactic.Flank ||
+                intent.CombatTactic == AICombatTactic.CoverHidden ||
+                intent.CombatTactic == AICombatTactic.CoverPeek ||
+                intent.CombatTactic == AICombatTactic.Withdraw)
             {
                 return;
             }
@@ -243,6 +314,13 @@ public sealed class SoloSelfPreservationPatch : AIModePatchBase
             };
         }
     }
+
+    public override IAIModePatchSession CreateSession(
+        AIPlayerCtrl ai,
+        AIModeContext context)
+    {
+        return new SoloTacticalSession(ai, context);
+    }
 }
 
 public sealed class TeamworkPatch : AIModePatchBase
@@ -255,6 +333,13 @@ public sealed class TeamworkPatch : AIModePatchBase
         {
             return new AIUtilityBias { Engage = 0.12f, Reposition = 0.2f };
         }
+    }
+
+    public override IAIModePatchSession CreateSession(
+        AIPlayerCtrl ai,
+        AIModeContext context)
+    {
+        return new TeamTacticalSession(ai, context);
     }
 
     protected override AIObjective? ResolveObjective(
@@ -340,6 +425,13 @@ public sealed class BombAttackPatch : AIModePatchBase
             return new AIUtilityBias { Engage = 0.1f, Reposition = 0.24f };
         }
     }
+
+    public override IAIModePatchSession CreateSession(
+        AIPlayerCtrl ai,
+        AIModeContext context)
+    {
+        return new BombTacticalSession(ai, context, true);
+    }
 }
 
 public sealed class BombDefensePatch : AIModePatchBase
@@ -352,5 +444,12 @@ public sealed class BombDefensePatch : AIModePatchBase
         {
             return new AIUtilityBias { Engage = 0.12f, TakeCover = 0.22f };
         }
+    }
+
+    public override IAIModePatchSession CreateSession(
+        AIPlayerCtrl ai,
+        AIModeContext context)
+    {
+        return new BombTacticalSession(ai, context, false);
     }
 }

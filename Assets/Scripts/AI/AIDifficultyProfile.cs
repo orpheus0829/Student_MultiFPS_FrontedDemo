@@ -74,6 +74,14 @@ public sealed class AIDifficultyProfile
     public float FireSpreadGate { get; private set; }
     public float FireDuration { get; private set; }
     public float FirePause { get; private set; }
+    public float CombatSettleTime { get; private set; }
+    public float CombatHoldMin { get; private set; }
+    public float CombatHoldMax { get; private set; }
+    public float ShortStrafeDuration { get; private set; }
+    public float FlankMoveDuration { get; private set; }
+    public float CoverHideDuration { get; private set; }
+    public float CoverPeekDuration { get; private set; }
+    public float SuppressionMemory { get; private set; }
     public float TacticalReloadRatio { get; private set; }
     public float PreferredRange { get; private set; }
     public float RangeBand { get; private set; }
@@ -114,28 +122,40 @@ public sealed class AIDifficultyProfile
         if (difficulty == AIDifficulty.Easy)
         {
             p.SightRange = 28f; p.FovDegrees = 110f; p.HearingRadius = 10f;
-            p.SenseInterval = 0.25f; p.ReactionTime = 0.8f; p.MemoryDuration = 2.5f;
-            p.DecisionInterval = 0.9f; p.MinimumCommitTime = 3.2f; p.TurnRate = 180f;
-            p.AimErrorInitial = 9f; p.AimErrorSettled = 5.5f; p.AimSettleTime = 1.1f;
-            p.AimChance = 0.4f; p.FireSpreadGate = 6.5f; p.FireDuration = 0.42f;
-            p.FirePause = 1f; p.PreferredRange = 11f; p.RangeBand = 3f;
+            p.SenseInterval = 0.2f; p.ReactionTime = 0.55f; p.MemoryDuration = 3.5f;
+            p.DecisionInterval = 0.42f; p.MinimumCommitTime = 1.4f; p.TurnRate = 165f;
+            p.AimErrorInitial = 7.5f; p.AimErrorSettled = 5.2f; p.AimSettleTime = 1.35f;
+            p.AimChance = 0.42f; p.FireSpreadGate = 6.8f; p.FireDuration = 0.34f;
+            p.FirePause = 0.72f; p.CombatSettleTime = 0.34f;
+            p.PreferredRange = 11f; p.RangeBand = 4f;
+            p.CombatHoldMin = 2.4f; p.CombatHoldMax = 4.2f;
+            p.ShortStrafeDuration = 0.75f; p.FlankMoveDuration = 1.6f;
+            p.CoverHideDuration = 1.45f; p.CoverPeekDuration = 1.15f;
+            p.SuppressionMemory = 0f;
             p.StrafeScale = 0.6f; p.CoverPreference = 0.35f;
             p.RetreatHealthRatio = 0.2f; p.ReturnHealthRatio = 0.6f;
             p.Aggression = 1f; p.RetreatPreference = 0.15f;
             p.TeamRegroupDistance = 30f; p.TeamArrivalRadius = 9f;
             p.SquadSeparationRadius = 2.5f; p.SquadSeparationWeight = 1.5f;
-            p.Utility = new AIUtilityWeights(0.35f, 1.2f, 0.45f);
+            p.IntelShareRange = 18f; p.IntelShareInterval = 2.3f;
+            p.IntelShareConfidence = 0.35f;
+            p.Utility = new AIUtilityWeights(0.3f, 1.15f, 0.4f);
             return p;
         }
         if (difficulty == AIDifficulty.Hard)
         {
             p.SightRange = 65f; p.FovDegrees = 175f; p.HearingRadius = 30f;
-            p.SenseInterval = 0.08f; p.ReactionTime = 0.15f; p.MemoryDuration = 8f;
-            p.DecisionInterval = 0.12f; p.MinimumCommitTime = 0.7f; p.Hysteresis = 0.1f;
+            p.SenseInterval = 0.07f; p.ReactionTime = 0.12f; p.MemoryDuration = 10f;
+            p.DecisionInterval = 0.1f; p.MinimumCommitTime = 0.35f; p.Hysteresis = 0.08f;
             p.TurnRate = 520f; p.AimErrorInitial = 1.2f; p.AimErrorSettled = 0.9f;
             p.AimSettleTime = 0.15f; p.LeadFactor = 1f; p.HeadshotChance = 0.4f;
             p.RecoilCompensation = 0.85f; p.AimChance = 1f; p.FireSpreadGate = 2f;
-            p.FireDuration = 1.1f; p.FirePause = 0.25f; p.TacticalReloadRatio = 0.65f;
+            p.FireDuration = 1.1f; p.FirePause = 0.25f; p.CombatSettleTime = 0.14f;
+            p.TacticalReloadRatio = 0.65f;
+            p.CombatHoldMin = 1.1f; p.CombatHoldMax = 2f;
+            p.ShortStrafeDuration = 0.62f; p.FlankMoveDuration = 1.25f;
+            p.CoverHideDuration = 0.72f; p.CoverPeekDuration = 1.05f;
+            p.SuppressionMemory = 0.75f;
             p.PreferredRange = 21f; p.RangeBand = 3f; p.StrafeScale = 1f;
             p.CoverPreference = 0.9f; p.RetreatHealthRatio = 0.55f;
             p.ReturnHealthRatio = 0.9f; p.FlankChance = 0.6f;
@@ -151,12 +171,17 @@ public sealed class AIDifficultyProfile
         }
         p.Difficulty = AIDifficulty.Normal;
         p.SightRange = 45f; p.FovDegrees = 140f; p.HearingRadius = 18f;
-        p.SenseInterval = 0.15f; p.ReactionTime = 0.38f; p.MemoryDuration = 4.5f;
-        p.DecisionInterval = 0.3f; p.MinimumCommitTime = 1.5f; p.TurnRate = 360f;
-        p.AimErrorInitial = 4f; p.AimErrorSettled = 2.2f; p.AimSettleTime = 0.4f;
+        p.SenseInterval = 0.12f; p.ReactionTime = 0.28f; p.MemoryDuration = 6f;
+        p.DecisionInterval = 0.2f; p.MinimumCommitTime = 0.7f; p.TurnRate = 340f;
+        p.AimErrorInitial = 3.7f; p.AimErrorSettled = 2.1f; p.AimSettleTime = 0.55f;
         p.LeadFactor = 0.6f; p.HeadshotChance = 0.2f; p.RecoilCompensation = 0.5f;
         p.AimChance = 0.85f; p.FireSpreadGate = 3.5f; p.FireDuration = 0.72f;
-        p.FirePause = 0.45f; p.TacticalReloadRatio = 0.4f; p.PreferredRange = 17f;
+        p.FirePause = 0.38f; p.CombatSettleTime = 0.24f;
+        p.TacticalReloadRatio = 0.4f; p.PreferredRange = 17f;
+        p.CombatHoldMin = 1.55f; p.CombatHoldMax = 2.8f;
+        p.ShortStrafeDuration = 0.72f; p.FlankMoveDuration = 1.45f;
+        p.CoverHideDuration = 1.05f; p.CoverPeekDuration = 1.2f;
+        p.SuppressionMemory = 0.42f;
         p.RangeBand = 3f; p.StrafeScale = 0.85f; p.CoverPreference = 0.6f;
         p.RetreatHealthRatio = 0.38f; p.ReturnHealthRatio = 0.75f;
         p.FlankChance = 0.25f; p.CanSwitchWeapon = true; p.CanMelee = true;

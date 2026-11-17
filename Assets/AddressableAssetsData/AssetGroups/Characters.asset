@@ -29,6 +29,13 @@ MonoBehaviour:
     - type.animator
     - weapon.drake-12
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0db32a701752b4a4dabc92d837a09e55
+    m_Address: animation.bomb.carry
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - type.animation
+    - type.match
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 20fb4fc03e5d78846ac9549039634f65
     m_Address: character.ai_player.prefab
     m_ReadOnly: 0

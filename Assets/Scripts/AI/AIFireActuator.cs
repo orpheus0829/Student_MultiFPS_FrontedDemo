@@ -14,6 +14,7 @@ public sealed class AIFireActuator
     private readonly WeaponCombatCtrl _combat;
     private readonly WeaponActionCtrl _actions;
     private readonly PlayerWeaponInventoryCtrl _inventory;
+    private readonly PlayerMoveCtrl _move;
     private AIDifficultyProfile _profile;
     private FirePhase _phase;
     private float _phaseEndTime;
@@ -32,12 +33,14 @@ public sealed class AIFireActuator
         WeaponCombatCtrl combat,
         WeaponActionCtrl actions,
         PlayerWeaponInventoryCtrl inventory,
+        PlayerMoveCtrl move,
         AIDifficultyProfile profile)
     {
         _send = send;
         _combat = combat;
         _actions = actions;
         _inventory = inventory;
+        _move = move;
         _profile = profile;
         RefreshAimPreference();
     }
@@ -118,18 +121,13 @@ public sealed class AIFireActuator
             _send(GJInputAction.Punch, PlayerInputPhase.Started, Vector2.zero);
             return;
         }
-        bool accurate = angularError <= _profile.FireSpreadGate &&
-            _combat.CurrentSpreadDegrees <= _profile.FireSpreadGate;
-        float fireDuration = _profile.FireDuration;
-        float firePause = _profile.FirePause;
-        if (_profile.Difficulty == AIDifficulty.Hard && intent.Target != null &&
-            intent.Target.Distance > _profile.PreferredRange + _profile.RangeBand)
-        {
-            WeaponDefinitionSO rangedWeapon = _actions.CurrentWeaponData;
-            float rpm = rangedWeapon ? GetRoundsPerMinute(rangedWeapon) : 600f;
-            fireDuration = Mathf.Clamp(60f / Mathf.Max(1f, rpm) * 2.5f, 0.18f, 0.42f);
-            firePause = Mathf.Max(firePause, 0.32f);
-        }
+        bool movingFire = intent.AllowMovingFire || _move && _move.IsSliding;
+        float angularGate = movingFire
+            ? _profile.FireSpreadGate * 1.8f
+            : _profile.FireSpreadGate;
+        bool accurate = angularError <= angularGate &&
+            (movingFire || _combat.CurrentSpreadDegrees <= _profile.FireSpreadGate);
+        BuildFireRhythm(weapon, intent, out float fireDuration, out float firePause);
         UpdateFirePhase(intent.Fire && accurate, fireDuration, firePause);
         RefreshSemiAutomatic();
     }
@@ -273,5 +271,99 @@ public sealed class AIFireActuator
             case WeaponFireMode.Burst: return weapon.Fire.BurstRpm;
             default: return weapon.Fire.SemiAutomaticRpm;
         }
+    }
+
+    private void BuildFireRhythm(
+        WeaponDefinitionSO weapon,
+        AIIntent intent,
+        out float fireDuration,
+        out float firePause)
+    {
+        float rpm = GetRoundsPerMinute(weapon);
+        float shotInterval = 60f / Mathf.Max(1f, rpm);
+        AITrackedTarget target = intent.Target;
+        float distance = target != null ? target.Distance : _profile.PreferredRange;
+        float rangeRatio = Mathf.InverseLerp(
+            Mathf.Max(2f, weapon.Damage.CloseDamageRange),
+            Mathf.Max(3f, weapon.Damage.FarDamageRange),
+            distance);
+        int closeShots = 4;
+        int farShots = 2;
+        float pauseScale = 1f;
+
+        switch (weapon.Basic.Category)
+        {
+            case WeaponCategory.SubmachineGun:
+                closeShots = 8;
+                farShots = 3;
+                pauseScale = 0.75f;
+                break;
+            case WeaponCategory.LightMachineGun:
+                closeShots = 11;
+                farShots = 5;
+                pauseScale = 0.7f;
+                break;
+            case WeaponCategory.Shotgun:
+                closeShots = 2;
+                farShots = 1;
+                pauseScale = 1.3f;
+                break;
+            case WeaponCategory.MarksmanRifle:
+            case WeaponCategory.SniperRifle:
+                closeShots = 2;
+                farShots = 1;
+                pauseScale = 1.65f;
+                break;
+            case WeaponCategory.Pistol:
+            case WeaponCategory.Revolver:
+                closeShots = 4;
+                farShots = 2;
+                pauseScale = 1.15f;
+                break;
+        }
+
+        float difficultyShotScale = _profile.Difficulty == AIDifficulty.Hard
+            ? 1.15f
+            : _profile.Difficulty == AIDifficulty.Normal ? 1f : 0.72f;
+        int shotCount = Mathf.Max(1, Mathf.RoundToInt(
+            Mathf.Lerp(closeShots, farShots, rangeRatio) * difficultyShotScale));
+        bool hardCommit = _profile.Difficulty == AIDifficulty.Hard &&
+            target != null && target.Visible &&
+            distance <= _profile.PreferredRange + _profile.RangeBand * 1.5f;
+        int lethalShots = 0;
+        if (hardCommit && target.Actor)
+        {
+            float estimatedDamage = Mathf.Lerp(
+                weapon.Damage.CloseDamage,
+                weapon.Damage.FarDamage,
+                rangeRatio);
+            lethalShots = Mathf.CeilToInt(
+                target.Actor.CurrentHealth /
+                Mathf.Max(1f, estimatedDamage * 0.72f)) + 1;
+            pauseScale *= target.ThreatScore >= 0.9f ? 0.45f : 0.68f;
+        }
+        if (intent.CombatTactic == AICombatTactic.HoldAngle ||
+            intent.CombatTactic == AICombatTactic.CoverPeek)
+        {
+            shotCount = Mathf.Max(1, Mathf.RoundToInt(shotCount * 0.78f));
+            pauseScale *= 1.12f;
+        }
+        else if (intent.CombatTactic == AICombatTactic.Suppress)
+        {
+            shotCount = Mathf.Max(3, Mathf.RoundToInt(shotCount * 1.35f));
+            pauseScale *= 0.82f;
+        }
+        if (lethalShots > 0)
+        {
+            shotCount = Mathf.Max(
+                shotCount,
+                Mathf.Min(_combat.MagazineAmmo, Mathf.Clamp(lethalShots, 4, 18)));
+        }
+        fireDuration = Mathf.Max(0.06f, shotInterval * (shotCount - 0.25f));
+        float maximumDuration = hardCommit
+            ? Mathf.Max(_profile.FireDuration * 2.2f, shotInterval * 17.75f)
+            : Mathf.Max(0.12f, _profile.FireDuration * 1.45f);
+        fireDuration = Mathf.Min(fireDuration, maximumDuration);
+        firePause = _profile.FirePause * pauseScale * Mathf.Lerp(0.78f, 1.25f, rangeRatio);
     }
 }

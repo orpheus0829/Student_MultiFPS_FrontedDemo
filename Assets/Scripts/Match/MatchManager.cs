@@ -1251,15 +1251,52 @@ public sealed class MatchManager : BaseMgr<MatchManager>
         IAIModePatch patch = CreateAiPatch(participant.Team);
         AIModeContext context = new AIModeContext
         {
+            Team = participant.Team,
+            Slot = participant.Slot,
             TargetFilter = actor => actor && actor.PlayerInfo &&
                 IsEnemy(participant.Info, actor.PlayerInfo),
             ObjectiveProvider = owner => GetAiObjective(participant),
             SearchObjectiveProvider = owner => GetAiSearchObjective(participant, owner),
             NearestAllyProvider = owner => FindNearestLivingAlly(participant),
             AllyFilter = other => other && other.Info &&
-                IsFriendly(participant.Info, other.Info)
+                IsFriendly(participant.Info, other.Info),
+            StandingProvider = owner => GetAiStanding(participant),
+            TeamEconomyProvider = team => _bombEconomy
+                ? _bombEconomy.GetTeamMoneyRatio(team)
+                : 1f,
+            BombProvider = () => _bombRuntime ? _bombRuntime.Bomb : null,
+            BombCarrierProvider = () => _bombRuntime
+                ? _bombRuntime.BombCarrier
+                : null,
+            AttackerTeamProvider = () => _config.Registry.GetInt(
+                "bomb.attackerTeam",
+                BombRules.DefaultAttackerTeam),
+            BombDefuseDurationProvider = () => _bombRuntime
+                ? _bombRuntime.DefuseDuration
+                : 5f
         };
         ai.InstallModePatch(patch, context);
+    }
+
+    private AICombatStanding GetAiStanding(MatchParticipant participant)
+    {
+        if (participant == null)
+        {
+            return default;
+        }
+
+        int leaderKills = 0;
+        for (int i = 0; i < _roster.Count; i++)
+        {
+            leaderKills = Mathf.Max(leaderKills, _roster[i].Kills);
+        }
+
+        return new AICombatStanding(
+            participant.Kills,
+            participant.Deaths,
+            participant.Assists,
+            participant.Score,
+            leaderKills);
     }
 
     private void SetRoundRespawnPolicy(bool roundEnded)

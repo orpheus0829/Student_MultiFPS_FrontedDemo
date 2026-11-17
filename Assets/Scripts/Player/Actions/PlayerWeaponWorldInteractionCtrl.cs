@@ -161,7 +161,8 @@ public sealed class PlayerWeaponWorldInteractionCtrl : MonoBehaviour
 
     private async Task TryDropCurrentAsync()
     {
-        if (_weaponAction.IsBusy || !_weaponAction.CurrentWeaponData ||
+        if (_inventory.IsBombSelected || _weaponAction.IsBusy ||
+            !_weaponAction.CurrentWeaponData ||
             !_view.ThirdPersonWeapon)
         {
             return;

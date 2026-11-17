@@ -51,6 +51,7 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
 
     private PlayerAnimationCtrl _animationCtrl;
     private PlayerWeaponViewCtrl _weaponView;
+    private PlayerWeaponInventoryCtrl _weaponInventory;
     private WeaponActionCtrl _action;
     private CharacterHealth _health;
     private Animator _bodyAnimator;
@@ -98,6 +99,7 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
     {
         TryGetComponent(out _animationCtrl);
         TryGetComponent(out _weaponView);
+        TryGetComponent(out _weaponInventory);
         TryGetComponent(out _action);
         TryGetComponent(out _health);
         if (!_animationCtrl || !_weaponView || !_action)
@@ -160,6 +162,11 @@ public sealed class PlayerThirdPersonGripCtrl : MonoBehaviour
         }
         if (_health && _health.IsDead)
         {
+            return;
+        }
+        if (_weaponInventory && _weaponInventory.IsBombSelected)
+        {
+            _resumeFromAnimationTakeover = true;
             return;
         }
 

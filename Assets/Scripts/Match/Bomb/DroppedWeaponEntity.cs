@@ -168,7 +168,7 @@ public sealed class DroppedWeaponEntity : MonoBehaviour, IWorldInteraction
         WorldInteractable interactable = dropped.AddComponent<WorldInteractable>();
         interactable.Configure(
             "拾取",
-            GJInputAction.PickupWeapon,
+            GJInputAction.Interact,
             entity,
             3.2f);
         IgnorePlayerCollisions(dropped);

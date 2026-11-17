@@ -55,6 +55,10 @@ public static class PlayerAnimatorContract
     public const string WeaponActionStartedName = "WeaponActionStarted";
     public const string WeaponActionCompletedName = "WeaponActionCompleted";
     public const string WeaponActionCancelledName = "WeaponActionCancelled";
+    public const string BombCarryName = "BombCarry";
+    public const string BombPlantingName = "BombPlanting";
+    public const string IdleName = "Idle";
+    public const string BombPlantCrouchName = "BombPlantCrouch";
 
     public static readonly int Gait = Animator.StringToHash(GaitName);
     public static readonly int TacSprintWeight = Animator.StringToHash(TacSprintWeightName);
@@ -74,4 +78,8 @@ public static class PlayerAnimatorContract
     public static readonly int WeaponActionStarted = Animator.StringToHash(WeaponActionStartedName);
     public static readonly int WeaponActionCompleted = Animator.StringToHash(WeaponActionCompletedName);
     public static readonly int WeaponActionCancelled = Animator.StringToHash(WeaponActionCancelledName);
+    public static readonly int BombCarry = Animator.StringToHash(BombCarryName);
+    public static readonly int BombPlanting = Animator.StringToHash(BombPlantingName);
+    public static readonly int Idle = Animator.StringToHash(IdleName);
+    public static readonly int BombPlantCrouch = Animator.StringToHash(BombPlantCrouchName);
 }

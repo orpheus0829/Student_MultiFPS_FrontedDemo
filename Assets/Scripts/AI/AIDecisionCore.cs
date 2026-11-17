@@ -28,7 +28,7 @@ public sealed class AIDecisionCore
         AITrackedTarget target = world.CurrentTarget;
         float healthRatio = Mathf.Clamp01(
             health.CurrentHealth / Mathf.Max(1f, health.MaxHealth));
-        if (_current == AIBehaviorId.Retreat &&
+        if (_current == AIBehaviorId.Retreat && health.RecoveryEnabled &&
             (healthRatio < profile.ReturnHealthRatio || (target != null && target.Visible)))
         {
             _currentScore = 1f;
@@ -42,32 +42,42 @@ public sealed class AIDecisionCore
             Mathf.Max(profile.RangeBand, profile.PreferredRange));
         float distanceDeviation = target == null ? 0f : 1f - rangeSuitability;
         float danger = 1f - healthRatio;
-        float patrol = (target == null ? w.PatrolNoTarget : 0f) +
-            (!world.HasRecentNoise ? w.PatrolQuiet : 0f);
-        float investigate = confidence * w.InvestigateConfidence +
+        float damagePressure = world.RecentDamagePressure;
+        float patrol = target == null && !world.HasRecentNoise
+            ? w.PatrolNoTarget + w.PatrolQuiet
+            : 0f;
+        float investigate = visible > 0f ? 0f :
+            confidence * w.InvestigateConfidence +
             world.NoiseConfidence * w.InvestigateNoise;
         float engage = visible * (w.EngageVisibility +
             rangeSuitability * w.EngageRange +
             healthRatio * w.EngageHealth +
-            profile.Aggression * w.EngageAggression);
-        float takeCover = visible * w.CoverVisibility +
+            profile.Aggression * w.EngageAggression) *
+            Mathf.Lerp(1f, 0.55f, danger);
+        float takeCover = hasCover && target != null ?
+            visible * w.CoverVisibility +
             danger * w.CoverDanger +
-            (hasCover ? w.CoverAvailable : 0f) +
-            profile.CoverPreference * w.CoverPreference +
-            (needsReload ? w.CoverReload : 0f);
+            damagePressure * 0.55f +
+            w.CoverAvailable * Mathf.Max(danger, damagePressure) +
+            profile.CoverPreference * w.CoverPreference *
+                Mathf.Max(danger, needsReload ? 0.65f : 0.15f) +
+            (needsReload ? w.CoverReload : 0f) : 0f;
         if (target == null || !hasCover) takeCover = 0f;
         float reposition = target == null || !target.Visible ? 0f :
             distanceDeviation * w.RepositionDistance +
             profile.StrafeScale * w.RepositionStrafe +
-            profile.FlankChance * w.RepositionFlank;
+            profile.FlankChance * w.RepositionFlank +
+            damagePressure * 0.24f;
         float retreatWindow = Mathf.Max(
             0.01f,
             profile.ReturnHealthRatio - profile.RetreatHealthRatio);
         float healthDanger = Mathf.Clamp01(
             (profile.ReturnHealthRatio - healthRatio) / retreatWindow);
-        float retreat = target != null && hasCover ?
+        float retreat = target != null && hasCover &&
+            (health.RecoveryEnabled || healthRatio <= profile.RetreatHealthRatio) ?
             healthDanger * w.RetreatDanger +
-            w.RetreatCover +
+            damagePressure * 0.45f +
+            w.RetreatCover * healthDanger +
             profile.RetreatPreference * w.RetreatPreference : 0f;
 
         patrol = ApplyBias(patrol, utilityBias.Patrol);
@@ -92,7 +102,7 @@ public sealed class AIDecisionCore
             }
         }
         if (best != _current &&
-            (Time.time - _lastSwitchTime < profile.MinimumCommitTime ||
+            (Time.time - _lastSwitchTime < GetCommitTime(_current, profile) ||
              bestScore <= currentScore + profile.Hysteresis))
         {
             _currentScore = currentScore;
@@ -112,6 +122,25 @@ public sealed class AIDecisionCore
     private static float ApplyBias(float score, float bias)
     {
         return score <= 0f ? 0f : Mathf.Clamp(score + bias, 0f, 2f);
+    }
+
+    private static float GetCommitTime(
+        AIBehaviorId behavior,
+        AIDifficultyProfile profile)
+    {
+        switch (behavior)
+        {
+            case AIBehaviorId.TakeCover:
+                return Mathf.Max(
+                    profile.MinimumCommitTime,
+                    profile.CoverHideDuration + profile.CoverPeekDuration);
+            case AIBehaviorId.Reposition:
+                return Mathf.Max(profile.MinimumCommitTime, profile.FlankMoveDuration);
+            case AIBehaviorId.Engage:
+                return Mathf.Max(profile.MinimumCommitTime, profile.CombatHoldMin * 0.7f);
+            default:
+                return profile.MinimumCommitTime;
+        }
     }
 
     private static float Score(

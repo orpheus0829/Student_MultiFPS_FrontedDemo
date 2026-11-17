@@ -40,6 +40,8 @@ public sealed class AIWorldModel
     private Vector3 _noisePosition;
     private float _noiseTime = float.NegativeInfinity;
     private Func<CharacterHealth, bool> _targetFilter;
+    private float _damagePressure;
+    private float _lastDamageTime = float.NegativeInfinity;
 
     public AITrackedTarget CurrentTarget { get; private set; }
     public bool HasRecentNoise
@@ -56,6 +58,8 @@ public sealed class AIWorldModel
                 (Time.time - _noiseTime) / Mathf.Max(0.1f, _profile.MemoryDuration));
         }
     }
+    public float RecentDamagePressure { get { return _damagePressure; } }
+    public float TimeSinceDamaged { get { return Time.time - _lastDamageTime; } }
 
     public AIWorldModel(
         CharacterHealth self,
@@ -173,6 +177,46 @@ public sealed class AIWorldModel
         track.UncertaintyRadius = Mathf.Max(1f, source.UncertaintyRadius + 1.5f);
     }
 
+    public bool PrioritizeModeTarget(CharacterHealth actor, float awarenessRange)
+    {
+        if (!CanConsiderAsTarget(actor))
+        {
+            return false;
+        }
+
+        Vector3 delta = actor.transform.position - _transform.position;
+        float distance = delta.magnitude;
+        if (distance > awarenessRange)
+        {
+            return false;
+        }
+
+        if (!_tracks.TryGetValue(actor, out AITrackedTarget track))
+        {
+            track = new AITrackedTarget { Actor = actor };
+            _tracks.Add(actor, track);
+        }
+
+        bool wasVisible = track.Visible;
+        AIBodyPointMask points = CheckVisiblePoints(actor);
+        track.Distance = distance;
+        track.Visible = points != AIBodyPointMask.None;
+        track.VisiblePoints = points;
+        if (track.Visible && !wasVisible)
+        {
+            track.VisibleSince = Time.time;
+        }
+        track.LastKnownPosition = actor.transform.position;
+        track.LastKnownVelocity = Vector3.zero;
+        track.LastSeenTime = Time.time;
+        track.Confidence = 1f;
+        track.ThreatScore = 1f;
+        track.Vulnerability = 1f;
+        track.UncertaintyRadius = track.Visible ? 0f : 1.5f;
+        CurrentTarget = track;
+        return track.Visible;
+    }
+
     private void UpdateTrack(CharacterHealth actor)
     {
         if (!_tracks.TryGetValue(actor, out AITrackedTarget track))
@@ -184,7 +228,11 @@ public sealed class AIWorldModel
         track.Distance = delta.magnitude;
         bool inRange = track.Distance <= _profile.SightRange;
         float angle = Vector3.Angle(_transform.forward, delta);
-        bool inFov = angle <= _profile.FovDegrees * 0.5f;
+        float closeAwareness = _profile.Difficulty == AIDifficulty.Hard
+            ? 12f
+            : _profile.Difficulty == AIDifficulty.Normal ? 8f : 4f;
+        bool inFov = angle <= _profile.FovDegrees * 0.5f ||
+            track.Distance <= closeAwareness;
         AIBodyPointMask points = inRange && inFov ? CheckVisiblePoints(actor) : AIBodyPointMask.None;
         bool wasVisible = track.Visible;
         track.Visible = points != AIBodyPointMask.None;
@@ -206,6 +254,7 @@ public sealed class AIWorldModel
         track.LastSeenTime = Time.time;
         track.Confidence = 1f;
         WeaponActionCtrl actions = actor.GetComponent<WeaponActionCtrl>();
+        PlayerActionCtrl playerActions = actor.GetComponent<PlayerActionCtrl>();
         bool reloading = actions && actions.CurrentAction != null &&
             IsReloadAction(actions.CurrentAction.ActionType);
         float lowHealth = 1f - Mathf.Clamp01(
@@ -213,6 +262,19 @@ public sealed class AIWorldModel
         track.Vulnerability = Mathf.Clamp01(
             lowHealth * 0.55f + (reloading ? 0.55f : 0f) +
             (actor.IsRecovering ? 0.45f : 0f));
+        Vector3 threatDirection = _transform.position - actor.transform.position;
+        threatDirection.y = 0f;
+        float facingThreat = threatDirection.sqrMagnitude > 0.01f
+            ? Mathf.Clamp01(Vector3.Dot(
+                actor.transform.forward,
+                threatDirection.normalized))
+            : 1f;
+        float activeThreat = playerActions && playerActions.IsFiring
+            ? 0.75f
+            : playerActions && playerActions.IsAiming ? 0.4f : 0f;
+        track.ThreatScore = Mathf.Max(
+            track.ThreatScore,
+            Mathf.Clamp01(activeThreat * Mathf.Lerp(0.45f, 1f, facingThreat)));
     }
 
     private AIBodyPointMask CheckVisiblePoints(CharacterHealth actor)
@@ -236,13 +298,25 @@ public sealed class AIWorldModel
         for (int i = 0; i < count; i++)
         {
             RaycastHit hit = _hits[i];
-            if (hit.transform.IsChildOf(_transform) || hit.distance >= nearest)
+            if (hit.transform.IsChildOf(_transform))
+            {
+                continue;
+            }
+            BodyHitbox hitbox = hit.collider.GetComponent<BodyHitbox>();
+            CharacterHealth candidate = hitbox
+                ? hitbox.CharacterHealth
+                : hit.collider.GetComponentInParent<CharacterHealth>();
+            // 包点、交互范围等 Trigger 只表达玩法区域，不能遮住区域内的角色。
+            if (hit.collider.isTrigger && !candidate)
+            {
+                continue;
+            }
+            if (hit.distance >= nearest)
             {
                 continue;
             }
             nearest = hit.distance;
-            BodyHitbox hitbox = hit.collider.GetComponent<BodyHitbox>();
-            seen = hitbox ? hitbox.CharacterHealth : hit.collider.GetComponentInParent<CharacterHealth>();
+            seen = candidate;
         }
         return seen == actor;
     }
@@ -276,6 +350,10 @@ public sealed class AIWorldModel
 
     private void DecayTracks()
     {
+        _damagePressure = Mathf.MoveTowards(
+            _damagePressure,
+            0f,
+            Time.deltaTime * 0.22f);
         foreach (AITrackedTarget track in _tracks.Values)
         {
             if (track.Visible)
@@ -302,6 +380,9 @@ public sealed class AIWorldModel
         CharacterHealth attacker = result.Instigator
             ? result.Instigator.GetComponent<CharacterHealth>()
             : null;
+        _lastDamageTime = Time.time;
+        _damagePressure = Mathf.Clamp01(
+            _damagePressure + result.AppliedDamage / Mathf.Max(1f, _self.MaxHealth));
         if (CanConsiderAsTarget(attacker))
         {
             if (!_tracks.TryGetValue(attacker, out AITrackedTarget track))
@@ -343,7 +424,10 @@ public sealed class AIWorldModel
         {
             return;
         }
-        Vector2 error = UnityEngine.Random.insideUnitCircle * noise.Uncertainty;
+        float hearingFraction = distance /
+            Mathf.Max(0.1f, Mathf.Min(_profile.HearingRadius, noise.Radius));
+        Vector2 error = UnityEngine.Random.insideUnitCircle *
+            noise.Uncertainty * Mathf.Lerp(0.45f, 1.35f, hearingFraction);
         _noisePosition = noise.Position + new Vector3(error.x, 0f, error.y);
         _noiseTime = Time.time;
 

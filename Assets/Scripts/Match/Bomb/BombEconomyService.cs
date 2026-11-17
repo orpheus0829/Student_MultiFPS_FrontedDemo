@@ -104,6 +104,15 @@ public sealed class BombEconomyService : MonoBehaviour
     {
         get { return _buyWindowRoundIndex; }
     }
+    public int AttackerTeam
+    {
+        get
+        {
+            return _registry != null
+                ? _registry.GetInt("bomb.attackerTeam", BombRules.DefaultAttackerTeam)
+                : BombRules.DefaultAttackerTeam;
+        }
+    }
 
     public bool IsBuyWindowOpen
     {
@@ -170,6 +179,37 @@ public sealed class BombEconomyService : MonoBehaviour
         account.Money -= amount;
         account.Notify();
         return true;
+    }
+
+    public float GetTeamMoneyRatio(int team)
+    {
+        if (!_match)
+        {
+            return 1f;
+        }
+
+        IReadOnlyList<MatchParticipant> participants = _match.GetParticipantsByTeam(team);
+        float totalMoney = 0f;
+        int accountCount = 0;
+        for (int i = 0; i < participants.Count; i++)
+        {
+            PlayerInfo player = participants[i].Info;
+            if (!player || !_accounts.TryGetValue(player, out Account account))
+            {
+                continue;
+            }
+
+            totalMoney += account.Money;
+            accountCount++;
+        }
+
+        if (accountCount == 0)
+        {
+            return 1f;
+        }
+
+        float averageMoney = totalMoney / accountCount;
+        return Mathf.Clamp01(averageMoney / 4500f);
     }
 
     public bool CanOpenShop(MatchParticipant participant)

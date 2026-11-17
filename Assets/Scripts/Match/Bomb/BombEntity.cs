@@ -17,6 +17,7 @@ public sealed class BombEntity : MonoBehaviour
 {
     private const float MinimumPulsePhase = -Mathf.PI * 0.5f;
     private const int WorldLayer = 0;
+    private const int ThirdPersonLayer = 8;
     private const int FirstPersonLayer = 9;
 
     [Header("炸弹")]
@@ -47,6 +48,7 @@ public sealed class BombEntity : MonoBehaviour
     private Vector3 _plantPresentationTargetPosition;
     private Quaternion _plantPresentationTargetRotation;
     private float _plantPresentationSpeed;
+    private Vector3 _defaultWorldScale;
 
     public BombEntityState State { get { return _state; } }
     public PlayerInfo Carrier { get { return _carrier; } }
@@ -63,6 +65,7 @@ public sealed class BombEntity : MonoBehaviour
 
     private void Awake()
     {
+        _defaultWorldScale = transform.lossyScale;
         if (!_armedLight)
         {
             _armedLight = GetComponentInChildren<Light>(true);
@@ -117,6 +120,7 @@ public sealed class BombEntity : MonoBehaviour
         transform.SetParent(carrier.transform, false);
         transform.localPosition = _carrierOffset;
         transform.localRotation = Quaternion.Euler(_carriedModelEuler);
+        ApplyWorldScale(1f);
         SubscribeCarrier(carrier);
         ApplyWorldState(false, false);
         PickedUp?.Invoke(this, carrier);
@@ -124,6 +128,11 @@ public sealed class BombEntity : MonoBehaviour
     }
 
     public bool TryDrop(Vector3 worldPosition)
+    {
+        return TryDrop(worldPosition, Vector3.zero);
+    }
+
+    public bool TryDrop(Vector3 worldPosition, Vector3 impulse)
     {
         if (_state != BombEntityState.Carried)
         {
@@ -137,10 +146,12 @@ public sealed class BombEntity : MonoBehaviour
         SetArmedLightActive(false);
         transform.SetParent(null, true);
         transform.position = worldPosition;
+        ApplyWorldScale(1f);
         SetLayerRecursively(gameObject, WorldLayer);
         _firstPersonPlantPresentationActive = false;
         ApplyWorldState(true, true);
         ApplyPhysicsState(true);
+        _rigidbody.linearVelocity = impulse;
         Dropped?.Invoke(this, previousCarrier);
         return true;
     }
@@ -171,6 +182,7 @@ public sealed class BombEntity : MonoBehaviour
         _lightPulsePhase = MinimumPulsePhase;
         transform.SetParent(null, true);
         transform.SetPositionAndRotation(worldPosition, worldRotation);
+        ApplyWorldScale(1f);
         SetLayerRecursively(gameObject, WorldLayer);
         _firstPersonPlantPresentationActive = false;
         ApplyPhysicsState(false);
@@ -249,9 +261,58 @@ public sealed class BombEntity : MonoBehaviour
             Quaternion.Euler(12f, 0f, 0f);
         transform.SetParent(cameraTransform, false);
         transform.SetLocalPositionAndRotation(startPosition, startRotation);
+        ApplyWorldScale(1f);
         SetLayerRecursively(gameObject, FirstPersonLayer);
         ApplyWorldState(true, false);
         _firstPersonPlantPresentationActive = true;
+        return true;
+    }
+
+    public bool BeginFirstPersonCarryPresentation(
+        Transform cameraTransform,
+        Vector3 localPosition,
+        Vector3 localEuler)
+    {
+        if (_state != BombEntityState.Carried || !_carrier || !cameraTransform)
+        {
+            return false;
+        }
+
+        ApplyPhysicsState(false);
+        _plantPresentationTargetPosition = localPosition;
+        _plantPresentationTargetRotation = Quaternion.Euler(localEuler);
+        _plantPresentationSpeed = 1000f;
+        transform.SetParent(cameraTransform, false);
+        transform.SetLocalPositionAndRotation(
+            _plantPresentationTargetPosition,
+            _plantPresentationTargetRotation);
+        ApplyWorldScale(1f);
+        SetLayerRecursively(gameObject, FirstPersonLayer);
+        ApplyWorldState(true, false);
+        _firstPersonPlantPresentationActive = true;
+        return true;
+    }
+
+    public bool BeginThirdPersonCarryPresentation(
+        Transform anchor,
+        Vector3 localPosition,
+        Vector3 localEuler,
+        float presentationScale)
+    {
+        if (_state != BombEntityState.Carried || !_carrier || !anchor)
+        {
+            return false;
+        }
+
+        _firstPersonPlantPresentationActive = false;
+        ApplyPhysicsState(false);
+        transform.SetParent(anchor, false);
+        transform.SetLocalPositionAndRotation(
+            localPosition,
+            Quaternion.Euler(localEuler));
+        ApplyWorldScale(Mathf.Max(0.01f, presentationScale));
+        SetLayerRecursively(gameObject, ThirdPersonLayer);
+        ApplyWorldState(true, false);
         return true;
     }
 
@@ -268,7 +329,21 @@ public sealed class BombEntity : MonoBehaviour
         transform.SetParent(_carrier ? _carrier.transform : null, false);
         transform.localPosition = _carrierOffset;
         transform.localRotation = Quaternion.Euler(_carriedModelEuler);
+        ApplyWorldScale(1f);
         ApplyWorldState(false, false);
+    }
+
+    public void CancelCarryPresentation()
+    {
+        CancelFirstPersonPlantPresentation();
+    }
+
+    public void RefreshPresentationVisibility()
+    {
+        if (_state == BombEntityState.Carried || _state == BombEntityState.Planted)
+        {
+            ApplyWorldState(true, _state == BombEntityState.Planted);
+        }
     }
 
     private void SubscribeCarrier(PlayerInfo carrier)
@@ -358,14 +433,20 @@ public sealed class BombEntity : MonoBehaviour
 
     private void ApplyWorldState(bool rendererVisible, bool colliderVisible)
     {
+        // C4 会在世界、玩家骨骼和第一人称相机之间反复换父节点。
+        // 角色可见性系统会使用 forceRenderingOff 隐藏第三人称模型，仅恢复
+        // Renderer.enabled 不足以让 C4 重新出现，因此这里统一恢复两层状态。
+        _renderers = GetComponentsInChildren<Renderer>(true);
         if (_renderers != null)
         {
             for (int i = 0; i < _renderers.Length; i++)
             {
                 _renderers[i].enabled = rendererVisible;
+                _renderers[i].forceRenderingOff = !rendererVisible;
             }
         }
 
+        _colliders = GetComponentsInChildren<Collider>(true);
         if (_colliders != null)
         {
             for (int i = 0; i < _colliders.Length; i++)
@@ -414,6 +495,30 @@ public sealed class BombEntity : MonoBehaviour
         _rigidbody.interpolation = RigidbodyInterpolation.None;
         _rigidbody.useGravity = false;
         _rigidbody.isKinematic = true;
+    }
+
+    private void ApplyWorldScale(float multiplier)
+    {
+        Vector3 targetScale = _defaultWorldScale * multiplier;
+        Transform parent = transform.parent;
+        if (!parent)
+        {
+            transform.localScale = targetScale;
+            return;
+        }
+
+        Vector3 parentScale = parent.lossyScale;
+        transform.localScale = new Vector3(
+            DivideScale(targetScale.x, parentScale.x),
+            DivideScale(targetScale.y, parentScale.y),
+            DivideScale(targetScale.z, parentScale.z));
+    }
+
+    private static float DivideScale(float target, float parentScale)
+    {
+        return Mathf.Abs(parentScale) > 0.00001f
+            ? target / parentScale
+            : target;
     }
 
     private static void SetLayerRecursively(GameObject root, int layer)

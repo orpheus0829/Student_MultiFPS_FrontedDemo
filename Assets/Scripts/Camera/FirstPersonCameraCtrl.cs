@@ -53,6 +53,9 @@ public class FirstPersonCameraCtrl : MonoBehaviour
     private float _forcedPitchTarget;
     private float _pitchBeforeForced;
     private float _forcedPitchSpeed;
+    private float _forcedHeightDrop;
+    private float _forcedHeightSpeed;
+    private bool _forcedHeightActive;
 
     public bool IsThirdPerson => _isThirdPerson;
     public Camera ViewCamera
@@ -327,6 +330,26 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         FaceAimDirection();
     }
 
+    public void BeginForcedHeightDrop(float heightDrop, float lerpSpeed)
+    {
+        _forcedHeightDrop = Mathf.Max(0f, heightDrop);
+        _forcedHeightSpeed = Mathf.Max(0.01f, lerpSpeed);
+        _forcedHeightActive = _forcedHeightDrop > 0f;
+    }
+
+    public void EndForcedHeightDropImmediate()
+    {
+        _forcedHeightActive = false;
+        _forcedHeightDrop = 0f;
+        if (!_pitchPivot)
+        {
+            return;
+        }
+
+        float slideDrop = _moveCtrl && _moveCtrl.IsSliding ? _slideCameraDrop : 0f;
+        _pitchPivot.localPosition = _pitchPivotBasePosition + Vector3.down * slideDrop;
+    }
+
     public Vector3 GetPlanarLookDirection()
     {
         Vector3 direction = Vector3.ProjectOnPlane(_pitchPivot.forward, Vector3.up);
@@ -401,8 +424,15 @@ public class FirstPersonCameraCtrl : MonoBehaviour
         }
 
         float drop = _moveCtrl && _moveCtrl.IsSliding ? _slideCameraDrop : 0f;
+        if (_forcedHeightActive)
+        {
+            drop += _forcedHeightDrop;
+        }
         Vector3 target = _pitchPivotBasePosition + Vector3.down * drop;
-        float weight = 1f - Mathf.Exp(-_slideCameraSpeed * Time.deltaTime);
+        float speed = _forcedHeightActive
+            ? Mathf.Max(_slideCameraSpeed, _forcedHeightSpeed)
+            : _slideCameraSpeed;
+        float weight = 1f - Mathf.Exp(-speed * Time.deltaTime);
         _pitchPivot.localPosition = Vector3.Lerp(_pitchPivot.localPosition, target, weight);
     }
 

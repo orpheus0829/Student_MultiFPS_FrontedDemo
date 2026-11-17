@@ -31,6 +31,16 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
     private Sprite _keySprite;
     private string _lastBindingText;
     private bool _promptCreated;
+    private bool _isAi;
+    private WorldInteractable _commandTarget;
+
+    public bool HasCommandTarget
+    {
+        get
+        {
+            return _commandTarget;
+        }
+    }
 
     private void Awake()
     {
@@ -38,7 +48,8 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
         _cameraCtrl = GetComponentInChildren<FirstPersonCameraCtrl>(true);
         _camera = _cameraCtrl ? _cameraCtrl.ViewCamera : null;
         _resources = ResourceMgr.instance;
-        if (TryGetComponent(out AIPlayerCtrl _) || !_actionCtrl || !_camera)
+        _isAi = TryGetComponent(out AIPlayerCtrl _);
+        if (!_actionCtrl || (!_isAi && !_camera))
         {
             enabled = false;
             return;
@@ -55,7 +66,7 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
 
     private void Update()
     {
-        if (!_camera || !_camera.gameObject.activeInHierarchy)
+        if (_isAi || !_camera || !_camera.gameObject.activeInHierarchy)
         {
             SetPromptVisible(false);
             return;
@@ -74,6 +85,7 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
         }
 
         SetPromptVisible(false);
+        _commandTarget = null;
     }
 
     private void OnDestroy()
@@ -86,25 +98,43 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
 
     private void HandleCommand(PlayerInputCommand command)
     {
-        if (command.Phase != PlayerInputPhase.Started || !_camera ||
-            !_camera.gameObject.activeInHierarchy)
+        if (command.Phase != PlayerInputPhase.Started)
         {
             return;
         }
 
-        // 输入到达时重新取一次准心命中，避免 Update 顺序或低帧率让缓存目标落后一帧。
-        _aimedTarget = FindAimedTarget();
-        if (!_aimedTarget || command.Action != _aimedTarget.InputAction)
+        WorldInteractable target = _commandTarget;
+        if (!target && _camera && _camera.gameObject.activeInHierarchy)
+        {
+            // 输入到达时重新取一次准心命中，避免 Update 顺序或低帧率让缓存目标落后一帧。
+            _aimedTarget = FindAimedTarget();
+            target = _aimedTarget;
+        }
+
+        if (!target || command.Action != target.InputAction)
         {
             return;
         }
 
-        if (!IsStillValid(_aimedTarget))
+        if (!IsStillValid(target))
         {
             return;
         }
 
-        _aimedTarget.Execute(gameObject);
+        target.Execute(gameObject);
+    }
+
+    public void SetCommandTarget(WorldInteractable target)
+    {
+        _commandTarget = target;
+    }
+
+    public void ClearCommandTarget(WorldInteractable target = null)
+    {
+        if (!target || _commandTarget == target)
+        {
+            _commandTarget = null;
+        }
     }
 
     private void RefreshTarget()
