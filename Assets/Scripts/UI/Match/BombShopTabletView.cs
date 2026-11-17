@@ -14,6 +14,7 @@ public sealed class BombShopTabletView : MonoBehaviour
     private const float CloseDuration = 0.24f;
     private const float LoadingDuration = 0.475f;
     private const float LoadingLoops = 1.2f;
+    private const float HoverExitDelay = 0.35f;
 
     [Header("平板动画")]
     [SerializeField] private CanvasGroup _canvasGroup;
@@ -38,6 +39,8 @@ public sealed class BombShopTabletView : MonoBehaviour
     private Vector2 _shownPosition;
     private Coroutine _motionRoutine;
     private Coroutine _loadingRoutine;
+    private Coroutine _hoverExitRoutine;
+    private BombShopItemView _selectedItem;
     public event Action<string> ItemHovered;
     public event Action ItemHoverExited;
     public event Action<string> ItemClicked;
@@ -59,6 +62,7 @@ public sealed class BombShopTabletView : MonoBehaviour
 
     private void OnDestroy()
     {
+        StopHoverExitRoutine();
         UnsubscribeSlots(_pistolSlots);
         UnsubscribeSlots(_lightSlots);
         UnsubscribeSlots(_mediumSlots);
@@ -152,6 +156,7 @@ public sealed class BombShopTabletView : MonoBehaviour
     public void Close(bool immediate)
     {
         StopLoading();
+        ClearSelectedItem();
         if (_motionRoutine != null)
         {
             StopCoroutine(_motionRoutine);
@@ -319,12 +324,52 @@ public sealed class BombShopTabletView : MonoBehaviour
 
     private void HandleHoverEntered(BombShopItemView item)
     {
+        StopHoverExitRoutine();
+        if (_selectedItem && _selectedItem != item)
+        {
+            _selectedItem.SetSelected(false);
+        }
+        _selectedItem = item;
+        _selectedItem.SetSelected(true);
         ItemHovered?.Invoke(item.ItemId);
     }
 
     private void HandleHoverExited(BombShopItemView item)
     {
+        StopHoverExitRoutine();
+        _hoverExitRoutine = StartCoroutine(ClearHoverAfterDelay(item));
+    }
+
+    private IEnumerator ClearHoverAfterDelay(BombShopItemView item)
+    {
+        yield return new WaitForSecondsRealtime(HoverExitDelay);
+        _hoverExitRoutine = null;
+        if (_selectedItem != item)
+        {
+            yield break;
+        }
+
+        ClearSelectedItem();
         ItemHoverExited?.Invoke();
+    }
+
+    private void StopHoverExitRoutine()
+    {
+        if (_hoverExitRoutine == null)
+        {
+            return;
+        }
+        StopCoroutine(_hoverExitRoutine);
+        _hoverExitRoutine = null;
+    }
+
+    private void ClearSelectedItem()
+    {
+        if (_selectedItem)
+        {
+            _selectedItem.SetSelected(false);
+        }
+        _selectedItem = null;
     }
 
     private void HandleClicked(BombShopItemView item)

@@ -9,7 +9,9 @@ public sealed class BombShopPreviewStage
     private const string AkResourceId = "weapon.ak.data";
     private const string SvdResourceId = "weapon.svd.data";
     private const string Kar98kResourceId = "weapon.kar98k.data";
-    private const float PistolDisplayScale = 0.7f;
+    private const string RevolverResourceId = "weapon.viper-357.data";
+    private const float PistolDisplayScale = 0.56f;
+    private const float RevolverDisplayScale = 0.6f;
     private const float OtherWeaponDisplayScale = 1.3f;
 
     private readonly PlayerWeaponInventoryCtrl _inventory;
@@ -26,6 +28,7 @@ public sealed class BombShopPreviewStage
     private Transform _helmetPos;
     private BombShopStageRuntime _runtime;
     private RenderTexture _texture;
+    private Material _selectionFilmMaterial;
     private int _contentVersion;
 
     public RenderTexture Texture { get { return _texture; } }
@@ -117,6 +120,11 @@ public sealed class BombShopPreviewStage
             UnityEngine.Object.Destroy(_texture);
         }
         _texture = null;
+        if (_selectionFilmMaterial)
+        {
+            UnityEngine.Object.Destroy(_selectionFilmMaterial);
+        }
+        _selectionFilmMaterial = null;
     }
 
     public void SetHoveredItem(BombEconomyService.ShopItem item)
@@ -148,15 +156,15 @@ public sealed class BombShopPreviewStage
         int version = ++_contentVersion;
         if (item.Kind == BombShopItemKind.Armor)
         {
-            await ShowEquipmentAsync(true, false, version, true);
+            await ShowEquipmentAsync(true, false, version, true, true);
         }
         else if (item.Kind == BombShopItemKind.Helmet)
         {
-            await ShowEquipmentAsync(false, true, version, true);
+            await ShowEquipmentAsync(false, true, version, true, true);
         }
         else
         {
-            await ShowWeaponAsync(item.ResourceId, version);
+            await ShowWeaponAsync(item.ResourceId, version, true);
             if (version == _contentVersion)
             {
                 ReleaseInstance(ref _armorCrate);
@@ -168,7 +176,7 @@ public sealed class BombShopPreviewStage
     private async Task RefreshDefaultAsync()
     {
         int version = ++_contentVersion;
-        await ShowWeaponAsync(GetDefaultWeaponResourceId(), version);
+        await ShowWeaponAsync(GetDefaultWeaponResourceId(), version, false);
         if (version != _contentVersion)
         {
             return;
@@ -177,10 +185,14 @@ public sealed class BombShopPreviewStage
             _armor && _armor.Armor > 0f,
             _armor && _armor.HasHelmet,
             version,
+            false,
             false);
     }
 
-    private async Task ShowWeaponAsync(string resourceId, int version)
+    private async Task ShowWeaponAsync(
+        string resourceId,
+        int version,
+        bool showSelectionFilm)
     {
         ReleaseInstance(ref _weapon);
         if (string.IsNullOrWhiteSpace(resourceId) || !_gunPos)
@@ -221,14 +233,21 @@ public sealed class BombShopPreviewStage
             {
                 HideKar98kDisplayAmmo(_weapon);
             }
-            float displayScale = data.Basic.Category == WeaponCategory.Pistol
-                ? PistolDisplayScale
-                : OtherWeaponDisplayScale;
+            float displayScale = OtherWeaponDisplayScale;
+            if (string.Equals(resourceId, RevolverResourceId, StringComparison.Ordinal))
+            {
+                displayScale = RevolverDisplayScale;
+            }
+            else if (data.Basic.Category == WeaponCategory.Pistol)
+            {
+                displayScale = PistolDisplayScale;
+            }
             PrepareDisplayObject(
                 _weapon,
                 _gunPos,
                 0.86f * displayScale,
-                displayRotation);
+                displayRotation,
+                showSelectionFilm);
         }
         catch (Exception exception)
         {
@@ -247,7 +266,8 @@ public sealed class BombShopPreviewStage
         bool showArmor,
         bool showHelmet,
         int version,
-        bool clearWeapon)
+        bool clearWeapon,
+        bool showSelectionFilm)
     {
         ReleaseInstance(ref _armorCrate);
         ReleaseInstance(ref _helmetCrate);
@@ -261,7 +281,8 @@ public sealed class BombShopPreviewStage
                 _service.ArmorCrateResourceId,
                 _armorPos,
                 0.58f,
-                version);
+                version,
+                showSelectionFilm);
         }
         if (showHelmet && version == _contentVersion)
         {
@@ -269,7 +290,8 @@ public sealed class BombShopPreviewStage
                 _service.HelmetCrateResourceId,
                 _helmetPos,
                 0.5f,
-                version);
+                version,
+                showSelectionFilm);
         }
     }
 
@@ -277,7 +299,8 @@ public sealed class BombShopPreviewStage
         string resourceId,
         Transform parent,
         float targetSize,
-        int version)
+        int version,
+        bool showSelectionFilm)
     {
         if (string.IsNullOrWhiteSpace(resourceId) || !parent)
         {
@@ -296,7 +319,12 @@ public sealed class BombShopPreviewStage
             _resources.ReleaseInstance(instance);
             return null;
         }
-        PrepareDisplayObject(instance, parent, targetSize);
+        PrepareDisplayObject(
+            instance,
+            parent,
+            targetSize,
+            Quaternion.identity,
+            showSelectionFilm);
         return instance;
     }
 
@@ -304,7 +332,8 @@ public sealed class BombShopPreviewStage
         GameObject instance,
         Transform anchor,
         float targetSize,
-        Quaternion displayRotation = default)
+        Quaternion displayRotation = default,
+        bool showSelectionFilm = false)
     {
         DisableStagePhysics(instance);
         SetLayerRecursively(instance, PreviewLayer);
@@ -343,6 +372,162 @@ public sealed class BombShopPreviewStage
         rigidbody.linearDamping = 0.25f;
         rigidbody.angularDamping = 0.8f;
         rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        if (showSelectionFilm)
+        {
+            AddSelectionFilm(instance);
+        }
+    }
+
+    private void AddSelectionFilm(GameObject root)
+    {
+        if (!EnsureSelectionFilmMaterial())
+        {
+            return;
+        }
+
+        Renderer[] sourceRenderers = root.GetComponentsInChildren<Renderer>(true);
+        Transform filmRoot = new GameObject("浅白选中膜").transform;
+        filmRoot.SetParent(root.transform, false);
+        filmRoot.localPosition = Vector3.zero;
+        filmRoot.localRotation = Quaternion.identity;
+        filmRoot.localScale = Vector3.one;
+
+        int rendererCount = 0;
+        for (int i = 0; i < sourceRenderers.Length; i++)
+        {
+            Renderer source = sourceRenderers[i];
+            if (!source || !source.enabled ||
+                !(source is MeshRenderer) && !(source is SkinnedMeshRenderer))
+            {
+                continue;
+            }
+
+            Transform shellTransform = CreateFilmTransform(root.transform, filmRoot, source.transform);
+            Bounds sourceBounds = source is SkinnedMeshRenderer skinnedBounds
+                ? skinnedBounds.localBounds
+                : GetMeshBounds(source);
+            const float filmExpansion = 1.003f;
+            Vector3 sourceCenterWorld = source.transform.TransformPoint(sourceBounds.center);
+            Vector3 centerCorrection = source.transform.TransformVector(
+                sourceBounds.center * (1f - filmExpansion));
+            shellTransform.position = root.transform.InverseTransformPoint(
+                sourceCenterWorld + centerCorrection);
+            shellTransform.localScale *= filmExpansion;
+            if (source is SkinnedMeshRenderer sourceSkinned)
+            {
+                SkinnedMeshRenderer shellSkinned =
+                    shellTransform.gameObject.AddComponent<SkinnedMeshRenderer>();
+                shellSkinned.sharedMesh = sourceSkinned.sharedMesh;
+                shellSkinned.bones = sourceSkinned.bones;
+                shellSkinned.rootBone = sourceSkinned.rootBone;
+                shellSkinned.localBounds = sourceSkinned.localBounds;
+                shellSkinned.quality = sourceSkinned.quality;
+                shellSkinned.updateWhenOffscreen = true;
+                CopyBlendShapeWeights(sourceSkinned, shellSkinned);
+                ConfigureFilmRenderer(shellSkinned, source.sharedMaterials.Length);
+                rendererCount++;
+                continue;
+            }
+
+            if (!source.TryGetComponent(out MeshFilter sourceFilter) || !sourceFilter.sharedMesh)
+            {
+                UnityEngine.Object.Destroy(shellTransform.gameObject);
+                continue;
+            }
+            MeshFilter shellFilter = shellTransform.gameObject.AddComponent<MeshFilter>();
+            shellFilter.sharedMesh = sourceFilter.sharedMesh;
+            MeshRenderer shellRenderer = shellTransform.gameObject.AddComponent<MeshRenderer>();
+            ConfigureFilmRenderer(shellRenderer, source.sharedMaterials.Length);
+            rendererCount++;
+        }
+
+        if (rendererCount == 0)
+        {
+            UnityEngine.Object.Destroy(filmRoot.gameObject);
+        }
+    }
+
+    private static Bounds GetMeshBounds(Renderer renderer)
+    {
+        if (renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh)
+        {
+            return filter.sharedMesh.bounds;
+        }
+        return new Bounds(Vector3.zero, Vector3.one);
+    }
+
+    private bool EnsureSelectionFilmMaterial()
+    {
+        if (_selectionFilmMaterial)
+        {
+            return true;
+        }
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (!shader)
+        {
+            Debug.LogWarning("商店选中膜无法创建：找不到 URP Unlit Shader。");
+            return false;
+        }
+
+        _selectionFilmMaterial = new Material(shader)
+        {
+            name = "商店预览浅白选中膜",
+            renderQueue = 3000
+        };
+        _selectionFilmMaterial.SetFloat("_Surface", 1f);
+        _selectionFilmMaterial.SetFloat("_Blend", 0f);
+        _selectionFilmMaterial.SetFloat("_Cull", 0f);
+        _selectionFilmMaterial.SetFloat("_ZWrite", 0f);
+        _selectionFilmMaterial.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0.16f));
+        _selectionFilmMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        _selectionFilmMaterial.SetInt(
+            "_DstBlend",
+            (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        _selectionFilmMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        return true;
+    }
+
+    private static Transform CreateFilmTransform(
+        Transform root,
+        Transform filmRoot,
+        Transform source)
+    {
+        Transform film = new GameObject(source.name + "_SelectionFilm").transform;
+        film.SetParent(filmRoot, false);
+        Matrix4x4 localMatrix = root.worldToLocalMatrix * source.localToWorldMatrix;
+        film.localPosition = localMatrix.GetColumn(3);
+        film.localRotation = localMatrix.rotation;
+        film.localScale = localMatrix.lossyScale;
+        return film;
+    }
+
+    private void ConfigureFilmRenderer(Renderer renderer, int materialCount)
+    {
+        Material[] materials = new Material[Mathf.Max(1, materialCount)];
+        for (int i = 0; i < materials.Length; i++)
+        {
+            materials[i] = _selectionFilmMaterial;
+        }
+        renderer.sharedMaterials = materials;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        renderer.enabled = true;
+    }
+
+    private static void CopyBlendShapeWeights(
+        SkinnedMeshRenderer source,
+        SkinnedMeshRenderer target)
+    {
+        if (!source.sharedMesh || !target.sharedMesh)
+        {
+            return;
+        }
+        int count = Mathf.Min(source.sharedMesh.blendShapeCount, target.sharedMesh.blendShapeCount);
+        for (int i = 0; i < count; i++)
+        {
+            target.SetBlendShapeWeight(i, source.GetBlendShapeWeight(i));
+        }
     }
 
     private static Renderer FindPrimaryRenderer(GameObject root)

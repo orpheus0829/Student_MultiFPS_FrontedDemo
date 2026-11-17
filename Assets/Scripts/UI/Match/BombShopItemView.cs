@@ -19,6 +19,7 @@ public sealed class BombShopItemView : MonoBehaviour,
 
     private string _itemId;
     private bool _isHovered;
+    private bool _isSelected;
     private int _lastClickFrame = -1;
 
     public event Action<BombShopItemView> HoverEntered;
@@ -50,6 +51,7 @@ public sealed class BombShopItemView : MonoBehaviour,
             _silhouette.sprite = silhouette;
             _silhouette.enabled = silhouette;
         }
+        _isSelected = false;
         SetHovered(false);
         gameObject.SetActive(true);
     }
@@ -57,6 +59,7 @@ public sealed class BombShopItemView : MonoBehaviour,
     public void Clear()
     {
         _itemId = string.Empty;
+        _isSelected = false;
         SetHovered(false);
         gameObject.SetActive(false);
     }
@@ -88,7 +91,7 @@ public sealed class BombShopItemView : MonoBehaviour,
             return;
         }
         _isHovered = isHovered;
-        SetHovered(isHovered);
+        RefreshHoverVisual();
         if (isHovered)
         {
             HoverEntered?.Invoke(this);
@@ -104,6 +107,12 @@ public sealed class BombShopItemView : MonoBehaviour,
         InvokeClickOnce();
     }
 
+    public void SetSelected(bool isSelected)
+    {
+        _isSelected = isSelected;
+        RefreshHoverVisual();
+    }
+
     private void InvokeClickOnce()
     {
         if (_lastClickFrame == Time.frameCount)
@@ -116,13 +125,20 @@ public sealed class BombShopItemView : MonoBehaviour,
 
     private void SetHovered(bool isHovered)
     {
+        _isHovered = isHovered;
+        RefreshHoverVisual();
+    }
+
+    private void RefreshHoverVisual()
+    {
+        bool highlighted = _isHovered || _isSelected;
         if (_hoverGlow)
         {
-            _hoverGlow.enabled = isHovered;
+            _hoverGlow.enabled = highlighted;
         }
         if (_background)
         {
-            _background.color = isHovered
+            _background.color = highlighted
                 ? new Color(0.25f, 0.29f, 0.34f, 0.96f)
                 : new Color(0.075f, 0.085f, 0.105f, 0.92f);
         }
