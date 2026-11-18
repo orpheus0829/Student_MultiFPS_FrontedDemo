@@ -218,9 +218,55 @@ public sealed class PlayerInteractionCtrl : MonoBehaviour
 
     private bool IsStillValid(WorldInteractable interactable)
     {
-        return interactable && interactable.isActiveAndEnabled &&
-            interactable.GetDistance(transform.position) <= interactable.InteractionRadius &&
-            interactable.CanInteract(gameObject);
+        if (!interactable || !interactable.isActiveAndEnabled ||
+            interactable.GetDistance(transform.position) > interactable.InteractionRadius ||
+            !interactable.CanInteract(gameObject))
+        {
+            return false;
+        }
+
+        return !_camera || HasLineOfSight(interactable);
+    }
+
+    private bool HasLineOfSight(WorldInteractable interactable)
+    {
+        Vector3 targetPosition = interactable.GetPromptPosition(_camera.transform.position);
+        Vector3 offset = targetPosition - _camera.transform.position;
+        float distance = offset.magnitude;
+        if (distance <= 0.001f)
+        {
+            return true;
+        }
+
+        int hitCount = Physics.RaycastNonAlloc(
+            _camera.transform.position,
+            offset / distance,
+            _hits,
+            distance + 0.05f,
+            _raycastLayers,
+            QueryTriggerInteraction.Collide);
+        if (hitCount <= 0)
+        {
+            return true;
+        }
+
+        SortHits(hitCount);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider collider = _hits[i].collider;
+            if (!collider || collider.transform.IsChildOf(transform))
+            {
+                continue;
+            }
+            if (collider.isTrigger && !interactable.OwnsCollider(collider))
+            {
+                continue;
+            }
+
+            return interactable.OwnsCollider(collider);
+        }
+
+        return true;
     }
 
     private void SortHits(int hitCount)
